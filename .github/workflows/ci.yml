@@ -53,7 +53,21 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: flutter pub outdated
+      - run: flutter pub get
+      - run: |
+          flutter pub outdated --json > outdated.json
+          # Count packages with newer versions available
+          OUTDATED_COUNT=$(jq '
+            [.packages[]
+                | select(
+                  (.latest != null and .latest != .current) or
+                  (.resolvable != null and .resolvable != .current)
+                  )
+                  ] | length
+              ' outdated.json)
+          if [ "$OUTDATED_COUNT" -gt 0 ]; then
+            echo "::warning title=Flutter dependencies outdated::${OUTDATED_COUNT} package(s) have updates available. Run 'flutter pub outdated' locally for details."
+          fi
 
 #  build_androidApk:
 #    name: Build (Android)
