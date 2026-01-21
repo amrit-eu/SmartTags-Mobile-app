@@ -66,6 +66,7 @@ jobs:
               ' outdated.json)
           if [ "$OUTDATED_COUNT" -gt 0 ]; then
             echo "::warning title=Flutter dependencies outdated::${OUTDATED_COUNT} package(s) have updates available. Run 'flutter pub outdated' locally for details."
+            exit 1
           fi
 
   build_androidApk:
