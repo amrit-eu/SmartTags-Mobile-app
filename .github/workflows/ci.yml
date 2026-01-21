@@ -38,3 +38,37 @@ jobs:
       - run: flutter pub get
       - run: flutter --version
       - run: flutter analyze
+  build_androidApk:
+    name: Build (Android)
+#    needs: [ flutter_test, flutter_lint ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter clean
+      - run: flutter build apk --debug
+      - run: flutter clean
+  build_iOSApp:
+    name: Build (iOS)
+#    needs: [ flutter_test, flutter_lint ]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter clean
+      - run: flutter build ios --no-codesign
+      - run: flutter clean
