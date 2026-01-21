@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/#33-gitlab-actions
   pull_request:
 
 jobs:
@@ -40,7 +39,6 @@ jobs:
       - run: flutter analyze
   build_androidApk:
     name: Build (Android)
-#    needs: [ flutter_test, flutter_lint ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -57,7 +55,6 @@ jobs:
       - run: flutter clean
   build_iOSApp:
     name: Build (iOS)
-#    needs: [ flutter_test, flutter_lint ]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
