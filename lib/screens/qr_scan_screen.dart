@@ -166,7 +166,12 @@ class _QrScannerOverlay extends CustomPainter {
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addRect(
-        Rect.fromLTWH(cutoutOffset.dx, cutoutOffset.dy, cutoutSize, cutoutSize),
+        Rect.fromLTWH(
+          cutoutOffset.dx,
+          cutoutOffset.dy,
+          cutoutSize,
+          cutoutSize,
+        ),
       )
       ..fillType = PathFillType.evenOdd;
 

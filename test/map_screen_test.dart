@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_amrit/components/location/location_fetcher.dart';
+import 'package:flutter_amrit/helpers/location/location_fetcher.dart';
 import 'package:flutter_amrit/screens/map_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
