@@ -36,7 +36,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       duration: const Duration(seconds: 1),
       lowerBound: 0.6,
       upperBound: 1.3,
-    )..repeat(reverse: true);
+    );
+    unawaited(_pulseController.repeat(reverse: true));
   }
 
   @override
