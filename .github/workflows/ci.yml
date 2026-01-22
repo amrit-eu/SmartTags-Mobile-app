@@ -1,0 +1,104 @@
+name: AMRIT SmartTags CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+
+  flutter_test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter --version
+      - run: flutter test --coverage
+
+  flutter_lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter --version
+      - run: flutter analyze
+
+  flutter_check_dependencies:
+    name: Check for outdated dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: |
+          flutter pub outdated --json > outdated.json
+          # Count packages with newer versions available
+          OUTDATED_COUNT=$(jq '
+            [.packages[]
+                | select(
+                  (.latest != null and .latest != .current) or
+                  (.resolvable != null and .resolvable != .current)
+                  )
+                  ] | length
+              ' outdated.json)
+          if [ "$OUTDATED_COUNT" -gt 0 ]; then
+            echo "::warning title=Flutter dependencies outdated::${OUTDATED_COUNT} package(s) have updates available. Run 'flutter pub outdated' locally for details."
+            exit 1
+          fi
+
+  build_androidApk:
+    name: Build (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter clean
+      - run: flutter build apk --debug
+      - run: flutter clean
+
+  build_iOSApp:
+    name: Build (iOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter clean
+      - run: flutter build ios --no-codesign
+      - run: flutter clean
