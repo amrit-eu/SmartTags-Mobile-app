@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 void main() {
-  testWidgets('Should be able to navigate to QR Scanner page', (WidgetTester tester) async {
+  testWidgets('Should be able to navigate to QR Scanner page', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MyApp());
     expect(find.text('Scan'), findsOneWidget);
 
@@ -15,7 +17,9 @@ void main() {
     expect(find.text('Scan QR Code'), findsOneWidget);
   });
 
-  testWidgets('QR scanner can resolve a valid OceanTags URL from QR code', (WidgetTester tester) async {
+  testWidgets('QR scanner can resolve a valid OceanTags URL from QR code', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: QrScanScreen(),
@@ -38,7 +42,9 @@ void main() {
     expect(find.text('RFHCZ3S'), findsOneWidget);
   });
 
-  testWidgets('QR scanner alerts about invalid QR code', (WidgetTester tester) async {
+  testWidgets('QR scanner alerts about invalid QR code', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: QrScanScreen(),
@@ -60,4 +66,3 @@ void main() {
     expect(find.text('Invalid QR Code format'), findsOneWidget);
   });
 }
-
