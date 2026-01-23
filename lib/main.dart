@@ -1,16 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_amrit/database/db.dart';
 import 'package:flutter_amrit/screens/map_screen.dart';
 import 'package:flutter_amrit/screens/qr_scan_screen.dart';
+import 'package:flutter_amrit/services/oceanops_repository.dart';
 import 'package:flutter_amrit/theme.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase();
+
+  // Initial data synchronization
+  final repository = OceanOpsRepository();
+  try {
+    final platforms = await repository.fetchPlatforms();
+    await database.syncPlatforms(platforms);
+  } on Exception catch (e) {
+    debugPrint('Failed to sync data: $e');
+  }
+
+  runApp(MyApp(database: database));
 }
 
 /// The root widget of the application.
 class MyApp extends StatelessWidget {
   /// Creates a [MyApp] widget.
-  const MyApp({super.key});
+  const MyApp({required this.database, super.key});
+
+  /// The global database instance.
+  final AppDatabase database;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +35,7 @@ class MyApp extends StatelessWidget {
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const MainNavigation(),
+      home: MainNavigation(database: database),
     );
   }
 }
@@ -26,7 +43,10 @@ class MyApp extends StatelessWidget {
 /// Main navigation shell with bottom navigation bar.
 class MainNavigation extends StatefulWidget {
   /// Creates a [MainNavigation] widget.
-  const MainNavigation({super.key});
+  const MainNavigation({required this.database, super.key});
+
+  /// The global database instance.
+  final AppDatabase database;
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -35,12 +55,17 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // Page widgets for each navigation destination
-  static const List<Widget> _pages = <Widget>[
-    MapScreen(),
-    _PlaceholderPage(title: 'Search', icon: Icons.search),
-    QrScanScreen(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = <Widget>[
+      MapScreen(database: widget.database),
+      const _PlaceholderPage(title: 'Search', icon: Icons.search),
+      const QrScanScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
