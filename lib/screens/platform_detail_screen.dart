@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_amrit/models/platform.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_tags/models/platform.dart';
 
 /// A screen displaying detailed information about a specific platform.
 class PlatformDetailScreen extends StatelessWidget {

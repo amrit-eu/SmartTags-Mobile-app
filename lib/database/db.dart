@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:flutter_amrit/database/db_connection.dart';
+import 'package:smart_tags/database/db_connection.dart';
 
 part 'db.g.dart';
 

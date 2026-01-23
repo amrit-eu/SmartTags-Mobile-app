@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_amrit/database/db.dart';
-import 'package:flutter_amrit/helpers/location/location_fetcher.dart';
-import 'package:flutter_amrit/models/platform.dart' as model;
-import 'package:flutter_amrit/screens/platform_detail_screen.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/models/platform.dart' as model;
+import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 /// A screen displaying an interactive ocean map with markers.
 class MapScreen extends StatefulWidget {

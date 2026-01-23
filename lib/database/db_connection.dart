@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:flutter_amrit/database/connection/unsupported.dart'
+import 'package:smart_tags/database/connection/unsupported.dart'
     if (dart.library.js_interop) 'connection/web.dart'
     if (dart.library.io) 'connection/native.dart'
     as impl;

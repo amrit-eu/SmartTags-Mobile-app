@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_amrit/models/platform.dart';
-import 'package:flutter_amrit/screens/platform_detail_screen.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 /// A screen that provides QR code scanning functionality.
 class QrScanScreen extends StatefulWidget {
@@ -97,9 +97,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
               valueListenable: _scannerController,
               builder: (context, state, child) {
                 return Icon(
-                  state.torchState == TorchState.on
-                      ? Icons.flash_on
-                      : Icons.flash_off,
+                  state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
                 );
               },
             ),
@@ -244,6 +242,5 @@ class _QrScannerOverlay extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_QrScannerOverlay oldDelegate) =>
-      borderColor != oldDelegate.borderColor;
+  bool shouldRepaint(_QrScannerOverlay oldDelegate) => borderColor != oldDelegate.borderColor;
 }

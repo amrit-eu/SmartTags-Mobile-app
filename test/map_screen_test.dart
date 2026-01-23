@@ -1,11 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_amrit/database/db.dart';
-import 'package:flutter_amrit/database/db_connection.dart' as conn;
-import 'package:flutter_amrit/helpers/location/location_fetcher.dart';
-import 'package:flutter_amrit/screens/map_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/db_connection.dart' as conn;
+import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/screens/map_screen.dart';
 
 class FakeLocationFetcher extends LocationFetcher {
   FakeLocationFetcher(this.location);

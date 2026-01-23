@@ -1,4 +1,4 @@
-import 'package:flutter_amrit/database/db.dart';
+import 'package:smart_tags/database/db.dart';
 
 /// A repository that fetches platform data from the OceanOPS API.
 class OceanOpsRepository {
