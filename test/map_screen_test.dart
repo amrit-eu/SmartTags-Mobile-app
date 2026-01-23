@@ -60,12 +60,17 @@ void main() {
       // Tap the icon to center the map and wait for the test callback
       await tester.tap(find.byIcon(Icons.my_location));
       await tester.pump(const Duration(milliseconds: 200));
-      await db.close();
 
       // Wait for the callback
       final center = await moved.future.timeout(const Duration(seconds: 5));
       expect(center.latitude, fakeLocation.latitude);
       expect(center.longitude, fakeLocation.longitude);
+      // Unmount widget before closing the database to ensure StreamBuilder
+      // listeners are disposed and the DB can close cleanly.
+      await tester.pumpWidget(const SizedBox.shrink());
+      // Allow the widget tree to process disposal and cancel streams.
+      await tester.pump(const Duration(milliseconds: 100));
+      await db.close();
     },
   );
 }
