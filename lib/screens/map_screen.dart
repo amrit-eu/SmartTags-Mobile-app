@@ -10,19 +10,19 @@ class MapScreen extends StatefulWidget {
   /// Creates a [MapScreen] widget.
   ///
   /// `locationFetcher` can be provided in tests to return a mocked
-  /// current location as a [LatLng].
-  /// `onLocationCentered` is called after the map.
+  ///  current location as a [LatLng].
+  /// `onLocationCentered` is called after the map is centered.
   const MapScreen({
     super.key,
     this.locationFetcher,
     this.onLocationCentered,
   });
 
-  /// Optional test / injection hook to provide the current location.
+  /// Optional test / injection hook to provide a LocationFetcher
   @visibleForTesting
   final LocationFetcher? locationFetcher;
 
-  /// Optional callback invoked after the map centers on the location.
+  /// Optional callback called after the map is centered on the user's location
   @visibleForTesting
   final ValueChanged<LatLng>? onLocationCentered;
 
@@ -80,7 +80,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   void _centerOnLocation() {
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 10);
-      // Call the onLocationCentred callback.
+      // Call the onLocationCentered callback with location.
       widget.onLocationCentered?.call(_currentLocation!);
     }
   }
