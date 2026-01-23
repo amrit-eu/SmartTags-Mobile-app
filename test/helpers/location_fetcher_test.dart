@@ -41,4 +41,84 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(geolocatorChannel, null);
   });
+  test('getUserLocation returns null for no permission', () async {
+    // Mock the Geolocator methods.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, (call) async {
+          if (call.method == 'isLocationServiceEnabled') return true;
+          if (call.method == 'checkPermission' ||
+              call.method == 'requestPermission') {
+            return LocationPermission.denied.index;
+          }
+          return null;
+        });
+
+    final fetcher = LocationFetcher();
+    final loc = await fetcher.getUserLocation();
+
+    expect(loc, isNull);
+
+    // Clean up the mock.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, null);
+  });
+  test('getUserLocation returns null for denied forever permission', () async {
+    // Mock the Geolocator methods.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, (call) async {
+          if (call.method == 'isLocationServiceEnabled') return true;
+          if (call.method == 'checkPermission') {
+            return LocationPermission.denied.index;
+          }
+          if (call.method == 'requestPermission') {
+            return LocationPermission.deniedForever.index;
+          }
+          return null;
+        });
+
+    final fetcher = LocationFetcher();
+    final loc = await fetcher.getUserLocation();
+
+    expect(loc, isNull);
+
+    // Clean up the mock.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, null);
+  });
+  test('getUserLocation returns LatLng for granted permission', () async {
+    // Mock the Geolocator methods.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, (call) async {
+          if (call.method == 'isLocationServiceEnabled') return true;
+          if (call.method == 'checkPermission') {
+            return LocationPermission.denied.index;
+          }
+          if (call.method == 'requestPermission') {
+            return LocationPermission.always.index;
+          }
+          if (call.method == 'getCurrentPosition') {
+            return {
+              'latitude': 10.0,
+              'longitude': 20.0,
+              'accuracy': 1.0,
+              'altitude': 1.0,
+              'heading': 1.0,
+              'speed': 1.0,
+              'speed_accuracy': 1.0,
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            };
+          }
+          return null;
+        });
+
+    final fetcher = LocationFetcher();
+    final loc = await fetcher.getUserLocation();
+
+    expect(loc?.latitude, 10);
+    expect(loc?.longitude, 20);
+
+    // Clean up the mock.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(geolocatorChannel, null);
+  });
 }
