@@ -2,19 +2,36 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_amrit/database/db.dart';
+import 'package:flutter_amrit/helpers/location/location_fetcher.dart';
 import 'package:flutter_amrit/models/platform.dart' as model;
 import 'package:flutter_amrit/screens/platform_detail_screen.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 /// A screen displaying an interactive ocean map with markers.
 class MapScreen extends StatefulWidget {
   /// Creates a [MapScreen] widget.
-  const MapScreen({required this.database, super.key});
+  ///
+  /// `locationFetcher` can be provided in tests to return a mocked
+  ///  current location as a [LatLng].
+  /// `onLocationCentered` is called after the map is centered.
+  const MapScreen({
+    required this.database,
+    super.key,
+    this.locationFetcher,
+    this.onLocationCentered,
+  });
 
   /// The local database instance.
   final AppDatabase database;
+
+  /// Optional test / injection hook to provide a LocationFetcher
+  @visibleForTesting
+  final LocationFetcher? locationFetcher;
+
+  /// Optional callback called after the map is centered on the user's location
+  @visibleForTesting
+  final ValueChanged<LatLng>? onLocationCentered;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -42,7 +59,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       duration: const Duration(seconds: 1),
       lowerBound: 0.6,
       upperBound: 1.3,
-    )..repeat(reverse: true);
+    );
+    unawaited(_pulseController.repeat(reverse: true));
   }
 
   @override
@@ -53,47 +71,24 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _getCurrentLocation() async {
-    // Check if location services are enabled
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      debugPrint('Location services are disabled.');
-      return;
-    }
+    final locationFetcher = widget.locationFetcher ?? LocationFetcher();
+    final location = await locationFetcher.getUserLocation();
 
-    // Request permission
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint('Location permission denied.');
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      debugPrint('Location permission permanently denied.');
-      return;
-    }
-
-    // Fetch location
-    try {
-      final position = await Geolocator.getCurrentPosition();
-      debugPrint(
-        'Location Found: ${position.latitude}, ${position.longitude}',
-      );
-
+    if (location != null) {
       setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
+        _currentLocation = location;
         _isLocationLoaded = true;
       });
-    } on Exception catch (e) {
-      debugPrint('Error getting location: $e');
+    } else {
+      debugPrint('Unable to retrieve users location');
     }
   }
 
   void _centerOnLocation() {
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 10);
+      // Call the onLocationCentered callback with location.
+      widget.onLocationCentered?.call(_currentLocation!);
     }
   }
 
