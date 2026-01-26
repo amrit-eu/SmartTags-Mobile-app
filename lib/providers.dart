@@ -32,3 +32,10 @@ final platformsStreamProvider = StreamProvider<List<Platform>>((ref) {
   return db.select(db.platforms).watch();
 });
 
+final platformByRefProvider = FutureProvider.family<List<Platform>, String>((
+    ref, platformRef
+    ) async {
+  final db = ref.watch(databaseProvider);
+  return await db.getPlatformByRef(platformRef);
+});
+
