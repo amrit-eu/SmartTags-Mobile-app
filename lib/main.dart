@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_amrit/database/db.dart';
-import 'package:flutter_amrit/screens/map_screen.dart';
-import 'package:flutter_amrit/screens/qr_scan_screen.dart';
-import 'package:flutter_amrit/services/oceanops_repository.dart';
-import 'package:flutter_amrit/theme.dart';
+import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/screens/map_screen.dart';
+import 'package:smart_tags/screens/qr_scan_screen.dart';
+import 'package:smart_tags/services/oceanops_repository.dart';
+import 'package:smart_tags/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

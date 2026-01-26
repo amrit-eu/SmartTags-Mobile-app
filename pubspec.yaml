@@ -1,5 +1,5 @@
-name: flutter_amrit
-description: "A new Flutter project."
+name: smart_tags
+description: "A cross-platform Flutter application designed for monitoring and tracking oceanographic platforms (e.g., Argo floats, gliders). It provides a visualization of platform locations on an interactive ocean map, with detailed status information and QR code integration for easier platform identification."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -50,10 +50,6 @@ dev_dependencies:
   test: ^1.26.3
   very_good_analysis: ^10.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:
 
   # The following line ensures that the Material Icons font is

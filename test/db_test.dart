@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:flutter_amrit/database/db.dart';
-import 'package:flutter_amrit/database/db_connection.dart' as conn;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/db_connection.dart' as conn;
 
 void main() {
   group('Database Verification Tests', () {
