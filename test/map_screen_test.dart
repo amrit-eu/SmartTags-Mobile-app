@@ -35,7 +35,7 @@ void main() {
     expect(titleFinder, findsOneWidget);
     await db.close();
   });
-  testWidgets('MapScreen has find my location icon', (tester) async {
+  testWidgets('MapScreen has "Find my location" icon', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
         ProviderScope(
