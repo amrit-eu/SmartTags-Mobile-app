@@ -88,6 +88,5 @@ class AppDatabase extends _$AppDatabase {
     return (select(platforms)
         ..where((p) => p.ref.equals(ref)))
         .get();
-      // .getSingleOrNull();
   }
 }

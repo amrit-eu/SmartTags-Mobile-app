@@ -1,21 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart' hide Path;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/database/mappers/platform_mapper.dart';
+import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 /// A screen that provides QR code scanning functionality.
-class QrScanScreen extends StatefulWidget {
+class QrScanScreen extends ConsumerStatefulWidget {
   /// Creates a [QrScanScreen] widget.
   const QrScanScreen({super.key});
 
   @override
-  State<QrScanScreen> createState() => _QrScanScreenState();
+  ConsumerState<QrScanScreen> createState() => _QrScanScreenState();
 }
 
-class _QrScanScreenState extends State<QrScanScreen> {
+class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
   bool _isProcessing = false;
 
@@ -53,31 +54,32 @@ class _QrScanScreenState extends State<QrScanScreen> {
   }
 
   Future<void> _handleValidCode(String reference) async {
+    if (!mounted) return;
+
     setState(() => _isProcessing = true);
     await _scannerController.stop();
-
-    // Navigate to detail screen with mock data
-    if (mounted) {
-      final mockPlatform = Platform(
-        id: reference,
-        model: 'Weather Sensor',
-        network: 'Satellite',
-        latestPosition: const LatLng(-12.345, 34.686),
-        status: PlatformStatus.active,
-        operationalStatus: OperationalStatus.recovered,
-        lastUpdated: DateTime(2024, 4, 24, 10, 15),
-        operationLocation: const LatLng(54.978, -1.661),
-      );
-
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => PlatformDetailScreen(platform: mockPlatform),
-        ),
-      );
+    try {
+      final platforms = await ref.read(platformByRefProvider(reference).future);
+      print(platforms);
+      if (platforms.isEmpty) {
+        _showMessage('No platforms found');
+      } else {
+        final platform = platforms.first;
+        if (!mounted) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => PlatformDetailScreen(platform: platform.toDomain()),
+          ),
+        );
+      }
+    } catch (e) {
+      _showMessage('Error fetching platform');
+    } finally {
+      if (mounted) { // Only restart scanner if widget is still active
+        setState(() => _isProcessing = false);
+        await _scannerController.start();
+      }
     }
-
-    setState(() => _isProcessing = false);
-    await _scannerController.start();
   }
 
   void _showMessage(String message) {
