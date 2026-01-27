@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:smart_tags/components/common/container.dart';
-import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying detailed information about a specific platform.
 class PlatformDetailScreen extends StatelessWidget {

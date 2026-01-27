@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smart_tags/components/common/user_icon_button.dart';
+import 'package:smart_tags/widgets/common/user_icon_button.dart';
 
 /// A custom AppBar widget for the Smart Tags app.
 class TopNavigation extends AppBar {

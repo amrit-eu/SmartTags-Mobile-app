@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:smart_tags/components/common/container.dart';
-import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that displays information about a [UserProfile].
 ///

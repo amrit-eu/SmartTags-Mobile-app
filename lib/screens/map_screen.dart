@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying an interactive ocean map with markers.
 class MapScreen extends ConsumerStatefulWidget {

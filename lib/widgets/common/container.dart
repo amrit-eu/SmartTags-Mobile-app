@@ -7,8 +7,10 @@ class SectionContainer extends StatelessWidget {
 
   /// The child widget to display inside the container.
   final Widget child;
+
   /// Optional height of the container.
   final double? height;
+
   /// Optional width of the container.
   final double? width;
 
@@ -39,8 +41,10 @@ class ContainerRow extends StatelessWidget {
 
   /// The label text to display.
   final String label;
+
   /// The value text to display.
   final String value;
+
   /// Optional color for the value text.
   final Color? valueColor;
 
