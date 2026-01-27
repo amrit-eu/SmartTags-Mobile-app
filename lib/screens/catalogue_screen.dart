@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/components/platform_card.dart';
 import 'package:smart_tags/providers.dart';
+import 'package:smart_tags/widgets/platform_card.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that displays a searchable catalogue of platforms.
 class CatalogueScreen extends ConsumerStatefulWidget {
@@ -37,9 +38,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Platforms'),
-      ),
+      appBar: TopNavigation(title: const Text('Platform Catalogue')),
       body: Column(
         children: [
           Padding(

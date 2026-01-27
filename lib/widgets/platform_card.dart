@@ -5,20 +5,28 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/platform.dart' as model_entity;
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/theme.dart';
 
+/// A card widget that displays details for a specific platform.
 class PlatformCard extends StatelessWidget {
+  /// Creates a [PlatformCard].
   const PlatformCard({
     required this.platform,
     super.key,
   });
 
+  /// The platform data to be displayed in this card.
   final Platform platform;
 
   @override
   Widget build(BuildContext context) {
+    final statusColors = Theme.of(context).extension<StatusColors>();
+    final colorScheme = Theme.of(context).colorScheme;
     final isActive = platform.status == 'Active';
-    final backgroundColor = isActive ? const Color.fromARGB(255, 1, 56, 3) : const Color.fromARGB(255, 134, 3, 16);
-    final borderColor = isActive ? const Color.fromARGB(255, 1, 146, 8) : const Color.fromARGB(255, 139, 3, 3);
+
+    final borderColor = isActive
+        ? statusColors?.activeBorderColor ?? Colors.green
+        : statusColors?.inactiveBorderColor ?? Colors.red;
 
     return GestureDetector(
       onTap: () {
@@ -50,7 +58,7 @@ class PlatformCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: backgroundColor,
+          color: colorScheme.surfaceContainerHighest,
           border: Border.all(color: borderColor, width: 2),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
@@ -76,12 +84,13 @@ class PlatformCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 22,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         platform.ref,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: const Color.fromARGB(134, 243, 217, 217),
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -94,11 +103,14 @@ class PlatformCard extends StatelessWidget {
                       'Operation location',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       '${platform.operationLat.toStringAsFixed(2)}, ${platform.operationLon.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -111,6 +123,7 @@ class PlatformCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w500,
                   letterSpacing: 1.2,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
