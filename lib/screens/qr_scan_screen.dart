@@ -60,7 +60,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     await _scannerController.stop();
     try {
       final platforms = await ref.read(platformByRefProvider(reference).future);
-      print(platforms);
       if (platforms.isEmpty) {
         _showMessage('No platforms found');
       } else {
@@ -72,8 +71,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
       _showMessage('Error fetching platform');
+      Error.throwWithStackTrace(e, st);
     } finally {
       if (mounted) { // Only restart scanner if widget is still active
         setState(() => _isProcessing = false);

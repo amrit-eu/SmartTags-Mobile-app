@@ -1,6 +1,6 @@
-import 'package:smart_tags/models/platform.dart' as domain;
-import 'package:smart_tags/database/db.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/models/platform.dart' as domain;
 
 /// Map the platform DB object returned to the domain model
 extension PlatformMapper on Platform {
