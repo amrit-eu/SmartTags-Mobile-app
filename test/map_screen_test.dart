@@ -104,14 +104,17 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: MapScreen(
-            database: db,
-            // Use a fake LocationFetcher to return a null location
-            locationFetcher: FakeLocationFetcher(null),
-      
-          ),
-        ),
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+            ],
+            child: MaterialApp(
+              home: MapScreen(
+                // Use a fake LocationFetcher
+                locationFetcher: FakeLocationFetcher(null),
+              ),
+            ),
+          )
       );
 
       await tester.pump(const Duration(milliseconds: 500));
