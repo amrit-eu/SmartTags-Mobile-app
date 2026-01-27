@@ -1,43 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:smart_tags/database/db.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
-import 'package:smart_tags/screens/user_profile.dart';
-import 'package:smart_tags/services/oceanops_repository.dart';
 import 'package:smart_tags/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final database = AppDatabase();
 
-  // Initial data synchronization
-  final repository = OceanOpsRepository();
-  try {
-    final platforms = await repository.fetchPlatforms();
-    await database.syncPlatforms(platforms);
-  } on Exception catch (e) {
-    debugPrint('Failed to sync data: $e');
-  }
-
-  runApp(MyApp(database: database));
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 /// The root widget of the application.
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   /// Creates a [MyApp] widget.
-  const MyApp({required this.database, super.key});
-
-  /// The global database instance.
-  final AppDatabase database;
+  const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(initialSyncProvider);
     return MaterialApp(
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: MainNavigation(database: database),
+      home: const MainNavigation(),
     );
   }
 }
@@ -45,10 +32,7 @@ class MyApp extends StatelessWidget {
 /// Main navigation shell with bottom navigation bar.
 class MainNavigation extends StatefulWidget {
   /// Creates a [MainNavigation] widget.
-  const MainNavigation({required this.database, super.key});
-
-  /// The global database instance.
-  final AppDatabase database;
+  const MainNavigation({super.key});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -63,10 +47,12 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
     _pages = <Widget>[
-      MapScreen(database: widget.database),
-      CatalogueScreen(database: widget.database),
+      const MapScreen(),
+      const CatalogueScreen(),
       const QrScanScreen(),
-      const UserProfileScreen(user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@noc.ac.uk'))
+      //const UserProfileScreen(
+      //  user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@noc.ac.uk'),
+      //),
     ];
   }
 
@@ -98,11 +84,6 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.qr_code_scanner_outlined),
             selectedIcon: Icon(Icons.qr_code_scanner),
             label: 'Scan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outlined),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
           ),
         ],
       ),

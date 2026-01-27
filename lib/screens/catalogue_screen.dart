@@ -1,27 +1,24 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/platform.dart' as model;
+import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 /// A screen that displays a searchable catalogue of platforms.
-class CatalogueScreen extends StatefulWidget {
+class CatalogueScreen extends ConsumerStatefulWidget {
   /// Creates a [CatalogueScreen].
-  const CatalogueScreen({
-    required this.database,
-    super.key,
-  });
+  const CatalogueScreen({super.key});
 
   /// The local database instance.
-  final AppDatabase database;
 
   @override
-  State<CatalogueScreen> createState() => _CatalogueScreenState();
+  ConsumerState<CatalogueScreen> createState() => _CatalogueScreenState();
 }
 
-class _CatalogueScreenState extends State<CatalogueScreen> {
+class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -72,65 +69,58 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                 ? const Center(
                     child: Text('Enter a platform ID or model to search'),
                   )
-                : StreamBuilder<List<Platform>>(
-                    stream: widget.database.watchPlatforms(query: _searchQuery),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
+                : ref
+                      .watch(platformsWatchProvider(_searchQuery))
+                      .when(
+                        data: (platforms) {
+                          if (platforms.isEmpty) {
+                            return const Center(
+                              child: Text('No results found'),
+                            );
+                          }
 
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      final platforms = snapshot.data!;
-
-                      if (platforms.isEmpty) {
-                        return const Center(
-                          child: Text('No results found'),
-                        );
-                      }
-
-                      return ListView.separated(
-                        itemCount: platforms.length,
-                        separatorBuilder: (context, index) => const Divider(),
-                        itemBuilder: (context, index) {
-                          final platform = platforms[index];
-                          return ListTile(
-                            title: Text(platform.model),
-                            subtitle: Text(platform.ref),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              final platformModel = model.Platform(
-                                id: platform.ref,
-                                model: platform.model,
-                                network: platform.network,
-                                latestPosition: LatLng(platform.lat, platform.lon),
-                                status: platform.status == 'Active'
-                                    ? model.PlatformStatus.active
-                                    : model.PlatformStatus.inactive,
-                                operationalStatus: platform.operationalStatus == 'Deployed'
-                                    ? model.OperationalStatus.deployed
-                                    : model.OperationalStatus.recovered,
-                                lastUpdated: platform.lastUpdated,
-                                operationLocation: LatLng(
-                                  platform.operationLat,
-                                  platform.operationLon,
-                                ),
-                              );
-                              unawaited(
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (context) => PlatformDetailScreen(platform: platformModel),
-                                  ),
-                                ),
+                          return ListView.separated(
+                            itemCount: platforms.length,
+                            separatorBuilder: (context, index) => const Divider(),
+                            itemBuilder: (context, index) {
+                              final platform = platforms[index];
+                              return ListTile(
+                                title: Text(platform.model),
+                                subtitle: Text(platform.ref),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  final platformModel = model.Platform(
+                                    id: platform.ref,
+                                    model: platform.model,
+                                    network: platform.network,
+                                    latestPosition: LatLng(platform.lat, platform.lon),
+                                    status: platform.status == 'Active'
+                                        ? model.PlatformStatus.active
+                                        : model.PlatformStatus.inactive,
+                                    operationalStatus: platform.operationalStatus == 'Deployed'
+                                        ? model.OperationalStatus.deployed
+                                        : model.OperationalStatus.recovered,
+                                    lastUpdated: platform.lastUpdated,
+                                    operationLocation: LatLng(
+                                      platform.operationLat,
+                                      platform.operationLon,
+                                    ),
+                                  );
+                                  unawaited(
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (context) => PlatformDetailScreen(platform: platformModel),
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
                             },
                           );
                         },
-                      );
-                    },
-                  ),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => Center(child: Text('Error: $error')),
+                      ),
           ),
         ],
       ),

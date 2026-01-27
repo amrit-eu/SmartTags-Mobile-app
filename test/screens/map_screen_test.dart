@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 
 class FakeLocationFetcher extends LocationFetcher {
@@ -19,14 +21,32 @@ class FakeLocationFetcher extends LocationFetcher {
 void main() {
   testWidgets('MapScreen has title', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
-    await tester.pumpWidget(MaterialApp(home: MapScreen(database: db)));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: MapScreen(),
+        ),
+      )
+    );
     final titleFinder = find.text('SmartTags');
     expect(titleFinder, findsOneWidget);
     await db.close();
   });
-  testWidgets('MapScreen has find my location icon', (tester) async {
+  testWidgets('MapScreen has "Find my location" icon', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
-    await tester.pumpWidget(MaterialApp(home: MapScreen(database: db)));
+    await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+          ],
+          child: const MaterialApp(
+            home: MapScreen(),
+          ),
+        )
+    );
     final iconFinder = find.byIcon(Icons.my_location);
     expect(iconFinder, findsOneWidget);
     await db.close();
@@ -41,19 +61,22 @@ void main() {
 
       // Use the test-only callback to observe when the map is centered
       final moved = Completer<LatLng>();
-
       await tester.pumpWidget(
-        MaterialApp(
-          home: MapScreen(
-            database: db,
-            // Use a fake LocationFetcher
-            locationFetcher: FakeLocationFetcher(fakeLocation),
-            // Check when the map is centered via the test callback
-            onLocationCentered: (center) {
-              if (!moved.isCompleted) moved.complete(center);
-            },
-          ),
-        ),
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+            ],
+            child: MaterialApp(
+              home: MapScreen(
+                // Use a fake LocationFetcher
+                locationFetcher: FakeLocationFetcher(fakeLocation),
+                // Check when the map is centered via the test callback
+                onLocationCentered: (center) {
+                  if (!moved.isCompleted) moved.complete(center);
+                },
+              ),
+            ),
+          )
       );
 
       await tester.pump(const Duration(milliseconds: 500));
@@ -81,14 +104,17 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: MapScreen(
-            database: db,
-            // Use a fake LocationFetcher to return a null location
-            locationFetcher: FakeLocationFetcher(null),
-      
-          ),
-        ),
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+            ],
+            child: MaterialApp(
+              home: MapScreen(
+                // Use a fake LocationFetcher
+                locationFetcher: FakeLocationFetcher(null),
+              ),
+            ),
+          )
       );
 
       await tester.pump(const Duration(milliseconds: 500));

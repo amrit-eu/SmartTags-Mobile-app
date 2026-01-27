@@ -96,4 +96,10 @@ class AppDatabase extends _$AppDatabase {
 
     return queryBuilder.watch();
   }
+
+  /// Helper function to select a specific platform by its reference. Returns a list
+  Future<List<Platform>> getPlatformByRef(String ref) {
+    return (select(platforms)..where((p) => p.ref.equals(ref))).get();
+    // .getSingleOrNull();
+  }
 }

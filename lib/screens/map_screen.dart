@@ -2,28 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
+import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 /// A screen displaying an interactive ocean map with markers.
-class MapScreen extends StatefulWidget {
+class MapScreen extends ConsumerStatefulWidget {
   /// Creates a [MapScreen] widget.
   ///
   /// `locationFetcher` can be provided in tests to return a mocked
   ///  current location as a [LatLng].
   /// `onLocationCentered` is called after the map is centered.
   const MapScreen({
-    required this.database,
     super.key,
     this.locationFetcher,
     this.onLocationCentered,
   });
-
-  /// The local database instance.
-  final AppDatabase database;
 
   /// Optional test / injection hook to provide a LocationFetcher
   @visibleForTesting
@@ -34,10 +32,10 @@ class MapScreen extends StatefulWidget {
   final ValueChanged<LatLng>? onLocationCentered;
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
+class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateMixin {
   LatLng? _currentLocation;
   late final MapController _mapController;
   late AnimationController _pulseController;
@@ -185,6 +183,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final platformsAsync = ref.watch(platformsStreamProvider);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -203,10 +202,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      body: StreamBuilder<List<Platform>>(
-        stream: widget.database.select(widget.database.platforms).watch(),
-        builder: (context, snapshot) {
-          final platforms = snapshot.data ?? [];
+      body: platformsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (platforms) {
           return FlutterMap(
             mapController: _mapController,
             options: const MapOptions(
