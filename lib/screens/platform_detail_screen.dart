@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/components/common/container.dart';
+import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/models/platform.dart';
 
 /// A screen displaying detailed information about a specific platform.
@@ -15,21 +16,7 @@ class PlatformDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Platform details'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // More actions placeholder
-            },
-          ),
-        ],
-      ),
+      appBar: TopNavigation(title: Text('Platform Details'), context: context,),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

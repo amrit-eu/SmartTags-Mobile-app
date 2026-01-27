@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
@@ -89,8 +90,9 @@ class _QrScanScreenState extends State<QrScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan QR Code'),
+      appBar: TopNavigation(
+        title: Text('Scan QR Code'),
+        context: context,
         actions: [
           IconButton(
             icon: ValueListenableBuilder(

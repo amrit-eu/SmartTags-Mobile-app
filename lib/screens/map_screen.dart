@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
@@ -186,23 +187,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.account_circle_outlined),
-          onPressed: () {
-            // Profile action placeholder
-          },
-        ),
-        title: const Text('SmartTags'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // Menu action placeholder
-            },
-          ),
-        ],
-      ),
+      appBar: TopNavigation(title: Text('SmartTags'), context: context,),
       body: StreamBuilder<List<Platform>>(
         stream: widget.database.select(widget.database.platforms).watch(),
         builder: (context, snapshot) {

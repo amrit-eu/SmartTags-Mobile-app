@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_tags/components/common/container.dart';
+import 'package:smart_tags/components/top_navigation.dart';
 
 /// A dataclass representing a user's profile.
 ///
@@ -40,21 +41,7 @@ class UserProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: const Text('My Profile'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () {
-                // More actions placeholder
-              },
-            ),
-          ],
-        ),
+      appBar: TopNavigation(title: Text('My Profile'), context: context, actions: [],),
       body:  SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
