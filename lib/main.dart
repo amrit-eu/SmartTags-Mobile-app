@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers.dart';
+import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/theme.dart';
@@ -8,7 +8,7 @@ import 'package:smart_tags/theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 /// The root widget of the application.
@@ -23,7 +23,7 @@ class MyApp extends ConsumerWidget {
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: MainNavigation(),
+      home: const MainNavigation(),
     );
   }
 }
@@ -46,7 +46,7 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
     _pages = <Widget>[
-      MapScreen(),
+      const MapScreen(),
       const _PlaceholderPage(title: 'Search', icon: Icons.search),
       const QrScanScreen(),
     ];
