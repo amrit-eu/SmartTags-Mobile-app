@@ -50,9 +50,6 @@ class _MainNavigationState extends State<MainNavigation> {
       const MapScreen(),
       const CatalogueScreen(),
       const QrScanScreen(),
-      //const UserProfileScreen(
-      //  user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@noc.ac.uk'),
-      //),
     ];
   }
 
