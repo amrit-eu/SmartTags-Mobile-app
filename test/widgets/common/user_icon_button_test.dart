@@ -4,12 +4,14 @@ import 'package:smart_tags/widgets/common/user_icon_button.dart';
 
 void main() {
   testWidgets('User Icon Button directs to Profile page.', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: UserIconButton()),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: UserIconButton()),
+        ),
       ),
-    ));
+    );
 
     // Ensure we're not on the profile screen yet
     expect(find.text('User ID'), findsNothing);
