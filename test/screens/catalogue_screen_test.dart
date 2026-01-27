@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/components/platform_card.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/providers.dart';
@@ -64,7 +63,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
-    expect(find.byType(ListTile), findsNothing);
+    expect(find.byType(PlatformCard), findsNothing);
   });
 
   testWidgets('CatalogueScreen filters platforms by text', (tester) async {
@@ -99,7 +98,7 @@ void main() {
     // Verify filtered state
     expect(find.text('Argo Float'), findsOneWidget);
     expect(find.text('Drifting Buoy'), findsNothing);
-  }, skip: true);
+  });
 
   testWidgets('CatalogueScreen shows no results message', (tester) async {
     await populateDb();
@@ -121,6 +120,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No results found'), findsOneWidget);
-    expect(find.byType(ListTile), findsNothing);
-  }, skip: true);
+    expect(find.byType(PlatformCard), findsNothing);
+  });
 }

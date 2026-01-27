@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SectionContainer extends StatelessWidget {
-  const SectionContainer({required this.child, this.height, this.width});
+  const SectionContainer({required this.child, super.key, this.height, this.width});
 
   final Widget child;
   final double? height;
@@ -23,9 +23,7 @@ class SectionContainer extends StatelessWidget {
 }
 
 class ContainerRow extends StatelessWidget {
-  const ContainerRow({
-    required this.label,
-    required this.value,
+  const ContainerRow({required this.label, required this.value, super.key,
     this.valueColor,
   });
 

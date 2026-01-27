@@ -1,11 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:smart_tags/models/platform.dart' as model;
+import 'package:smart_tags/components/platform_card.dart';
 import 'package:smart_tags/providers.dart';
-import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 /// A screen that displays a searchable catalogue of platforms.
 class CatalogueScreen extends ConsumerStatefulWidget {
@@ -79,42 +75,17 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
                             );
                           }
 
-                          return ListView.separated(
+                          return GridView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 400,
+                              mainAxisExtent: 180,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
                             itemCount: platforms.length,
-                            separatorBuilder: (context, index) => const Divider(),
                             itemBuilder: (context, index) {
-                              final platform = platforms[index];
-                              return ListTile(
-                                title: Text(platform.model),
-                                subtitle: Text(platform.ref),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () {
-                                  final platformModel = model.Platform(
-                                    id: platform.ref,
-                                    model: platform.model,
-                                    network: platform.network,
-                                    latestPosition: LatLng(platform.lat, platform.lon),
-                                    status: platform.status == 'Active'
-                                        ? model.PlatformStatus.active
-                                        : model.PlatformStatus.inactive,
-                                    operationalStatus: platform.operationalStatus == 'Deployed'
-                                        ? model.OperationalStatus.deployed
-                                        : model.OperationalStatus.recovered,
-                                    lastUpdated: platform.lastUpdated,
-                                    operationLocation: LatLng(
-                                      platform.operationLat,
-                                      platform.operationLon,
-                                    ),
-                                  );
-                                  unawaited(
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (context) => PlatformDetailScreen(platform: platformModel),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
+                              return PlatformCard(platform: platforms[index]);
                             },
                           );
                         },
