@@ -19,7 +19,6 @@ class PlatformDetailScreen extends StatelessWidget {
       appBar: TopNavigation(
         title: const Text('Platform Details'),
         leading: const BackButton(),
-        actions: const [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

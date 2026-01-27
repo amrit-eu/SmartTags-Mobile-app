@@ -16,7 +16,7 @@ class UserProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopNavigation(title: const Text('My Profile'), actions: const [], leading: const BackButton()),
+      appBar: TopNavigation(title: const Text('My Profile'), leading: const BackButton()),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

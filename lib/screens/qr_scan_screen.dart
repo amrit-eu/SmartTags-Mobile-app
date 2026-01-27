@@ -109,7 +109,6 @@ class _QrScanScreenState extends State<QrScanScreen> {
             icon: const Icon(Icons.cameraswitch),
             onPressed: _scannerController.switchCamera,
           ),
-          const UserIconButton(),
         ],
       ),
       body: Stack(

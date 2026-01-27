@@ -58,7 +58,6 @@ void main() {
       );
 
       expect(find.byIcon(Icons.settings), findsOneWidget);
-      expect(find.byType(UserIconButton), findsNothing);
     });
 
     testWidgets('TopNavigation displays leading widget', (tester) async {
@@ -107,7 +106,6 @@ void main() {
 
       expect(find.text(customTitle), findsOneWidget);
       expect(find.byIcon(Icons.search), findsOneWidget);
-      expect(find.byType(UserIconButton), findsNothing);
     });
 
     testWidgets('TopNavigation displays empty actions list', (tester) async {
@@ -119,8 +117,8 @@ void main() {
         ),
       );
 
-      expect(find.byType(UserIconButton), findsNothing);
-      expect(find.byIcon(Icons.person), findsNothing);
+      expect(find.byType(UserIconButton), findsOne);
+      expect(find.byIcon(Icons.person), findsOne);
     });
   });
 }
