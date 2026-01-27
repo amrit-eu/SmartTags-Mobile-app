@@ -39,7 +39,6 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   LatLng? _currentLocation;
-  bool _isLocationLoaded = false;
   late final MapController _mapController;
   late AnimationController _pulseController;
 
@@ -51,7 +50,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _mapController = MapController();
-    unawaited(_getCurrentLocation());
 
     // Animation controller for pulsing effect
     _pulseController = AnimationController(
@@ -70,21 +68,27 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _getCurrentLocation() async {
+  Future<LatLng?> _getCurrentLocation() async {
     final locationFetcher = widget.locationFetcher ?? LocationFetcher();
     final location = await locationFetcher.getUserLocation();
-
-    if (location != null) {
-      setState(() {
-        _currentLocation = location;
-        _isLocationLoaded = true;
-      });
-    } else {
-      debugPrint('Unable to retrieve users location');
-    }
+    return location;
   }
 
-  void _centerOnLocation() {
+  void _setCurrentLocation(LatLng location) {
+    /// Helper method to set the current location state
+    setState(() {
+      _currentLocation = location;
+    });
+  }
+
+  Future<void> _centerOnLocation(BuildContext context) async {
+    final location = await _getCurrentLocation();
+    if (location != null) {_setCurrentLocation(location);}
+    else if (context.mounted) {
+      _showToast(context, 'Unable to fetch current location', 'Close');
+    }
+    // Move to current location.
+    // This will use the last previous known location if fetching fails.
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 10);
       // Call the onLocationCentered callback with location.
@@ -123,7 +127,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final markers = <Marker>[];
 
     // Add current location marker if available
-    if (_isLocationLoaded && _currentLocation != null) {
+    if (_currentLocation != null) {
       markers.add(
         Marker(
           width: 40,
@@ -231,8 +235,20 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         },
       ),
       floatingActionButton: FloatingActionButton.small(
-        onPressed: _centerOnLocation,
+        onPressed: () async {
+          await _centerOnLocation(context);
+        },
         child: const Icon(Icons.my_location),
+      ),
+    );
+  }
+
+  void _showToast(BuildContext context, String message, String label) {
+    final scaffold = ScaffoldMessenger.of(context);
+    scaffold.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(label: label, onPressed: scaffold.hideCurrentSnackBar),
       ),
     );
   }
