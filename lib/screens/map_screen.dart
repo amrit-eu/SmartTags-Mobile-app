@@ -84,8 +84,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   Future<void> _centerOnLocation(BuildContext context) async {
     final location = await _getCurrentLocation();
-    if (location != null) {_setCurrentLocation(location);}
-    else if (context.mounted) {
+    if (location != null) {
+      _setCurrentLocation(location);
+    } else if (context.mounted) {
       _showToast(context, 'Unable to fetch current location', 'Close');
     }
     // Move to current location.
@@ -187,7 +188,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopNavigation(title: Text('SmartTags'), context: context,),
+      appBar: TopNavigation(title: const Text('SmartTags')),
       body: StreamBuilder<List<Platform>>(
         stream: widget.database.select(widget.database.platforms).watch(),
         builder: (context, snapshot) {

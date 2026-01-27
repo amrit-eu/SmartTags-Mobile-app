@@ -86,7 +86,6 @@ void main() {
             database: db,
             // Use a fake LocationFetcher to return a null location
             locationFetcher: FakeLocationFetcher(null),
-      
           ),
         ),
       );
@@ -99,7 +98,7 @@ void main() {
       final toastFinder = find.byType(SnackBar);
       final errorTextFinder = find.text('Unable to fetch current location');
       final toastActionFinder = find.byType(SnackBarAction);
-      
+
       // Assert toast is found
       expect(toastFinder, findsOneWidget);
       expect(errorTextFinder, findsOne);

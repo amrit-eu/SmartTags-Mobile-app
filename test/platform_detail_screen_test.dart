@@ -23,7 +23,7 @@ void main() {
         home: PlatformDetailScreen(platform: testPlatform),
       ),
     );
-    final titleFinder = find.text('Platform details');
+    final titleFinder = find.text('Platform Details');
     expect(titleFinder, findsOneWidget);
   });
 

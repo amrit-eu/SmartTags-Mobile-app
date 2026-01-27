@@ -1,27 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:smart_tags/screens/user_profile.dart';
+import 'package:smart_tags/components/common/user_icon_button.dart';
 
+/// A custom AppBar widget for the Smart Tags app.
 class TopNavigation extends AppBar {
-	TopNavigation({
-		Key? key,
-		Widget? title,
-		Widget? leading,
-		List<Widget>? actions,
-    required BuildContext context
-	}) : super(
-					key: key,
-					title: title ?? const Text('Smart Tags'),
-					leading: leading ?? IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-					actions: actions ?? [
-						IconButton(
-							icon: const Icon(Icons.person),
-							onPressed: () => Navigator.of(context).push(
-								MaterialPageRoute(builder: (ctx) => UserProfileScreen(user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@gmail.com'),),)
-							),
-						),
-					],
-				);
+  /// Creates a [TopNavigation] widget with an optional [title], [leading] widget, and [actions].
+  /// [actions] defaults to a user icon button if not provided.
+  TopNavigation({super.key, Widget? title, super.leading, List<Widget>? actions})
+    : super(
+        title: title ?? const Text('Smart Tags'),
+        actions: actions ?? [const UserIconButton()],
+      );
 }

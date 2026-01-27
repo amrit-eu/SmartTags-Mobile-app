@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:smart_tags/components/common/user_icon_button.dart';
 import 'package:smart_tags/components/top_navigation.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
@@ -91,8 +92,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TopNavigation(
-        title: Text('Scan QR Code'),
-        context: context,
+        title: const Text('Scan QR Code'),
         actions: [
           IconButton(
             icon: ValueListenableBuilder(
@@ -109,6 +109,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
             icon: const Icon(Icons.cameraswitch),
             onPressed: _scannerController.switchCamera,
           ),
+          const UserIconButton(),
         ],
       ),
       body: Stack(

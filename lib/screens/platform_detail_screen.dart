@@ -16,7 +16,11 @@ class PlatformDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopNavigation(title: Text('Platform Details'), context: context,),
+      appBar: TopNavigation(
+        title: const Text('Platform Details'),
+        leading: const BackButton(),
+        actions: const [],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
