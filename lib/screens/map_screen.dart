@@ -9,6 +9,7 @@ import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying an interactive ocean map with markers.
 class MapScreen extends ConsumerStatefulWidget {
@@ -81,8 +82,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   Future<void> _centerOnLocation(BuildContext context) async {
     final location = await _getCurrentLocation();
-    if (location != null) {_setCurrentLocation(location);}
-    else if (context.mounted) {
+    if (location != null) {
+      _setCurrentLocation(location);
+    } else if (context.mounted) {
       _showToast(context, 'Unable to fetch current location', 'Close');
     }
     // Move to current location.
@@ -185,23 +187,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     final platformsAsync = ref.watch(platformsStreamProvider);
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.account_circle_outlined),
-          onPressed: () {
-            // Profile action placeholder
-          },
-        ),
-        title: const Text('SmartTags'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // Menu action placeholder
-            },
-          ),
-        ],
-      ),
+      appBar: TopNavigation(title: const Text('SmartTags')),
       body: platformsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),

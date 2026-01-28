@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that provides QR code scanning functionality.
 class QrScanScreen extends StatefulWidget {
@@ -89,7 +90,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: TopNavigation(
         title: const Text('Scan QR Code'),
         actions: [
           IconButton(
