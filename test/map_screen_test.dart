@@ -24,7 +24,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          databaseProvider.overrideWithValue(db),
+          databaseProvider.overrideWith((ref) => db),
         ],
         child: const MaterialApp(
           home: MapScreen(),
@@ -40,7 +40,7 @@ void main() {
     await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            databaseProvider.overrideWithValue(db),
+            databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
             home: MapScreen(),
@@ -64,7 +64,7 @@ void main() {
       await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              databaseProvider.overrideWithValue(db),
+              databaseProvider.overrideWith((ref) => db),
             ],
             child: MaterialApp(
               home: MapScreen(
@@ -106,7 +106,7 @@ void main() {
       await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              databaseProvider.overrideWithValue(db),
+              databaseProvider.overrideWith((ref) => db),
             ],
             child: MaterialApp(
               home: MapScreen(
