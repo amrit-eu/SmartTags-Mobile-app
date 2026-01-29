@@ -19,6 +19,7 @@ class QrScanScreen extends ConsumerStatefulWidget {
 class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
   bool _isProcessing = false;
+  String? _lastFailedReference;
 
   @override
   void dispose() {
@@ -31,11 +32,15 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
     for (final barcode in capture.barcodes) {
       final code = barcode.rawValue;
+      if (code == _lastFailedReference) {
+        return;
+      }
       if (code != null) {
         final reference = _extractReference(code);
         if (reference != null) {
           unawaited(_handleValidCode(reference));
         } else {
+          setState(() => _lastFailedReference = code);
           _showMessage('Invalid QR Code format');
         }
         break; // Process only the first barcode
@@ -55,12 +60,14 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
   Future<void> _handleValidCode(String reference) async {
     if (!mounted) return;
-
-    setState(() => _isProcessing = true);
+    if (reference == _lastFailedReference) {
+      return;
+    }    setState(() => _isProcessing = true);
     await _scannerController.stop();
     try {
       final platforms = await ref.read(platformByRefProvider(reference).future);
       if (platforms.isEmpty) {
+        setState(() => _lastFailedReference = reference);
         _showMessage('No platforms found');
       } else {
         final platform = platforms.first;
@@ -72,6 +79,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         );
       }
     } catch (e, st) {
+      setState(() => _lastFailedReference = reference);
       _showMessage('Error fetching platform');
       Error.throwWithStackTrace(e, st);
     } finally {
@@ -84,7 +92,13 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => setState(() => _lastFailedReference = null)
+        ),
+      ),
     );
   }
 
