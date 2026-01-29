@@ -46,16 +46,14 @@ final platformsStreamProvider = StreamProvider<List<Platform>>((ref) {
   return db.select(db.platforms).watch();
 });
 
-/// Fetches one or more [Platform] records matching the given platform
-/// reference.
+/// Fetches one or more [Platform] records matching the given platform reference.
 ///
 /// This is a parameterized (family) provider, allowing callers to request
 /// platform data for a specific reference identifier.
 ///
 /// The data is fetched from the local database only.
-final FutureProviderFamily<List<Platform>, String> platformByRefProvider = FutureProvider.family<List<Platform>, String>((
-    ref, platformRef
-    ) async {
+final FutureProviderFamily<List<Platform>, String> platformByRefProvider = FutureProvider.family<List<Platform>, String>(
+    (ref, platformRef) async {
   final db = ref.watch(databaseProvider);
   return db.getPlatformByRef(platformRef);
 });

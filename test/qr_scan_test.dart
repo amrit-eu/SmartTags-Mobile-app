@@ -163,4 +163,50 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await db.close();
   });
+
+  testWidgets('QR scanner shows error when DB read fails', (
+      WidgetTester tester,
+      ) async {
+    final db = AppDatabase.executor(conn.inMemoryConnection());
+    await tester.pumpWidget(
+        ProviderScope(
+          retry: (retryCount, error) => null,
+          overrides: [
+            databaseProvider.overrideWith((ref) => db),
+            platformByRefProvider.overrideWith(
+                  (ref, reference) => Future<List<Platform>>.error(
+                Exception('DB failure'),
+                StackTrace.current,
+              ),
+            ),
+          ],
+          child: const MaterialApp(
+            home: QrScanScreen(),
+          ),
+        )
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final scanner = tester.widget<MobileScanner>(
+      find.byType(MobileScanner),
+    );
+    const fakeBarcode = Barcode(
+      rawValue: 'https://www.ocean-ops.org/oceantags/RFHCZ3S',
+      format: BarcodeFormat.qrCode,
+    );
+    scanner.onDetect!(
+      const BarcodeCapture(barcodes: [fakeBarcode]),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Error fetching platform'), findsOneWidget);
+    expect(find.byType(PlatformDetailScreen), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    // Allow the widget tree to process disposal and cancel streams.
+    await tester.pump(const Duration(milliseconds: 100));
+    await db.close();
+  });
 }
