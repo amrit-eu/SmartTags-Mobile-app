@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
@@ -8,15 +10,21 @@ import 'package:smart_tags/main.dart';
 import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
+import 'package:smart_tags/services/oceanops_repository.dart';
 
 void main() {
   testWidgets('Should be able to navigate to QR Scanner page', (
     WidgetTester tester,
   ) async {
+    final client = MockClient((request) async {
+      return http.Response('{}', 200);
+    });
     final db = AppDatabase.executor(conn.inMemoryConnection());
+    final opsRepo = OceanOpsRepository(client: client);
     await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            oceanOpsRepositoryProvider.overrideWith((ref) => opsRepo),
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
