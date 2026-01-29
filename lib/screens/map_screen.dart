@@ -296,7 +296,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             child: Icon(
               Icons.location_on,
               // Color depends on status and selection.
-              color: _selectedPlatformPosition == point ? const Color.fromARGB(255, 2, 0, 101): (dbPlatform.status == 'Active' ? Colors.green : Colors.red),
+              color: _selectedPlatformPosition == point
+                  ? const Color.fromARGB(255, 2, 0, 101)
+                  : (dbPlatform.status == 'Active' ? Colors.green : Colors.red),
               // Size increases if this marker is selected.
               size: _selectedPlatformPosition == point ? 40 : 30,
             ),
