@@ -53,7 +53,9 @@ final platformsStreamProvider = StreamProvider<List<Platform>>((ref) {
 ///
 /// The data is fetched from the local database only.
 final FutureProviderFamily<List<Platform>, String> platformByRefProvider =
-    FutureProvider.family<List<Platform>, String>((ref, platformRef) async {
-      final db = ref.watch(databaseProvider);
-      return db.getPlatformByRef(platformRef);
+    FutureProvider.family<List<Platform>, String>(
+      retry: (retryCount, error) => null,
+      (ref, platformRef) async {
+        final db = ref.watch(databaseProvider);
+        return db.getPlatformByRef(platformRef);
     });

@@ -178,7 +178,6 @@ void main() {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
         ProviderScope(
-          retry: (retryCount, error) => null,
           overrides: [
             databaseProvider.overrideWith((ref) => db),
             platformByRefProvider.overrideWith(
