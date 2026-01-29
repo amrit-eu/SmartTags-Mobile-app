@@ -29,7 +29,7 @@ void main() {
         child: const MaterialApp(
           home: MapScreen(),
         ),
-      )
+      ),
     );
     final titleFinder = find.text('SmartTags');
     expect(titleFinder, findsOneWidget);
@@ -125,7 +125,7 @@ void main() {
       final toastFinder = find.byType(SnackBar);
       final errorTextFinder = find.text('Unable to fetch current location');
       final toastActionFinder = find.byType(SnackBarAction);
-      
+
       // Assert toast is found
       expect(toastFinder, findsOneWidget);
       expect(errorTextFinder, findsOne);

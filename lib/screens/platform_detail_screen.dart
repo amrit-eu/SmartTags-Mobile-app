@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying detailed information about a specific platform.
 class PlatformDetailScreen extends StatelessWidget {
@@ -14,20 +16,9 @@ class PlatformDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text('Platform details'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // More actions placeholder
-            },
-          ),
-        ],
+      appBar: TopNavigation(
+        title: const Text('Platform Details'),
+        leading: const BackButton(),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -35,7 +26,7 @@ class PlatformDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Map Section
-            _SectionContainer(
+            SectionContainer(
               height: 250,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -101,7 +92,7 @@ class PlatformDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Platform Metadata Section
-            _SectionContainer(
+            SectionContainer(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -116,19 +107,19 @@ class PlatformDetailScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const Divider(height: 24),
-                  _MetadataRow(
+                  ContainerRow(
                     label: 'Latest position',
                     value:
                         '${platform.latestPosition.latitude.toStringAsFixed(3)}, '
                         '${platform.latestPosition.longitude.toStringAsFixed(3)}',
                   ),
                   const Divider(height: 16),
-                  _MetadataRow(
+                  ContainerRow(
                     label: 'Network',
                     value: platform.network,
                   ),
                   const Divider(height: 16),
-                  _MetadataRow(
+                  ContainerRow(
                     label: 'Status',
                     value: platform.status == PlatformStatus.active ? 'Active' : 'Inactive',
                     valueColor: platform.status == PlatformStatus.active ? Colors.green : Colors.red,
@@ -139,7 +130,7 @@ class PlatformDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Latest Operation Section
-            _SectionContainer(
+            SectionContainer(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -150,13 +141,13 @@ class PlatformDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const Divider(height: 24),
-                  _MetadataRow(
+                  ContainerRow(
                     label: 'Operational Status',
                     value: platform.operationalStatus == OperationalStatus.deployed ? 'Deployed' : 'Recovered',
                     valueColor: platform.operationalStatus == OperationalStatus.deployed ? Colors.blue : Colors.orange,
                   ),
                   const Divider(height: 16),
-                  _MetadataRow(
+                  ContainerRow(
                     label: 'Last updated',
                     value:
                         '${DateFormat(
@@ -164,7 +155,7 @@ class PlatformDetailScreen extends StatelessWidget {
                         ).format(platform.lastUpdated)} UTC',
                   ),
                   const Divider(height: 16),
-                  _MetadataRow(
+                  ContainerRow(
                     label: 'Position',
                     value:
                         '${platform.operationLocation.latitude.toStringAsFixed(3)}, '
@@ -177,61 +168,6 @@ class PlatformDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SectionContainer extends StatelessWidget {
-  const _SectionContainer({required this.child, this.height});
-
-  final Widget child;
-  final double? height;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: height,
-      padding: height == null ? const EdgeInsets.all(16) : EdgeInsets.zero,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.blueGrey.shade100),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _MetadataRow extends StatelessWidget {
-  const _MetadataRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: valueColor,
-          ),
-        ),
-      ],
     );
   }
 }
