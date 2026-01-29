@@ -344,22 +344,33 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   initialZoom: _defaultZoom,
                 ),
                 children: [
-                  // Ocean Base Tiles
-                  TileLayer(
-                    urlTemplate:
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/'
-                        'Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
-                    userAgentPackageName: 'com.example.flutter_amrit',
-                  ),
-                  // Ocean Reference Tiles (labels)
-                  TileLayer(
-                    urlTemplate:
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/'
-                        'Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
-                    userAgentPackageName: 'com.example.flutter_amrit',
+                  // GestureDetector for tiles to handle clear platform selection on tap.
+                  GestureDetector(
+                    onTap: _selectedPlatform != null ? _clearSelection : null,
+                    behavior: HitTestBehavior.opaque,
+                    child: Stack(
+                      children: [
+                        // Ocean Base Tiles
+                        TileLayer(
+                          urlTemplate:
+                              'https://server.arcgisonline.com/ArcGIS/rest/services/'
+                              'Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+                          userAgentPackageName: 'com.example.flutter_amrit',
+                        ),
+                        // Ocean Reference Tiles (labels)
+                        TileLayer(
+                          urlTemplate:
+                              'https://server.arcgisonline.com/ArcGIS/rest/services/'
+                              'Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
+                          userAgentPackageName: 'com.example.flutter_amrit',
+                        ),
+                      ],
+                    ),
                   ),
                   // Markers
-                  MarkerLayer(markers: _buildMarkers(platforms)),
+                  MarkerLayer(
+                    markers: _buildMarkers(platforms),
+                  ),
                 ],
               ),
               if (_selectedPlatform != null && _selectedPlatformPosition != null) ...[
