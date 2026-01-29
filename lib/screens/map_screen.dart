@@ -40,6 +40,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   LatLng? _currentLocation;
   late final MapController _mapController;
   late AnimationController _pulseController;
+  late AnimationController _popupAnimationController;
   model.Platform? _selectedPlatform;
   LatLng? _selectedPlatformPosition;
 
@@ -60,11 +61,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       upperBound: 1.3,
     );
     unawaited(_pulseController.repeat(reverse: true));
+
+    // Animation controller for popup effect.
+    _popupAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _popupAnimationController.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -130,6 +138,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       _selectedPlatform = platform;
       _selectedPlatformPosition = position;
     });
+    // Reset and play animation
+    if (mounted) {
+      unawaited(_popupAnimationController.forward(from: 0));
+    }
     // Center map on the selected marker.
     Future.delayed(const Duration(milliseconds: 100), () {
       _mapController.move(position, _mapController.camera.zoom);
@@ -142,6 +154,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       _selectedPlatform = null;
       _selectedPlatformPosition = null;
     });
+    // Reset animation when clearing selection
+    if (_popupAnimationController.isAnimating) {
+      _popupAnimationController.stop();
+    }
   }
 
   /// Builds the popup widget for a selected platform marker.
@@ -350,9 +366,15 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 Positioned(
                   top: 20,
                   left: 16,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: _buildPopup(context, _selectedPlatform!),
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.5, end: 1).animate(
+                      CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
+                    ),
+                    alignment: Alignment.topLeft,
+                    child: GestureDetector(
+                      onTap: () {},
+                      child: _buildPopup(context, _selectedPlatform!),
+                    ),
                   ),
                 ),
               ],
