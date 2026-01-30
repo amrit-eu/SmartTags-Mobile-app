@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smart_tags/widgets/common/settings_icon_button.dart';
+import 'package:smart_tags/widgets/common/settings_menu.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 
 /// A custom AppBar widget for the Smart Tags app.
@@ -12,6 +12,6 @@ class TopNavigation extends AppBar {
     : super(
         title: title ?? const Text('Smart Tags'),
         leading: leading ?? const UserIconButton(),
-        actions: actions ?? [const SettingsIconButton()]
+        actions: actions ?? [const SettingsMenu()]
       );
 }

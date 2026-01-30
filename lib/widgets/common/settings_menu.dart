@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 
 /// A button to open a list of settings overlaying the current screen.
-class SettingsIconButton extends StatefulWidget {
-  /// Creates a [SettingsIconButton] displaying current app settings.
-  const SettingsIconButton({super.key});
+class SettingsMenu extends StatefulWidget {
+  /// Creates a [SettingsMenu] displaying current app settings.
+  const SettingsMenu({super.key});
 
   @override
-  State<SettingsIconButton> createState() => _SettingsIconButtonState();
+  State<SettingsMenu> createState() => _SettingsMenuState();
 }
 
-class _SettingsIconButtonState extends State<SettingsIconButton> {
+class _SettingsMenuState extends State<SettingsMenu> {
   final FocusNode _buttonFocusNode = FocusNode(debugLabel: 'Menu Button');
 
   @override
