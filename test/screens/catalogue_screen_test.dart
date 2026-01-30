@@ -6,7 +6,6 @@ import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
-import 'package:test_screenshot/test_screenshot.dart';
 
 void main() {
   late AppDatabase db;
