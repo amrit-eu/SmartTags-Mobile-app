@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/providers/settings_providers.dart';
 
+/// A button to open a list of settings overlaying the current screen.
 class SettingsIconButton extends StatefulWidget {
   /// Creates a [SettingsIconButton] displaying current app settings.
   const SettingsIconButton({super.key});
@@ -54,12 +57,24 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
                       width: MediaQuery.of(context).size.width / 3,
                       height: 80.0,
                       child: Center(
-                        child: Container(
-                          alignment: Alignment.center,
-                          color: Colors.amber[600],
-                          child: const Icon(
-                            size: 64,
-                            Icons.dark_mode,
+                        child: Card(
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final isDark = Theme.of(context).brightness == Brightness.dark;
+
+                              return SwitchListTile(
+                                title: const Text('Dark Mode'),
+                                secondary: const Icon(Icons.dark_mode),
+                                value: isDark,
+                                onChanged: (bool value) {
+                                  if (value) {
+                                    ref.read(themeProvider.notifier).toggleDark();
+                                  } else {
+                                    ref.read(themeProvider.notifier).toggleLight();
+                                  }
+                                },
+                              );
+                            },
                           ),
                         ),
                       ),

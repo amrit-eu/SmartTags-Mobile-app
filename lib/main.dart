@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/providers.dart';
+import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/theme.dart';
@@ -24,6 +25,7 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       home: const MainNavigation(),
+      themeMode: ref.watch(themeProvider),
     );
   }
 }
