@@ -13,7 +13,7 @@ class SettingsIconButton extends StatefulWidget {
 
 class _SettingsIconButtonState extends State<SettingsIconButton> {
   OverlayEntry? overlayEntry;
-  int currentPageIndex = 0;
+  final GlobalKey _buttonKey = GlobalKey();
 
   void createSettingsOverlay() {
     // Remove the existing OverlayEntry.
@@ -22,6 +22,13 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
     assert(
     overlayEntry == null,'Found an existing overlay when there should be none',
     );
+
+    final renderBox = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      return;
+    }
+    final buttonSize = renderBox.size;
+    final buttonPosition = renderBox.localToGlobal(Offset.zero);
 
     overlayEntry = OverlayEntry(
       // Create a new OverlayEntry.
@@ -42,10 +49,11 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
                 onTapOutside: (tap) {
                   removeSettingsOverlay();
                 },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                child: Stack(
                   children: <Widget>[
-                    SizedBox(
+                    Positioned(
+                      top: buttonPosition.dy + buttonSize.height,
+                      right: MediaQuery.of(context).size.width - buttonPosition.dx - buttonSize.width,
                       width: MediaQuery.of(context).size.width / 3,
                       height: 80,
                       child: Center(
@@ -73,7 +81,7 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
                     ),
                   ],
                 ),
-              )
+              ),
             ),
           ),
         );
@@ -101,6 +109,7 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      key: _buttonKey,
       icon: const Icon(Icons.settings),
       onPressed: createSettingsOverlay,
     );
