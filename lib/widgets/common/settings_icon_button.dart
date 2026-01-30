@@ -23,15 +23,6 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
     overlayEntry == null,'Found an existing overlay when there should be none',
     );
 
-    Widget builder(BuildContext context) {
-      return const Column(
-        children: <Widget>[
-          Text('Test', style: TextStyle(color: Colors.green)),
-          Icon(Icons.arrow_downward, color: Colors.green),
-        ],
-      );
-    }
-
     overlayEntry = OverlayEntry(
       // Create a new OverlayEntry.
       builder: (BuildContext context) {
@@ -54,7 +45,6 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Builder(builder: builder),
                     SizedBox(
                       width: MediaQuery.of(context).size.width / 3,
                       height: 80,
