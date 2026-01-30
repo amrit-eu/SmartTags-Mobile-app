@@ -35,9 +35,7 @@ class PlatformCard extends StatelessWidget {
           model: platform.model,
           network: platform.network,
           latestPosition: LatLng(platform.lat, platform.lon),
-          status: platform.status == 'Active'
-              ? model_entity.PlatformStatus.active
-              : model_entity.PlatformStatus.inactive,
+          status: isActive ? model_entity.PlatformStatus.active : model_entity.PlatformStatus.inactive,
           operationalStatus: platform.operationalStatus == 'Deployed'
               ? model_entity.OperationalStatus.deployed
               : model_entity.OperationalStatus.recovered,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers.dart';
@@ -8,8 +9,6 @@ import 'package:smart_tags/widgets/top_navigation.dart';
 class CatalogueScreen extends ConsumerStatefulWidget {
   /// Creates a [CatalogueScreen].
   const CatalogueScreen({super.key});
-
-  /// The local database instance.
 
   @override
   ConsumerState<CatalogueScreen> createState() => _CatalogueScreenState();
@@ -89,7 +88,12 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
                           );
                         },
                         loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (error, stack) => Center(child: Text('Error: $error')),
+                        error: (error, stack) {
+                          if (kDebugMode) {
+                            debugPrint('Error: $error \n Stack: $stack');
+                          }
+                          return const Center(child: Text('Failed to fetch platforms'));
+                        },
                       ),
           ),
         ],
