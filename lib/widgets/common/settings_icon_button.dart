@@ -19,7 +19,9 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
     // Remove the existing OverlayEntry.
     removeSettingsOverlay();
 
-    assert(overlayEntry == null);
+    assert(
+    overlayEntry == null,'Found an existing overlay when there should be none',
+    );
 
     Widget builder(BuildContext context) {
       return const Column(
@@ -38,12 +40,12 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
         return SafeArea(
           child: Align(
             alignment: AlignmentDirectional.topEnd,
-            heightFactor: 1.0,
+            heightFactor: 1,
             child: DefaultTextStyle(
               style: const TextStyle(
                 color: Colors.blue,
                 fontWeight: FontWeight.bold,
-                fontSize: 14.0,
+                fontSize: 14,
               ),
               child: TapRegion(
                 onTapOutside: (tap) {
@@ -55,7 +57,7 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
                     Builder(builder: builder),
                     SizedBox(
                       width: MediaQuery.of(context).size.width / 3,
-                      height: 80.0,
+                      height: 80,
                       child: Center(
                         child: Card(
                           child: Consumer(
