@@ -15,6 +15,14 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
   OverlayEntry? overlayEntry;
   final GlobalKey _buttonKey = GlobalKey();
 
+  void toggleSettingsOverlay() {
+    if (overlayEntry == null) {
+      createSettingsOverlay();
+    } else {
+      removeSettingsOverlay();
+    }
+  }
+
   void createSettingsOverlay() {
     // Remove the existing OverlayEntry.
     removeSettingsOverlay();
@@ -24,9 +32,8 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
     );
 
     final renderBox = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) {
-      return;
-    }
+    if (renderBox == null) return;
+
     final buttonSize = renderBox.size;
     final buttonPosition = renderBox.localToGlobal(Offset.zero);
 
@@ -45,42 +52,42 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
-              child: TapRegion(
-                onTapOutside: (tap) {
-                  removeSettingsOverlay();
-                },
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(
-                      top: buttonPosition.dy + buttonSize.height,
-                      right: MediaQuery.of(context).size.width - buttonPosition.dx - buttonSize.width,
-                      width: MediaQuery.of(context).size.width / 3,
-                      height: 80,
-                      child: Center(
-                        child: Card(
-                          child: Consumer(
-                            builder: (context, ref, _) {
-                              final isDark = Theme.of(context).brightness == Brightness.dark;
+              child: Stack(
+                children: <Widget>[
+                  GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: removeSettingsOverlay,
+                    child: Container(color: Colors.transparent),
+                  ),
+                  Positioned(
+                    top: buttonPosition.dy + buttonSize.height,
+                    right: MediaQuery.of(context).size.width - buttonPosition.dx - buttonSize.width,
+                    width: MediaQuery.of(context).size.width / 3,
+                    height: 80,
+                    child: Center(
+                      child: Card(
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final isDark = Theme.of(context).brightness == Brightness.dark;
 
-                              return SwitchListTile(
-                                title: const Text('Dark Mode'),
-                                secondary: const Icon(Icons.dark_mode),
-                                value: isDark,
-                                onChanged: (bool value) {
-                                  if (value) {
-                                    ref.read(themeProvider.notifier).toggleDark();
-                                  } else {
-                                    ref.read(themeProvider.notifier).toggleLight();
-                                  }
-                                },
-                              );
-                            },
-                          ),
+                            return SwitchListTile(
+                              title: const Text('Dark Mode'),
+                              secondary: const Icon(Icons.dark_mode),
+                              value: isDark,
+                              onChanged: (bool value) {
+                                if (value) {
+                                  ref.read(themeProvider.notifier).toggleDark();
+                                } else {
+                                  ref.read(themeProvider.notifier).toggleLight();
+                                }
+                              },
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -111,7 +118,7 @@ class _SettingsIconButtonState extends State<SettingsIconButton> {
     return IconButton(
       key: _buttonKey,
       icon: const Icon(Icons.settings),
-      onPressed: createSettingsOverlay,
+      onPressed: toggleSettingsOverlay,
     );
   }
 }
