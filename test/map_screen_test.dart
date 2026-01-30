@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -343,10 +342,7 @@ void main() {
 
       // Tap on the map outside the popup
       final mapTapTarget = find.byWidgetPredicate(
-        (widget) =>
-        widget is GestureDetector &&
-        widget.behavior == HitTestBehavior.opaque &&
-        widget.onTap != null,
+        (widget) => widget is GestureDetector && widget.behavior == HitTestBehavior.opaque && widget.onTap != null,
       );
       final mapGestureWidget = tester.widget<GestureDetector>(mapTapTarget.first);
       // Call the onTap directly since tester.tap was being temperamental
@@ -355,6 +351,80 @@ void main() {
 
       // Verify the popup is closed
       expect(find.text('Outside Tap Test'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
+      await db.close();
+    },
+  );
+  testWidgets(
+    'Selecting another marker updates the popup content',
+    (tester) async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+
+      // Insert two test platforms
+      await db
+          .into(db.platforms)
+          .insert(
+            PlatformsCompanion.insert(
+              ref: 'TEST-006',
+              model: 'First Platform',
+              network: 'Test Network',
+              lat: 40,
+              lon: -3,
+              operationLat: 41,
+              operationLon: -4,
+              status: 'Active',
+              operationalStatus: 'Deployed',
+              lastUpdated: DateTime.now(),
+            ),
+          );
+      await db
+          .into(db.platforms)
+          .insert(
+            PlatformsCompanion.insert(
+              ref: 'TEST-007',
+              model: 'Second Platform',
+              network: 'Test Network',
+              lat: 42,
+              lon: -6,
+              operationLat: 43,
+              operationLon: -7,
+              status: 'Active',
+              operationalStatus: 'Deployed',
+              lastUpdated: DateTime.now(),
+            ),
+          );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWith((ref) => db),
+          ],
+          child: const MaterialApp(
+            home: MapScreen(),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(seconds: 2));
+
+      // Tap first marker
+      await tester.tap(find.byIcon(Icons.location_on).at(0));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify first platform is shown
+      expect(find.text('First Platform'), findsOneWidget);
+      expect(find.text('ID: TEST-006'), findsOneWidget);
+
+      // Tap second marker
+      await tester.tap(find.byIcon(Icons.location_on).at(1));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify popup updates to second platform
+      expect(find.text('Second Platform'), findsOneWidget);
+      expect(find.text('ID: TEST-007'), findsOneWidget);
+      expect(find.text('First Platform'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 100));
