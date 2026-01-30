@@ -69,35 +69,32 @@ void main() {
   testWidgets('CatalogueScreen filters platforms by text', (tester) async {
     await populateDb();
 
-    await tester.screenshotWithImages(() async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWithValue(db),
-          ],
-          child: const Screenshotter(
-            child: MaterialApp(
-              home: CatalogueScreen(),
-            ),
-          ),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: CatalogueScreen(),
         ),
-      );
-    });
-    await tester.pump(const Duration(seconds: 2));
-    await tester.screenshot(
-      path: 'test/screens/catalogue_screen_before_search.png',
+      ),
     );
+    await tester.pumpAndSettle();
+    
     // Verify initial state
     expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
 
     // Enter search text
     await tester.enterText(find.byType(TextField), 'Argo Float');
-    await tester.pump(const Duration(seconds: 5));
-    await tester.screenshot(path: 'test/screens/catalogue_screen_filtered.png');
+    await tester.pumpAndSettle();
 
-    // Verify filtered state
-    expect(find.text('Argo Float'), findsOneWidget);
+    // Verify results show one PlatformCard
+    expect(find.byType(PlatformCard), findsOneWidget);
     expect(find.text('Drifting Buoy'), findsNothing);
+    
+    // Cleanup
+    await tester.pumpWidget(Container());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('CatalogueScreen shows no results message', (tester) async {
@@ -121,5 +118,9 @@ void main() {
 
     expect(find.text('No results found'), findsOneWidget);
     expect(find.byType(PlatformCard), findsNothing);
+    
+    // Cleanup
+    await tester.pumpWidget(Container());
+    await tester.pumpAndSettle();
   });
 }
