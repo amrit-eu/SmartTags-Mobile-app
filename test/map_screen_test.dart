@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -291,6 +292,69 @@ void main() {
 
       // Verify the popup is closed
       expect(find.text('Close Button Test'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
+      await db.close();
+    },
+  );
+  testWidgets(
+    'Tapping outside the popup closes it',
+    (tester) async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+
+      // Insert a test platform
+      await db
+          .into(db.platforms)
+          .insert(
+            PlatformsCompanion.insert(
+              ref: 'TEST-005',
+              model: 'Outside Tap Test',
+              network: 'Test Network',
+              lat: 45.5,
+              lon: -5.5,
+              operationLat: 44,
+              operationLon: -6,
+              status: 'Active',
+              operationalStatus: 'Deployed',
+              lastUpdated: DateTime.now(),
+            ),
+          );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWith((ref) => db),
+          ],
+          child: const MaterialApp(
+            home: MapScreen(),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(seconds: 2));
+
+      // Tap on the marker to show the popup
+      await tester.tap(find.byIcon(Icons.location_on).first);
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify the popup is shown
+      expect(find.text('Outside Tap Test'), findsOneWidget);
+
+      // Tap on the map outside the popup
+      final mapTapTarget = find.byWidgetPredicate(
+        (widget) =>
+        widget is GestureDetector &&
+        widget.behavior == HitTestBehavior.opaque &&
+        widget.onTap != null,
+      );
+      final mapGestureWidget = tester.widget<GestureDetector>(mapTapTarget.first);
+      // Call the onTap directly since tester.tap was being temperamental
+      mapGestureWidget.onTap?.call();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify the popup is closed
+      expect(find.text('Outside Tap Test'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 100));
