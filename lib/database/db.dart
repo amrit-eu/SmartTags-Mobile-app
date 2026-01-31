@@ -83,6 +83,20 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Watches all platforms, optionally filtered by a search query.
+  Stream<List<Platform>> watchPlatforms({String? query}) {
+    final queryBuilder = select(platforms);
+
+    if (query != null && query.isNotEmpty) {
+      queryBuilder.where((tbl) {
+        final likeQuery = '%${query.toLowerCase()}%';
+        return tbl.ref.lower().like(likeQuery) | tbl.model.lower().like(likeQuery);
+      });
+    }
+
+    return queryBuilder.watch();
+  }
+
   /// Helper function to select a specific platform by its reference. Returns a list
   Future<List<Platform>> getPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref))).get();

@@ -46,7 +46,15 @@ final platformsStreamProvider = StreamProvider<List<Platform>>((ref) {
   return db.select(db.platforms).watch();
 });
 
-/// Fetches one or more [Platform] records matching the given platform reference.
+///
+final StreamProviderFamily<List<Platform>, String> platformsWatchProvider =
+    StreamProvider.family<List<Platform>, String>((ref, String query) {
+      final db = ref.watch(databaseProvider);
+      return db.watchPlatforms(query: query);
+    });
+
+/// Fetches one or more [Platform] records matching the given platform
+/// reference.
 ///
 /// This is a parameterized (family) provider, allowing callers to request
 /// platform data for a specific reference identifier.
