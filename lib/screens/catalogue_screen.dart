@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/providers.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 

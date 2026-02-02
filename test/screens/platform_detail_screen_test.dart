@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/models/platform.dart';
@@ -19,8 +20,10 @@ Platform testPlatform = Platform(
 void main() {
   testWidgets('Platform Detail has title', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: PlatformDetailScreen(platform: testPlatform),
+      ProviderScope(
+          child: MaterialApp(
+            home: PlatformDetailScreen(platform: testPlatform),
+          ),
       ),
     );
     final titleFinder = find.text('Platform Details');
@@ -29,9 +32,11 @@ void main() {
 
   testWidgets('Platform Details has map', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: PlatformDetailScreen(platform: testPlatform),
-      ),
+        ProviderScope(
+          child: MaterialApp(
+            home: PlatformDetailScreen(platform: testPlatform),
+          ),
+        ),
     );
     final mapFinder = find.byType(FlutterMap);
     expect(mapFinder, findsOneWidget);
@@ -39,8 +44,10 @@ void main() {
 
   testWidgets('Platform Details has marker on map', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: PlatformDetailScreen(platform: testPlatform),
+      ProviderScope(
+        child: MaterialApp(
+          home: PlatformDetailScreen(platform: testPlatform),
+        ),
       ),
     );
     final markerFinder = find.byIcon(Icons.location_on);
@@ -49,8 +56,10 @@ void main() {
 
   testWidgets('Platform Details has back arrow', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: PlatformDetailScreen(platform: testPlatform),
+      ProviderScope(
+        child: MaterialApp(
+          home: PlatformDetailScreen(platform: testPlatform),
+        ),
       ),
     );
     final backArrowFinder = find.byIcon(Icons.arrow_back);

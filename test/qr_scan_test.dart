@@ -7,7 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/main.dart';
-import 'package:smart_tags/providers.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/services/oceanops_repository.dart';

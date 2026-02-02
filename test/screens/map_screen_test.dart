@@ -7,7 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
-import 'package:smart_tags/providers.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 
 class FakeLocationFetcher extends LocationFetcher {

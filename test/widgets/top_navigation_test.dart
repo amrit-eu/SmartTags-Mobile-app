@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/widgets/common/settings_menu.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -7,11 +9,14 @@ void main() {
   group('TopNavigation', () {
     testWidgets('TopNavigation displays default title', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: TopNavigation(),
+            ),
           ),
-        ),
+        )
+
       );
 
       expect(find.text('Smart Tags'), findsOneWidget);
@@ -20,11 +25,13 @@ void main() {
     testWidgets('TopNavigation displays custom title', (tester) async {
       const customTitle = 'Custom Title';
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(title: const Text(customTitle)),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: TopNavigation(title: const Text(customTitle)),
+            ),
           ),
-        ),
+        )
       );
 
       expect(find.text(customTitle), findsOneWidget);
@@ -33,28 +40,47 @@ void main() {
 
     testWidgets('TopNavigation displays UserIconButton by default', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(),
-          ),
-        ),
+        ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(),
+              ),
+            ),
+        )
       );
 
       expect(find.byType(UserIconButton), findsOneWidget);
       expect(find.byIcon(Icons.person), findsOneWidget);
     });
 
+    testWidgets('TopNavigation displays SettingsMenu action by default', (tester) async {
+      await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(),
+              ),
+            ),
+          )
+      );
+
+      expect(find.byType(SettingsMenu), findsOneWidget);
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    });
+
     testWidgets('TopNavigation displays custom actions', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(
-              actions: [
-                IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
-              ],
+        ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(
+                  actions: [
+                    IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
+        )
       );
 
       expect(find.byIcon(Icons.settings), findsOneWidget);
@@ -62,11 +88,14 @@ void main() {
 
     testWidgets('TopNavigation displays leading widget', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(leading: const BackButton()),
-          ),
-        ),
+        ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(leading: const BackButton()),
+              ),
+            ),
+        )
+
       );
 
       expect(find.byType(BackButton), findsOneWidget);
@@ -75,14 +104,16 @@ void main() {
     testWidgets('TopNavigation displays custom title with leading widget', (tester) async {
       const customTitle = 'Details Screen';
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(
-              title: const Text(customTitle),
-              leading: const BackButton(),
+        ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(
+                  title: const Text(customTitle),
+                  leading: const BackButton(),
+                ),
+              ),
             ),
-          ),
-        ),
+        )
       );
 
       expect(find.text(customTitle), findsOneWidget);
@@ -92,16 +123,18 @@ void main() {
     testWidgets('TopNavigation displays custom title with custom actions', (tester) async {
       const customTitle = 'Search Screen';
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(
-              title: const Text(customTitle),
-              actions: [
-                IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-              ],
+        ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(
+                  title: const Text(customTitle),
+                  actions: [
+                    IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
+        )
       );
 
       expect(find.text(customTitle), findsOneWidget);
@@ -110,11 +143,13 @@ void main() {
 
     testWidgets('TopNavigation displays empty actions list', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: TopNavigation(actions: const []),
-          ),
-        ),
+        ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(actions: const []),
+              ),
+            ),
+        )
       );
 
       expect(find.byType(UserIconButton), findsOne);
