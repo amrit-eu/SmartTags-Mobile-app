@@ -33,6 +33,7 @@ migrate_working_dir/
 **/linux/flutter/*.cc
 **/linux/flutter/*.h
 **/linux/flutter/*.cmake
+**/macos/Flutter/*.swift
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
