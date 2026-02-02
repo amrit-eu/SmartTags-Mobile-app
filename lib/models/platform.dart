@@ -7,6 +7,17 @@ enum PlatformStatus {
 
   /// Platform is not transmitting data.
   inactive,
+
+  /// Invalid value
+  unknown;
+
+  /// Convert to PlatformStatus from string stored in DB
+  static PlatformStatus platformStatusFromDb(String value) {
+    return PlatformStatus.values.firstWhere(
+          (e) => e.name.toLowerCase() == value.toLowerCase(),
+      orElse: () => PlatformStatus.unknown,
+    );
+  }
 }
 
 /// Represents the operational status of a platform.
@@ -16,6 +27,17 @@ enum OperationalStatus {
 
   /// Platform has been recovered.
   recovered,
+
+  /// Invalid value
+  unknown;
+
+  /// Convert to OperationalStatus from string stored in DB
+  static OperationalStatus operationalStatusFromDb(String value) {
+    return OperationalStatus.values.firstWhere(
+          (e) => e.name.toLowerCase() == value.toLowerCase(),
+      orElse: () => OperationalStatus.unknown,
+    );
+  }
 }
 
 /// A model representing an ocean platform and its metadata.

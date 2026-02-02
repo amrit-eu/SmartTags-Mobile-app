@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/map_screen.dart';
@@ -49,7 +50,7 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
     _pages = <Widget>[
       const MapScreen(),
-      const _PlaceholderPage(title: 'Search', icon: Icons.search),
+      const CatalogueScreen(),
       const QrScanScreen(),
     ];
   }
@@ -84,39 +85,6 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Scan',
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// A placeholder page for non-implemented navigation destinations.
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({required this.title, required this.icon});
-
-  final String title;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(
-              '$title Page',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Coming soon',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
       ),
     );
   }
