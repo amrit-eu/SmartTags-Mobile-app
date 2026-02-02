@@ -33,9 +33,9 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
               ? null // disables the switch
               : (bool value) {
             if (value) {
-              ref.read(themeProvider.notifier).toggleDark();
+              ref.read(themeProvider.notifier).setDark();
             } else {
-              ref.read(themeProvider.notifier).toggleLight();
+              ref.read(themeProvider.notifier).setLight();
             }
           },
         ),
@@ -44,9 +44,9 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
           value: ref.watch(themeProvider) == ThemeMode.system,
           onChanged: (bool? checked) {
             if (checked ?? false) {
-              ref.read(themeProvider.notifier).toggleSystem();
+              ref.read(themeProvider.notifier).setSystem();
             } else {
-              ref.read(themeProvider.notifier).toggleLight();
+              ref.read(themeProvider.notifier).setLight();
             }
           },
           secondary: const Icon(Icons.light_mode),
