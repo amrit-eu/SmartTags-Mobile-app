@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 
 void main() {
   testWidgets('User Icon Button directs to Profile page.', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          appBar: AppBar(),
-          body: const Center(child: UserIconButton()),
-        ),
-      ),
+      ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: UserIconButton()),
+            ),
+          ),
+      )
     );
 
     // Ensure we're not on the profile screen yet
