@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/widgets/common/settings_menu.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -50,6 +51,21 @@ void main() {
 
       expect(find.byType(UserIconButton), findsOneWidget);
       expect(find.byIcon(Icons.person), findsOneWidget);
+    });
+
+    testWidgets('TopNavigation displays SettingsMenu action by default', (tester) async {
+      await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(
+                appBar: TopNavigation(),
+              ),
+            ),
+          )
+      );
+
+      expect(find.byType(SettingsMenu), findsOneWidget);
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
 
     testWidgets('TopNavigation displays custom actions', (tester) async {
