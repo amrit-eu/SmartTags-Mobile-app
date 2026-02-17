@@ -8,6 +8,8 @@
 // Notes (editable)
 
 import 'package:flutter/material.dart';
+import 'package:smart_tags/extensions/string_extension.dart';
+import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 enum DeployAction { deploy, recover }
@@ -50,47 +52,50 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopNavigation(title: const Text('Deploy Platform')),
+      appBar: TopNavigation(title: Text('${widget.action.name.capitalize()} Platform'), leading: const BackButton()),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text('Deploy Platform Form goes here'),
-            Form(
-              child: Column(
-                children: [
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Platform ID'),
-                    initialValue: widget.platformID,
-                    enabled: false, // Platform ID is not editable.
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Platform Model'),
-                    controller: _modelController,
-                  ),
-                  Text('Event Type: ${widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery'}'),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Location'),
-                    controller: _locationController,
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Time (UTC)'),
-                    controller: _timeController,
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Notes'),
-                    controller: _notesController,
-                    maxLines: 3,
-                  ),
-                ],
+            SectionContainer(
+              child: Form(
+                child: Column(
+                  spacing: 16,
+                  children: [
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Platform ID'),
+                      initialValue: widget.platformID,
+                      enabled: false, // Platform ID is not editable.
+                    ),
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Platform Model'),
+                      controller: _modelController,
+                      enabled: false, // Platform Model is not editable.
+                    ),
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Location'),
+                      controller: _locationController,
+                    ),
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Time (UTC)'),
+                      controller: _timeController,
+                    ),
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Notes'),
+                      controller: _notesController,
+                      maxLines: 3,
+                    ),
+                    ElevatedButton(
+                      onPressed: _submitForm,
+                      child: Text('${widget.action.name.capitalize()} Platform'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: _submitForm,
-              child: Text('${widget.action == DeployAction.deploy ? 'Deploy' : 'Recover'} Platform ${widget.platformID}'),
             ),
           ],
         ),
-      )
+      ),
     );
   }
 }

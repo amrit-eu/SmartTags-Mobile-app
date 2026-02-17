@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/screens/deploy_platform_screen.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -168,6 +169,45 @@ class PlatformDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'deploy',
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute<DeployPlatformScreen>(
+                  builder: (context) => DeployPlatformScreen(
+                    action: DeployAction.deploy,
+                    platformID: platform.id,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.arrow_circle_up_rounded),
+            label: const Text('Deploy'),
+          ),
+          const SizedBox(width: 12),
+          FloatingActionButton.extended(
+            heroTag: 'recover',
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute<DeployPlatformScreen>(
+                  builder: (context) => DeployPlatformScreen(
+                    action: DeployAction.recover,
+                    platformID: platform.id,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.repeat),
+            label: const Text('Recover'),
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
