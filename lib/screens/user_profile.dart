@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that displays information about a [UserProfile].
 ///
 /// Shows the user's avatar, ID, email, and full name.
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends ConsumerWidget {
   /// Creates a [UserProfileScreen] for the given [user].
   const UserProfileScreen({required this.user, super.key});
 
@@ -14,7 +16,7 @@ class UserProfileScreen extends StatelessWidget {
   final UserProfile user;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: TopNavigation(title: const Text('My Profile'), leading: const BackButton()),
       body: SingleChildScrollView(
@@ -47,6 +49,24 @@ class UserProfileScreen extends StatelessWidget {
                   ContainerRow(
                     label: 'Full Name',
                     value: user.fullName,
+                  ),
+                  ElevatedButton(
+                    onPressed: ref.read(loginProvider.notifier).setLoggedOut,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),

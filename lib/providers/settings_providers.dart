@@ -28,3 +28,25 @@ class AppThemeMode extends Notifier<ThemeMode> {
     state = ThemeMode.light;
   }
 }
+
+/// Provides updates about changes to the user login status
+final loginProvider = NotifierProvider<AppLoginState, bool>(AppLoginState.new);
+
+class AppLoginState extends Notifier<bool> {
+  /// Load initial state. Currently statically initialised.
+  /// Change to using AsyncNotifier once we load from a DB or similar.
+  @override
+  bool build() {
+    return false;
+  }
+
+  void setLoggedIn() {
+    debugPrint("logIn");
+    state = true;
+  }
+
+  void setLoggedOut() {
+    debugPrint("logOut");
+    state = false;
+  }
+}
