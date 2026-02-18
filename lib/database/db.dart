@@ -71,7 +71,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updatePlatforms(List<PlatformsCompanion> companions) async {
     await batch((batch) {
       for (final companion in companions) {
-        batch.update(platforms, companion);
+        batch.update(platforms, companion, where: (tbl) => tbl.ref.equals(companion.ref.value));
       }
     });
   }
