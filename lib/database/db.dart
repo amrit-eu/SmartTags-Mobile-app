@@ -78,8 +78,11 @@ class AppDatabase extends _$AppDatabase {
 
   /// Helper to handle both (upsert) if needed by the sync service.
   Future<void> syncPlatforms(List<PlatformsCompanion> companions) async {
-    await batch((batch) {
-      batch.insertAllOnConflictUpdate(platforms, companions);
+    await transaction(() async {
+      await delete(platforms).go();
+      await batch((batch) {
+        batch.insertAll(platforms, companions);
+      });
     });
   }
 
