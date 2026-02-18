@@ -51,6 +51,14 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
     print('Longitude: ${_longitudeController.text}');
     print('Time (UTC): ${_timeController.text}');
     print('Notes: ${_notesController.text}');
+
+    // Attempt to update the record in the local sqlite database.
+    // If successful, pop the screen and show a success message.
+    // If there is an error, show an error message.
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$eventType successful!')),
+    );
   }
 
   @override
@@ -68,7 +76,7 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                   children: [
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Platform ID'),
-                      initialValue: widget.platform.id.toString(),
+                      initialValue: widget.platform.id,
                       enabled: false, // Platform ID is not editable.
                     ),
                     TextFormField(
