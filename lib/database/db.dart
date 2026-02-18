@@ -104,4 +104,10 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Platform>> getPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref))).get();
   }
+
+  /// Watches a single platform by its reference, emitting updates when it changes.
+  Stream<Platform?> watchPlatformByRef(String ref) {
+    return (select(platforms)..where((p) => p.ref.equals(ref)))
+        .watchSingleOrNull();
+  }
 }

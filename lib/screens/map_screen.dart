@@ -200,7 +200,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ID: ${platform.platformId}',
+                          'ID: ${platform.platformRef}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -232,7 +232,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                     unawaited(
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (context) => PlatformDetailScreen(platform: platform),
+                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
                         ),
                       ),
                     );
@@ -293,7 +293,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           child: GestureDetector(
             onTap: () {
               final platformModel = model.Platform(
-                platformId: dbPlatform.ref,
+                platformRef: dbPlatform.ref,
                 model: dbPlatform.model,
                 network: dbPlatform.network,
                 latestPosition: point,

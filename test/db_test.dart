@@ -90,6 +90,7 @@ void main() {
       final updatedPlatforms = [
         PlatformsCompanion(
           id: Value(results.first.id),
+          ref: const Value('PLT-001'),
           model: const Value('Model A Updated'),
         ),
       ];

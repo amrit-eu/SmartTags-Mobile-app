@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying detailed information about a specific platform.
-class PlatformDetailScreen extends StatelessWidget {
+class PlatformDetailScreen extends ConsumerWidget {
   /// Creates a [PlatformDetailScreen] widget.
-  const PlatformDetailScreen({required this.platform, super.key});
+  const PlatformDetailScreen({required this.platformRef, super.key});
 
-  /// The platform data to display.
-  final Platform platform;
+  /// The platform reference used to watch live updates from the database.
+  final String platformRef;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final platformAsync = ref.watch(platformByRefStreamProvider(platformRef));
+    final platform = platformAsync.value?.toDomain();
+    if (platform == null) {
+      return Scaffold(
+        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: TopNavigation(
         title: const Text('Platform Details'),
@@ -104,7 +115,7 @@ class PlatformDetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    platform.platformId,
+                    platform.platformRef,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const Divider(height: 24),

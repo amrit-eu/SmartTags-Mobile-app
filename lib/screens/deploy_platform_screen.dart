@@ -51,7 +51,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   Future<void> _submitForm() async {
     final eventType = _eventType;
     debugPrint('--- $eventType Form Submitted ---');
-    debugPrint('Platform ID: ${widget.platform.platformId}');
+    debugPrint('Platform ID: ${widget.platform.platformRef}');
     debugPrint('Platform Model:${widget.platform.model}');
     debugPrint('Event Type: $eventType');
     debugPrint('Latitude: ${_latitudeController.text}');
@@ -64,7 +64,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     await ref.read(databaseProvider).updatePlatforms(
       [
         PlatformsCompanion(
-          ref: Value(widget.platform.platformId),
+          ref: Value(widget.platform.platformRef),
           model: Value(widget.platform.model),
           lat: Value(double.parse(_latitudeController.text)),
           lon: Value(double.parse(_longitudeController.text)),
@@ -108,7 +108,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                   children: [
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Platform ID'),
-                      initialValue: widget.platform.platformId,
+                      initialValue: widget.platform.platformRef,
                       enabled: false, // Platform ID is not editable.
                     ),
                     TextFormField(

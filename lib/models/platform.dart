@@ -50,7 +50,7 @@ enum OperationalStatus {
 class Platform {
   /// Creates a [Platform] instance.
   const Platform({
-    required this.platformId,
+    required this.platformRef,
     required this.model,
     required this.network,
     required this.latestPosition,
@@ -61,7 +61,7 @@ class Platform {
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
-  final String platformId;
+  final String platformRef;
 
   /// The model name of the device.
   final String model;

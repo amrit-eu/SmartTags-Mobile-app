@@ -7,7 +7,7 @@ extension PlatformMapper on Platform {
   /// Map the platform DB object returned to the domain model
   domain.Platform toDomain() {
     return domain.Platform(
-      platformId: ref,
+      platformRef: ref,
       model: model,
       network: network,
       latestPosition: LatLng(lat, lon),

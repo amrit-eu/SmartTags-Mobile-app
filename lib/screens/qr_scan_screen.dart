@@ -75,7 +75,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         if (!mounted) return;
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (context) => PlatformDetailScreen(platform: platform.toDomain()),
+            builder: (context) => PlatformDetailScreen(platformRef: platform.toDomain().platformRef),
           ),
         );
       }
