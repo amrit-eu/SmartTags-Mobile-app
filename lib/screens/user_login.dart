@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
+import 'package:smart_tags/screens/user_profile.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 class UserLoginScreen extends ConsumerStatefulWidget {
@@ -34,6 +36,13 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
             backgroundColor: Colors.green,
           ),
         );
+        Navigator.of(context).push(
+            MaterialPageRoute<UserProfileScreen>(
+              builder: (BuildContext ctx) => const UserProfileScreen(
+                user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@gmail.com'),
+              ),
+            )
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -47,6 +56,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
       });
     }
   }
+
   @override
   void dispose() {
     _emailController.dispose();

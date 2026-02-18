@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -51,7 +52,14 @@ class UserProfileScreen extends ConsumerWidget {
                     value: user.fullName,
                   ),
                   ElevatedButton(
-                    onPressed: ref.read(loginProvider.notifier).setLoggedOut,
+                    onPressed: () {
+                      ref.read(loginProvider.notifier).setLoggedOut();
+                      Navigator.of(context).push(
+                        MaterialPageRoute<MainNavigation>(
+                          builder: (BuildContext ctx) => const MainNavigation(),
+                        )
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue.shade600,
                       foregroundColor: Colors.white,
