@@ -25,7 +25,8 @@ class DeployPlatformScreen extends StatefulWidget {
 
 class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
   final _modelController = TextEditingController();
-  final _locationController = TextEditingController();
+  final _latitudeController = TextEditingController();
+  final _longitudeController = TextEditingController();
   final _timeController = TextEditingController();
   final _notesController = TextEditingController();
   TimeOfDay? _selectedTime;
@@ -33,7 +34,8 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
   @override
   void dispose() {
     _modelController.dispose();
-    _locationController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     _timeController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -45,7 +47,8 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
     print('Platform ID: ${widget.platformID}');
     print('Platform Model: ${_modelController.text}');
     print('Event Type: $eventType');
-    print('Location: ${_locationController.text}');
+    print('Latitude: ${_latitudeController.text}');
+    print('Longitude: ${_longitudeController.text}');
     print('Time (UTC): ${_timeController.text}');
     print('Notes: ${_notesController.text}');
   }
@@ -74,11 +77,20 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                       enabled: false, // Platform Model is not editable.
                     ),
                     Row(
+                      spacing: 8,
                       children: [
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Location'),
-                            controller: _locationController,
+                            decoration: const InputDecoration(labelText: 'Latitude'),
+                            controller: _latitudeController,
+                            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                          ),
+                        ),
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(labelText: 'Longitude'),
+                            controller: _longitudeController,
+                            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                           ),
                         ),
                         IconButton(
