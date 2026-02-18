@@ -10,6 +10,7 @@
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
@@ -174,12 +175,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                         );
                         setState(() {
                           _selectedDateTime = combined;
-                          _dateTimeController.text =
-                              '${combined.year.toString().padLeft(4, '0')}-'
-                              '${combined.month.toString().padLeft(2, '0')}-'
-                              '${combined.day.toString().padLeft(2, '0')} '
-                              '${combined.hour.toString().padLeft(2, '0')}:'
-                              '${combined.minute.toString().padLeft(2, '0')}';
+                          _dateTimeController.text = DateFormat(
+                            'MMM dd, yyyy, hh:mm a',
+                          ).format(combined);
                         });
                       },
                     ),
