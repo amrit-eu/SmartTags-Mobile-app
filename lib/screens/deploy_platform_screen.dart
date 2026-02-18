@@ -51,7 +51,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   Future<void> _submitForm() async {
     final eventType = _eventType;
     debugPrint('--- $eventType Form Submitted ---');
-    debugPrint('Platform ID: ${widget.platform.id}');
+    debugPrint('Platform ID: ${widget.platform.platformId}');
     debugPrint('Platform Model:${widget.platform.model}');
     debugPrint('Event Type: $eventType');
     debugPrint('Latitude: ${_latitudeController.text}');
@@ -61,13 +61,20 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
     // Attempt to update the record in the local sqlite database.
     try {
-    await ref.read(databaseProvider).updatePlatform(
-      PlatformsCompanion(
-        id: Value(int.parse(widget.platform.id)),
-        lat: Value(double.parse(_latitudeController.text)),
-        lon: Value(double.parse(_longitudeController.text)),
-        lastUpdated: Value(_selectedDateTime ?? DateTime.now()),
-      ),
+    await ref.read(databaseProvider).updatePlatforms(
+      [
+        PlatformsCompanion(
+          ref: Value(widget.platform.platformId),
+          model: Value(widget.platform.model),
+          lat: Value(double.parse(_latitudeController.text)),
+          lon: Value(double.parse(_longitudeController.text)),
+          lastUpdated: Value(_selectedDateTime ?? DateTime.now()),
+          operationLat: Value(widget.platform.operationLocation.latitude),
+          operationLon: Value(widget.platform.operationLocation.longitude),
+          operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
+          status: Value(PlatformStatus.platformStatusToDb(widget.platform.status)),
+        ),
+      ]
     );
     } on Exception catch (e) {
       debugPrint('Error updating platform: $e');
@@ -101,7 +108,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                   children: [
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Platform ID'),
-                      initialValue: widget.platform.id,
+                      initialValue: widget.platform.platformId,
                       enabled: false, // Platform ID is not editable.
                     ),
                     TextFormField(

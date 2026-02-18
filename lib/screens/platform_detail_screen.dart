@@ -104,7 +104,7 @@ class PlatformDetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    platform.id,
+                    platform.platformId,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const Divider(height: 24),

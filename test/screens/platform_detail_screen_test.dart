@@ -7,7 +7,7 @@ import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 Platform testPlatform = Platform(
-  id: '1',
+  platformId: '1',
   model: 'Model 1',
   latestPosition: const LatLng(0, 0),
   network: 'Network 1',

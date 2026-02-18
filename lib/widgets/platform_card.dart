@@ -31,7 +31,7 @@ class PlatformCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         final platformModel = model_entity.Platform(
-          id: platform.ref,
+          platformId: platform.ref,
           model: platform.model,
           network: platform.network,
           latestPosition: LatLng(platform.lat, platform.lon),

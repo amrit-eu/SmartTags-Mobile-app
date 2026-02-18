@@ -200,7 +200,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ID: ${platform.id}',
+                          'ID: ${platform.platformId}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -293,7 +293,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           child: GestureDetector(
             onTap: () {
               final platformModel = model.Platform(
-                id: dbPlatform.ref,
+                platformId: dbPlatform.ref,
                 model: dbPlatform.model,
                 network: dbPlatform.network,
                 latestPosition: point,
