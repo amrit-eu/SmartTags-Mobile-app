@@ -7,58 +7,82 @@
 // Time (UTC) (editable)
 // Notes (editable)
 
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 enum DeployAction { deploy, recover }
 
-class DeployPlatformScreen extends StatefulWidget {
+class DeployPlatformScreen extends ConsumerStatefulWidget {
   const DeployPlatformScreen({super.key, required this.action, required this.platform});
   final DeployAction action;
   final Platform platform;
 
   @override
-  State<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
+  ConsumerState<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
 }
 
-class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
+class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
-  final _timeController = TextEditingController();
+  final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
-  TimeOfDay? _selectedTime;
+  DateTime? _selectedDateTime;
+
+  String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
 
   @override
   void dispose() {
     _latitudeController.dispose();
     _longitudeController.dispose();
-    _timeController.dispose();
+    _dateTimeController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  void _submitForm() {
-    final eventType = widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
-    print('--- $eventType Form Submitted ---');
-    print('Platform ID: ${widget.platform.id}');
-    print('Platform Model:${widget.platform.model}');
-    print('Event Type: $eventType');
-    print('Latitude: ${_latitudeController.text}');
-    print('Longitude: ${_longitudeController.text}');
-    print('Time (UTC): ${_timeController.text}');
-    print('Notes: ${_notesController.text}');
+  Future<void> _submitForm() async {
+    final eventType = _eventType;
+    debugPrint('--- $eventType Form Submitted ---');
+    debugPrint('Platform ID: ${widget.platform.id}');
+    debugPrint('Platform Model:${widget.platform.model}');
+    debugPrint('Event Type: $eventType');
+    debugPrint('Latitude: ${_latitudeController.text}');
+    debugPrint('Longitude: ${_longitudeController.text}');
+    debugPrint('Time (UTC): ${_dateTimeController.text}');
+    debugPrint('Notes: ${_notesController.text}');
 
     // Attempt to update the record in the local sqlite database.
-    // If successful, pop the screen and show a success message.
-    // If there is an error, show an error message.
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$eventType successful!')),
+    try {
+    await ref.read(databaseProvider).updatePlatform(
+      PlatformsCompanion(
+        id: Value(int.parse(widget.platform.id)),
+        lat: Value(double.parse(_latitudeController.text)),
+        lon: Value(double.parse(_longitudeController.text)),
+        lastUpdated: Value(_selectedDateTime ?? DateTime.now()),
+      ),
     );
+    } on Exception catch (e) {
+      debugPrint('Error updating platform: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update platform: $e')),
+        );
+      }
+      return;
+    }
+    // If successful, pop the screen and show a success message.
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$eventType successful!')),
+      );
+    }
   }
 
   @override
@@ -123,21 +147,40 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                       ],
                     ),
                     TextFormField(
-                      decoration: const InputDecoration(labelText: 'Time (UTC)'),
-                      controller: _timeController,
+                      decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
+                      controller: _dateTimeController,
                       readOnly: true,
                       onTap: () async {
-                        final picked = await showTimePicker(
+                        final date = await showDatePicker(
                           context: context,
-                          initialTime: _selectedTime ?? TimeOfDay.now(),
+                          initialDate: _selectedDateTime ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          helpText: 'Date',
+                        );
+                        if (date == null) return;
+                        if (!context.mounted) return;
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: _selectedDateTime != null
+                              ? TimeOfDay.fromDateTime(_selectedDateTime!)
+                              : TimeOfDay.now(),
                           helpText: 'Time (UTC)',
                         );
-                        if (picked != null) {
-                          setState(() {
-                            _selectedTime = picked;
-                            _timeController.text = picked.format(context);
-                          });
-                        }
+                        if (time == null) return;
+                        final combined = DateTime(
+                          date.year, date.month, date.day,
+                          time.hour, time.minute,
+                        );
+                        setState(() {
+                          _selectedDateTime = combined;
+                          _dateTimeController.text =
+                              '${combined.year.toString().padLeft(4, '0')}-'
+                              '${combined.month.toString().padLeft(2, '0')}-'
+                              '${combined.day.toString().padLeft(2, '0')} '
+                              '${combined.hour.toString().padLeft(2, '0')}:'
+                              '${combined.minute.toString().padLeft(2, '0')}';
+                        });
                       },
                     ),
                     TextFormField(
