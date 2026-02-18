@@ -28,6 +28,7 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
   final _locationController = TextEditingController();
   final _timeController = TextEditingController();
   final _notesController = TextEditingController();
+  TimeOfDay? _selectedTime;
 
   @override
   void dispose() {
@@ -72,13 +73,37 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                       controller: _modelController,
                       enabled: false, // Platform Model is not editable.
                     ),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Location'),
-                      controller: _locationController,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(labelText: 'Location'),
+                            controller: _locationController,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.my_location),
+                          onPressed: () {},
+                        ),
+                      ],
                     ),
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Time (UTC)'),
                       controller: _timeController,
+                      readOnly: true,
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: _selectedTime ?? TimeOfDay.now(),
+                          helpText: 'Time (UTC)',
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _selectedTime = picked;
+                            _timeController.text = picked.format(context);
+                          });
+                        }
+                      },
                     ),
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Notes'),
