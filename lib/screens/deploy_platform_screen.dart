@@ -9,6 +9,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:smart_tags/extensions/string_extension.dart';
+import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -95,7 +96,22 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.my_location),
-                          onPressed: () {},
+                          onPressed: () async {
+                            final locationFetcher = LocationFetcher();
+                            final location = await locationFetcher.getUserLocation();
+                            if (location != null) {
+                              setState(() {
+                                _latitudeController.text = location.latitude.toStringAsFixed(6);
+                                _longitudeController.text = location.longitude.toStringAsFixed(6);
+                              });
+                            } else {
+                              if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to fetch location. Please enter location manually.')),
+                              );
+                              }
+                            }
+                          },
                         ),
                       ],
                     ),
