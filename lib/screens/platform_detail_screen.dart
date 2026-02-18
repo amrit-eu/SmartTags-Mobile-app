@@ -180,7 +180,7 @@ class PlatformDetailScreen extends StatelessWidget {
                 MaterialPageRoute<DeployPlatformScreen>(
                   builder: (context) => DeployPlatformScreen(
                     action: DeployAction.deploy,
-                    platformID: platform.id,
+                    platform: platform,
                   ),
                 ),
               );
@@ -197,7 +197,7 @@ class PlatformDetailScreen extends StatelessWidget {
                 MaterialPageRoute<DeployPlatformScreen>(
                   builder: (context) => DeployPlatformScreen(
                     action: DeployAction.recover,
-                    platformID: platform.id,
+                    platform: platform,
                   ),
                 ),
               );

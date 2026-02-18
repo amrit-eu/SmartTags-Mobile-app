@@ -10,22 +10,22 @@
 import 'package:flutter/material.dart';
 import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 enum DeployAction { deploy, recover }
 
 class DeployPlatformScreen extends StatefulWidget {
-  const DeployPlatformScreen({super.key, required this.action, required this.platformID});
+  const DeployPlatformScreen({super.key, required this.action, required this.platform});
   final DeployAction action;
-  final String platformID;
+  final Platform platform;
 
   @override
   State<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
 }
 
 class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
-  final _modelController = TextEditingController();
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
   final _timeController = TextEditingController();
@@ -34,7 +34,6 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
 
   @override
   void dispose() {
-    _modelController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
     _timeController.dispose();
@@ -45,8 +44,8 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
   void _submitForm() {
     final eventType = widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
     print('--- $eventType Form Submitted ---');
-    print('Platform ID: ${widget.platformID}');
-    print('Platform Model: ${_modelController.text}');
+    print('Platform ID: ${widget.platform.id}');
+    print('Platform Model:${widget.platform.model}');
     print('Event Type: $eventType');
     print('Latitude: ${_latitudeController.text}');
     print('Longitude: ${_longitudeController.text}');
@@ -69,12 +68,12 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                   children: [
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Platform ID'),
-                      initialValue: widget.platformID,
+                      initialValue: widget.platform.id.toString(),
                       enabled: false, // Platform ID is not editable.
                     ),
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Platform Model'),
-                      controller: _modelController,
+                      initialValue: widget.platform.model,
                       enabled: false, // Platform Model is not editable.
                     ),
                     Row(
@@ -107,7 +106,7 @@ class _DeployPlatformScreenState extends State<DeployPlatformScreen> {
                             } else {
                               if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to fetch location. Please enter location manually.')),
+                                const SnackBar(content: Text('Failed to fetch location. Please enter manually.')),
                               );
                               }
                             }
