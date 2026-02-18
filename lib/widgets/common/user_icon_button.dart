@@ -13,7 +13,6 @@ class UserIconButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    debugPrint(ref.watch(loginProvider).toString());
     return IconButton(
       icon: ref.watch(loginProvider)
             ? const Icon(Icons.person)

@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/user_profile.dart';
@@ -16,6 +19,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _client = http.Client();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -25,8 +29,25 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
         _isLoading = true;
       });
 
-      String email = _emailController.text.trim();
-      String password = _passwordController.text;
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      final authUrl = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/login');
+
+      try {
+        final response = await _client.post(
+            authUrl,
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(<String, String>{'login': email, 'password': password}),
+        );
+        final body = jsonDecode(response.body);
+
+        debugPrint('Got result: $body');
+      } on PlatformException catch (e) {
+        debugPrint('Got error: $e');
+      }
 
       if (email == "test@example.com" && password == "password123") {
         ref.read(loginProvider.notifier).setLoggedIn();
@@ -61,6 +82,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _client.close();
     super.dispose();
   }
 

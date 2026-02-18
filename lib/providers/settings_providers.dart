@@ -41,12 +41,10 @@ class AppLoginState extends Notifier<bool> {
   }
 
   void setLoggedIn() {
-    debugPrint("logIn");
     state = true;
   }
 
   void setLoggedOut() {
-    debugPrint("logOut");
     state = false;
   }
 }
