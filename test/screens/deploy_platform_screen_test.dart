@@ -316,6 +316,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that an error SnackBar is shown
-    expect(find.textContaining('Failed to update platform:'), findsOneWidget);
+    expect(find.text('Failed to update platform.'), findsOneWidget);
   });
 }

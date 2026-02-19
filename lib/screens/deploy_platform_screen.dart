@@ -59,16 +59,6 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   }
 
   Future<void> _submitForm() async {
-    final eventType = _eventType;
-    debugPrint('--- $eventType Form Submitted ---');
-    debugPrint('Platform ID: ${widget.platform.platformRef}');
-    debugPrint('Platform Model:${widget.platform.model}');
-    debugPrint('Event Type: $eventType');
-    debugPrint('Latitude: ${_latitudeController.text}');
-    debugPrint('Longitude: ${_longitudeController.text}');
-    debugPrint('Time (UTC): ${_dateTimeController.text}');
-    debugPrint('Notes: ${_notesController.text}');
-
     // Attempt to update the record in the local sqlite database.
     try {
       await ref.read(databaseProvider).updatePlatforms([
@@ -89,7 +79,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       debugPrint('Error updating platform: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update platform: $e')),
+          const SnackBar(content: Text('Failed to update platform.')),
         );
       }
       return;
@@ -97,7 +87,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     // If successful, pop the screen and show a success message.
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$eventType successful!')),
+        SnackBar(content: Text('$_eventType successful!')),
       );
     }
   }
