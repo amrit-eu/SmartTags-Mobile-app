@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/providers/auth_response.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/user_profile.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -42,36 +42,55 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
             },
             body: jsonEncode(<String, String>{'login': email, 'password': password}),
         );
-        final body = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body);
+          final authResponse = AuthResponse.fromJson(body as Map<String, dynamic>);
 
-        debugPrint('Got result: $body');
+          ref.read(loginProvider.notifier).setLoggedIn();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).push(
+              MaterialPageRoute<UserProfileScreen>(
+                builder: (BuildContext ctx) => UserProfileScreen(
+                  user: authResponse.contact,
+                ),
+              )
+          );
+        }
+        else if (response.statusCode == 401) {
+          final body = jsonDecode(response.body);
+          final error = body['error'];
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error.toString()),
+              backgroundColor: Colors.red,
+            ),
+          );
+          debugPrint('Got result: $error');
+        }
+        else {
+          final body = jsonDecode(response.body);
+          final error = body['error'];
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error != null ? error.toString() : 'Failed to authenticate'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
       } on PlatformException catch (e) {
+        debugPrint('Got error: $e');
+      } on http.ClientException catch (e) {
+        // e.g. failed to fetch, if not on VPN
         debugPrint('Got error: $e');
       }
 
-      if (email == "test@example.com" && password == "password123") {
-        ref.read(loginProvider.notifier).setLoggedIn();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).push(
-            MaterialPageRoute<UserProfileScreen>(
-              builder: (BuildContext ctx) => const UserProfileScreen(
-                user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@gmail.com'),
-              ),
-            )
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid email or password'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
       setState(() {
         _isLoading = false;
       });

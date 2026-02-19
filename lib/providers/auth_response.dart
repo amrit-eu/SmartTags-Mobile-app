@@ -4,21 +4,6 @@ import 'package:smart_tags/models/user.dart';
 ///
 /// Contains the user's unique identifier, full name, and email address.
 class AuthResponse {
-  /// The user's unique numeric identifier.
-  final bool success;
-
-  /// The user's full display name.
-  final String accessTokenRs256;
-
-  /// The user's primary email address.
-  final String refreshToken;
-
-  final int refreshExpiresIn;
-
-  final int expiresIn;
-
-  final UserProfile contact;
-
   /// Creates an [AuthResponse].
   ///
   /// All fields are required and must be non-null.
@@ -31,25 +16,43 @@ class AuthResponse {
     required this.contact,
   });
 
-
+  /// Deserialises JSON response from API into an [AuthResponse] object
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     return switch (json) {
       {
-        'success': final bool success,
-        'access_token_rs256': final String accessTokenRs256,
-        'refresh_token': final String refreshToken,
-        'refresh_expires_in': final int refreshExpiresIn,
-        'expires_in': final int expiresIn,
-        'contact': final UserProfile contact,
+      'success': final bool success,
+      'access_token_rs256': final String accessTokenRs256,
+      'refresh_token': final String refreshToken,
+      'refresh_expires_in': final int refreshExpiresIn,
+      'expires_in': final int expiresIn,
+      'contact': final Map<String, dynamic> contact,
       } => AuthResponse(
-          success: success,
-          accessTokenRs256: accessTokenRs256,
-          refreshToken: refreshToken,
-          refreshExpiresIn: refreshExpiresIn,
-          expiresIn: expiresIn,
-          contact: contact,
+        success: success,
+        accessTokenRs256: accessTokenRs256,
+        refreshToken: refreshToken,
+        refreshExpiresIn: refreshExpiresIn,
+        expiresIn: expiresIn,
+        contact: UserProfile.fromJson(contact),
       ),
       _ => throw const FormatException('Failed to read auth response.'),
     };
   }
+
+  /// Success status of authentication
+  final bool success;
+
+  /// JWT session token returned from API
+  final String accessTokenRs256;
+
+  /// Refresh token to renew session JWT
+  final String refreshToken;
+
+  /// Seconds until expiry of refresh token (default: 864000 = 7 days)
+  final int refreshExpiresIn;
+
+  /// Seconds until expiry of session token (default: 3600 = 1 hour)
+  final int expiresIn;
+
+  /// [UserProfile] object containing information about the contact user
+  final UserProfile contact;
 }
