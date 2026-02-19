@@ -11,11 +11,12 @@ import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// enum representing the type of operation being performed on the platform.
-enum DeployAction { 
+enum DeployAction {
   /// Deploying a platform.
-  deploy, 
+  deploy,
+
   /// Recovering a platform.
-  recover 
+  recover,
 }
 
 /// A screen for deploying or recovering a platform, allowing users to input relevant details.
@@ -24,8 +25,10 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// [action] specifies whether the user is deploying or recovering a platform.
   /// [platform] is the platform being deployed or recovered.
   const DeployPlatformScreen({required this.action, required this.platform, super.key});
+
   /// The type of operation being performed (deploy or recover).
   final DeployAction action;
+
   /// The platform being deployed or recovered.
   final Platform platform;
 
@@ -64,8 +67,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
     // Attempt to update the record in the local sqlite database.
     try {
-    await ref.read(databaseProvider).updatePlatforms(
-      [
+      await ref.read(databaseProvider).updatePlatforms([
         PlatformsCompanion(
           ref: Value(widget.platform.platformRef),
           model: Value(widget.platform.model),
@@ -78,8 +80,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           status: Value(PlatformStatus.platformStatusToDb(widget.platform.status)),
           operationNotes: Value(_notesController.text),
         ),
-      ]
-    );
+      ]);
     } on Exception catch (e) {
       debugPrint('Error updating platform: $e');
       if (mounted) {
@@ -149,9 +150,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                               });
                             } else {
                               if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to fetch location. Please enter manually.')),
-                              );
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Failed to fetch location. Please enter manually.')),
+                                );
                               }
                             }
                           },
@@ -181,8 +182,11 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                         );
                         if (time == null) return;
                         final combined = DateTime(
-                          date.year, date.month, date.day,
-                          time.hour, time.minute,
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
                         );
                         setState(() {
                           _selectedDateTime = combined;
