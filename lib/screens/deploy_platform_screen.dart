@@ -24,13 +24,17 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// Creates a [DeployPlatformScreen] widget.
   /// [action] specifies whether the user is deploying or recovering a platform.
   /// [platform] is the platform being deployed or recovered.
-  const DeployPlatformScreen({required this.action, required this.platform, super.key});
+  const DeployPlatformScreen({required this.action, required this.platform, this.locationFetcher, super.key});
 
   /// The type of operation being performed (deploy or recover).
   final DeployAction action;
 
   /// The platform being deployed or recovered.
   final Platform platform;
+
+  /// Optional test / injection hook to provide a LocationFetcher
+  @visibleForTesting
+  final LocationFetcher? locationFetcher;
 
   @override
   ConsumerState<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
@@ -141,7 +145,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                         IconButton(
                           icon: const Icon(Icons.my_location),
                           onPressed: () async {
-                            final locationFetcher = LocationFetcher();
+                            final locationFetcher = widget.locationFetcher ?? LocationFetcher();
                             final location = await locationFetcher.getUserLocation();
                             if (location != null) {
                               setState(() {
