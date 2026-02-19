@@ -15,6 +15,7 @@ extension PlatformMapper on Platform {
       operationalStatus: domain.OperationalStatus.operationalStatusFromDb(operationalStatus),
       lastUpdated: lastUpdated,
       operationLocation: LatLng(operationLat, operationLon),
+      operationNotes: operationNotes,
     );
   }
 }

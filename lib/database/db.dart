@@ -46,6 +46,9 @@ class Platforms extends Table {
 
   /// Batch reference (optional).
   TextColumn get batchRef => text().nullable()();
+
+  /// Additional notes about the latest operation (optional).
+  TextColumn get operationNotes => text().nullable()();
 }
 
 /// The local SQLite database using Drift ORM.
@@ -67,7 +70,7 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Updates a list of platforms based on their primary keys.
+  /// Updates a list of platforms based on their ref.
   Future<void> updatePlatforms(List<PlatformsCompanion> companions) async {
     await batch((batch) {
       for (final companion in companions) {

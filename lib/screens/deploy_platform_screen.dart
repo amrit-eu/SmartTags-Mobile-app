@@ -69,10 +69,11 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           lat: Value(double.parse(_latitudeController.text)),
           lon: Value(double.parse(_longitudeController.text)),
           lastUpdated: Value(_selectedDateTime ?? DateTime.now()),
-          operationLat: Value(double.parse(_latitudeController.text)),// Value(widget.platform.operationLocation.latitude),
-          operationLon: Value(double.parse(_longitudeController.text)),// Value(widget.platform.operationLocation.longitude),
+          operationLat: Value(double.parse(_latitudeController.text)),
+          operationLon: Value(double.parse(_longitudeController.text)),
           operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
           status: Value(PlatformStatus.platformStatusToDb(widget.platform.status)),
+          operationNotes: Value(_notesController.text),
         ),
       ]
     );

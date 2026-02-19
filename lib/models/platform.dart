@@ -58,6 +58,7 @@ class Platform {
     required this.operationalStatus,
     required this.lastUpdated,
     required this.operationLocation,
+    this.operationNotes,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -83,4 +84,7 @@ class Platform {
 
   /// The location of the last operation.
   final LatLng operationLocation;
+
+  /// Additional notes about the latest operation (optional).
+  final String? operationNotes;
 }

@@ -173,6 +173,15 @@ class PlatformDetailScreen extends ConsumerWidget {
                         '${platform.operationLocation.latitude.toStringAsFixed(3)}, '
                         '${platform.operationLocation.longitude.toStringAsFixed(3)}',
                   ),
+                  const Divider(height: 16),
+                  ContainerRow(
+                    label: 'Notes',
+                    value: '${
+                      platform.operationNotes != null && platform.operationNotes!.isNotEmpty
+                      ? platform.operationNotes
+                      : 'No additional notes.'
+                    }',
+                  ),
                 ],
               ),
             ),
