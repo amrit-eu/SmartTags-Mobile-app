@@ -174,11 +174,15 @@ void main() {
       );
 
       // Wait for the widget to build and data to load
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 1));
 
       // Tap on the marker (location_on icon)
       await tester.tap(find.byIcon(Icons.location_on).first);
-      await tester.pump(const Duration(milliseconds: 500));
+      
+      // Multiple pumps to allow for stream provider updates
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verify the popup is displayed
       expect(find.text('Test Platform Model'), findsOneWidget);
@@ -227,11 +231,13 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 1));
 
       // Tap on the marker
       await tester.tap(find.byIcon(Icons.location_on).first);
-      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verify the popup displays the correct latitude and longitude
       expect(find.text('51.234'), findsOneWidget);
@@ -276,11 +282,13 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 1));
 
       // Tap on the marker to show the popup
       await tester.tap(find.byIcon(Icons.location_on).first);
-      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verify the popup is shown
       expect(find.text('Close Button Test'), findsOneWidget);
@@ -331,11 +339,13 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 1));
 
       // Tap on the marker to show the popup
       await tester.tap(find.byIcon(Icons.location_on).first);
-      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verify the popup is shown
       expect(find.text('Outside Tap Test'), findsOneWidget);
@@ -407,11 +417,13 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(seconds: 1));
 
       // Tap first marker
       await tester.tap(find.byIcon(Icons.location_on).at(0));
-      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verify first platform is shown
       expect(find.text('First Platform'), findsOneWidget);
@@ -419,7 +431,9 @@ void main() {
 
       // Tap second marker
       await tester.tap(find.byIcon(Icons.location_on).at(1));
-      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
       // Verify popup updates to second platform
       expect(find.text('Second Platform'), findsOneWidget);
