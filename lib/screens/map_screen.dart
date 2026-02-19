@@ -42,7 +42,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late AnimationController _pulseController;
   late AnimationController _popupAnimationController;
   String? _selectedPlatformRef;
-  LatLng? _selectedPlatformPosition;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
   static const LatLng _defaultCenter = LatLng(45, -5);
@@ -136,7 +135,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   void _selectPlatformMarker(String platformRef, LatLng position) {
     setState(() {
       _selectedPlatformRef = platformRef;
-      _selectedPlatformPosition = position;
     });
     // Reset and play animation
     if (mounted) {
@@ -148,11 +146,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     });
   }
 
-  /// Clears the selected platform and its position.
+  /// Clears the selected platform.
   void _clearSelection() {
     setState(() {
       _selectedPlatformRef = null;
-      _selectedPlatformPosition = null;
     });
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
@@ -358,45 +355,47 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   ),
                 ],
               ),
-              if (_selectedPlatformRef != null && _selectedPlatformPosition != null) ...[
-                Positioned(
-                  top: 20,
-                  left: 16,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.5, end: 1).animate(
-                      CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
-                    ),
-                    alignment: Alignment.topLeft,
-                    child: GestureDetector(
-                      onTap: () {},
-                      child: _buildPopup(
-                        context,
-                        platforms
-                            .where((p) => p.ref == _selectedPlatformRef)
-                            .map((dbPlatform) {
-                              final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-                              return model.Platform(
-                                platformRef: dbPlatform.ref,
-                                model: dbPlatform.model,
-                                network: dbPlatform.network,
-                                latestPosition: point,
-                                status: dbPlatform.status == 'Active'
-                                    ? model.PlatformStatus.active
-                                    : model.PlatformStatus.inactive,
-                                operationalStatus: dbPlatform.operationalStatus == 'Deployed'
-                                    ? model.OperationalStatus.deployed
-                                    : model.OperationalStatus.recovered,
-                                lastUpdated: dbPlatform.lastUpdated,
-                                operationLocation: LatLng(
-                                  dbPlatform.operationLat,
-                                  dbPlatform.operationLon,
-                                ),
-                              );
-                            })
-                            .first,
+              if (_selectedPlatformRef != null) ...[
+                Builder(
+                  builder: (context) {
+                    final selectedDb = platforms
+                        .where((p) => p.ref == _selectedPlatformRef)
+                        .firstOrNull;
+                    // Platform may have been deleted from the database.
+                    if (selectedDb == null) return const SizedBox.shrink();
+                    final selectedPoint = LatLng(selectedDb.lat, selectedDb.lon);
+                    final selectedPlatform = model.Platform(
+                      platformRef: selectedDb.ref,
+                      model: selectedDb.model,
+                      network: selectedDb.network,
+                      latestPosition: selectedPoint,
+                      status: selectedDb.status == 'Active'
+                          ? model.PlatformStatus.active
+                          : model.PlatformStatus.inactive,
+                      operationalStatus: selectedDb.operationalStatus == 'Deployed'
+                          ? model.OperationalStatus.deployed
+                          : model.OperationalStatus.recovered,
+                      lastUpdated: selectedDb.lastUpdated,
+                      operationLocation: LatLng(
+                        selectedDb.operationLat,
+                        selectedDb.operationLon,
                       ),
-                    ),
-                  ),
+                    );
+                    return Positioned(
+                      top: 20,
+                      left: 16,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.5, end: 1).animate(
+                          CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
+                        ),
+                        alignment: Alignment.topLeft,
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: _buildPopup(context, selectedPlatform),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ],
