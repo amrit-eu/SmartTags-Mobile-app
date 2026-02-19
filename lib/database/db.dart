@@ -79,7 +79,8 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Helper to handle both (upsert) if needed by the sync service.
+  /// Helper to sync platforms to database.
+  /// Currently empties and re-inserts, but could be optimized to do upserts in the future.
   Future<void> syncPlatforms(List<PlatformsCompanion> companions) async {
     await transaction(() async {
       await delete(platforms).go();
