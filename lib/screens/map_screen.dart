@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
@@ -358,28 +359,19 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               if (_selectedPlatformRef != null) ...[
                 Builder(
                   builder: (context) {
-                    final selectedDb = platforms
-                        .where((p) => p.ref == _selectedPlatformRef)
-                        .firstOrNull;
-                    // Platform may have been deleted from the database.
+                    final platformAsync = ref.watch(platformByRefStreamProvider(_selectedPlatformRef!));
+                    final selectedDb = platformAsync.value?.toDomain();
                     if (selectedDb == null) return const SizedBox.shrink();
-                    final selectedPoint = LatLng(selectedDb.lat, selectedDb.lon);
+                    final selectedPoint = selectedDb.latestPosition;
                     final selectedPlatform = model.Platform(
-                      platformRef: selectedDb.ref,
+                      platformRef: selectedDb.platformRef,
                       model: selectedDb.model,
                       network: selectedDb.network,
                       latestPosition: selectedPoint,
-                      status: selectedDb.status == 'Active'
-                          ? model.PlatformStatus.active
-                          : model.PlatformStatus.inactive,
-                      operationalStatus: selectedDb.operationalStatus == 'Deployed'
-                          ? model.OperationalStatus.deployed
-                          : model.OperationalStatus.recovered,
+                      status: selectedDb.status,
+                      operationalStatus: selectedDb.operationalStatus,
                       lastUpdated: selectedDb.lastUpdated,
-                      operationLocation: LatLng(
-                        selectedDb.operationLat,
-                        selectedDb.operationLon,
-                      ),
+                      operationLocation: selectedDb.operationLocation,
                     );
                     return Positioned(
                       top: 20,
