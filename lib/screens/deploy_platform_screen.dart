@@ -84,7 +84,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       }
       return;
     }
-    // If successful, pop the screen and show a success message.
+    // If successful, show a success message.
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$_eventType successful!')),
