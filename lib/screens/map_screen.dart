@@ -312,6 +312,19 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final platformsAsync = ref.watch(platformsStreamProvider);
+    
+    // Listen for position updates of the selected platform and auto-center map
+    if (_selectedPlatformRef != null) {
+      ref.listen(platformByRefStreamProvider(_selectedPlatformRef!), (previous, next) {
+        next.whenData((platform) {
+          if (platform != null && mounted) {
+            final newPosition = LatLng(platform.lat, platform.lon);
+            _mapController.move(newPosition, _mapController.camera.zoom);
+          }
+        });
+      });
+    }
+    
     return Scaffold(
       appBar: TopNavigation(title: const Text('SmartTags')),
       body: platformsAsync.when(

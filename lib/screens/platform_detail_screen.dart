@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
@@ -10,7 +11,7 @@ import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying detailed information about a specific platform.
-class PlatformDetailScreen extends ConsumerWidget {
+class PlatformDetailScreen extends ConsumerStatefulWidget {
   /// Creates a [PlatformDetailScreen] widget.
   const PlatformDetailScreen({required this.platformRef, super.key});
 
@@ -18,8 +19,38 @@ class PlatformDetailScreen extends ConsumerWidget {
   final String platformRef;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final platformAsync = ref.watch(platformByRefStreamProvider(platformRef));
+  ConsumerState<PlatformDetailScreen> createState() => _PlatformDetailScreenState();
+}
+
+class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
+  late final MapController _mapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final platformAsync = ref.watch(platformByRefStreamProvider(widget.platformRef));
+    
+    // Listen for position updates and auto-center map
+    ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
+      next.whenData((dbPlatform) {
+        if (dbPlatform != null && mounted) {
+          final newPosition = LatLng(dbPlatform.lat, dbPlatform.lon);
+          _mapController.move(newPosition, _mapController.camera.zoom);
+        }
+      });
+    });
+    
     final platform = platformAsync.value?.toDomain();
     if (platform == null) {
       return Scaffold(
@@ -45,12 +76,10 @@ class PlatformDetailScreen extends ConsumerWidget {
                 child: Stack(
                   children: [
                     FlutterMap(
+                      mapController: _mapController,
                       options: MapOptions(
                         initialCenter: platform.latestPosition,
                         initialZoom: 6,
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.none,
-                        ),
                       ),
                       children: [
                         TileLayer(
