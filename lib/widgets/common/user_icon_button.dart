@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/models/user.dart';
-import 'package:smart_tags/providers/settings_providers.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/screens/user_login.dart';
 import 'package:smart_tags/screens/user_profile.dart';
 
@@ -13,21 +12,33 @@ class UserIconButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.asData?.value;
+    final isLoading = authState.isLoading;
     return IconButton(
-      icon: ref.watch(loginProvider)
+      icon: user != null
             ? const Icon(Icons.person)
             : const Icon(Icons.person_outline),
-      onPressed: () => Navigator.of(context).push(
-          ref.watch(loginProvider)
-            ? MaterialPageRoute<UserProfileScreen>(
-                builder: (BuildContext ctx) => const UserProfileScreen(
-                  user: UserProfile(id: 1, fullName: 'Joe Bloggs', email: 'jb@gmail.com'),
-                ),
+      onPressed: isLoading 
+        ? null
+        : () async {
+        if (user != null) {
+          await Navigator.of(context).push(
+              MaterialPageRoute<UserProfileScreen>(
+                builder: (BuildContext ctx) =>
+                    UserProfileScreen(
+                      user: user,
+                    ),
               )
-            : MaterialPageRoute<UserLoginScreen>(
+          );
+        } else {
+          await Navigator.of(context).push(
+              MaterialPageRoute<UserLoginScreen>(
                 builder: (BuildContext ctx) => const UserLoginScreen(),
-              ),
-      ),
+              )
+          );
+        }
+      }
     );
   }
 }

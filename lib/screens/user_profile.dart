@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/user.dart';
-import 'package:smart_tags/providers/settings_providers.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -52,9 +52,9 @@ class UserProfileScreen extends ConsumerWidget {
                     value: user.fullName,
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      ref.read(loginProvider.notifier).setLoggedOut();
-                      Navigator.of(context).push(
+                    onPressed: () async {
+                      ref.read(authProvider.notifier).logout();
+                      await Navigator.of(context).push(
                         MaterialPageRoute<MainNavigation>(
                           builder: (BuildContext ctx) => const MainNavigation(),
                         )

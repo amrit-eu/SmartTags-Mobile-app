@@ -13,38 +13,18 @@ class AppThemeMode extends Notifier<ThemeMode> {
     return ThemeMode.system;
   }
 
-  /// Reset to system theme
+  /// Resets to system theme
   void setSystem() {
     state = ThemeMode.system;
   }
 
-  /// Enable dark mode
+  /// Enables dark mode
   void setDark() {
     state = ThemeMode.dark;
   }
 
-  /// Enable light mode
+  /// Enables light mode
   void setLight() {
     state = ThemeMode.light;
-  }
-}
-
-/// Provides updates about changes to the user login status
-final loginProvider = NotifierProvider<AppLoginState, bool>(AppLoginState.new);
-
-class AppLoginState extends Notifier<bool> {
-  /// Load initial state. Currently statically initialised.
-  /// Change to using AsyncNotifier once we load from a DB or similar.
-  @override
-  bool build() {
-    return false;
-  }
-
-  void setLoggedIn() {
-    state = true;
-  }
-
-  void setLoggedOut() {
-    state = false;
   }
 }

@@ -1,14 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import 'package:smart_tags/providers/auth_response.dart';
-import 'package:smart_tags/providers/settings_providers.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/screens/user_profile.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
+/// A screen that allows a user to log in via OceanOps using their username and password.
 class UserLoginScreen extends ConsumerStatefulWidget {
+  /// Creates a [UserLoginScreen].
   const UserLoginScreen({super.key});
 
   @override
@@ -19,94 +17,43 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _client = http.Client();
-  bool _isLoading = false;
   bool _obscurePassword = true;
-
-  Future<void> _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
-
-      final authUrl = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/login');
-
-      try {
-        final response = await _client.post(
-            authUrl,
-            headers: <String, String>{
-              'Content-Type': 'application/json; charset=UTF-8',
-            },
-            body: jsonEncode(<String, String>{'login': email, 'password': password}),
-        );
-        if (response.statusCode == 200) {
-          final body = jsonDecode(response.body);
-          final authResponse = AuthResponse.fromJson(body as Map<String, dynamic>);
-
-          ref.read(loginProvider.notifier).setLoggedIn();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).push(
-              MaterialPageRoute<UserProfileScreen>(
-                builder: (BuildContext ctx) => UserProfileScreen(
-                  user: authResponse.contact,
-                ),
-              )
-          );
-        }
-        else if (response.statusCode == 401) {
-          final body = jsonDecode(response.body);
-          final error = body['error'];
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error.toString()),
-              backgroundColor: Colors.red,
-            ),
-          );
-          debugPrint('Got result: $error');
-        }
-        else {
-          final body = jsonDecode(response.body);
-          final error = body['error'];
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error != null ? error.toString() : 'Failed to authenticate'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-
-      } on PlatformException catch (e) {
-        debugPrint('Got error: $e');
-      } on http.ClientException catch (e) {
-        // e.g. failed to fetch, if not on VPN
-        debugPrint('Got error: $e');
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _client.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.isLoading;
+    ref.listen(authProvider, (previous, next) async {
+      await next.whenOrNull(
+        data: (user) async {
+          if (user != null) {
+            await Navigator.of(context).push(
+                MaterialPageRoute<UserProfileScreen>(
+                  builder: (BuildContext ctx) => UserProfileScreen(
+                    user: user,
+                  ),
+                )
+            );
+          }
+        },
+        error: (error, _) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+              Text(error.toString()),
+            ),
+          );
+        },
+      );
+    });
+
     return Scaffold(
       appBar: TopNavigation(title: const Text('Login'), leading: const BackButton()),
       body: SingleChildScrollView(
@@ -215,7 +162,15 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                   const SizedBox(height: 24),
                   // Login Button
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
+                    onPressed: isLoading ? null : () async {
+                      final form = _formKey.currentState;
+                      if (form == null || !form.validate()) {
+                        return;
+                      }
+                      final email = _emailController.text.trim();
+                      final password = _passwordController.text;
+                      await ref.read(authProvider.notifier).login(email, password);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue.shade600,
                       foregroundColor: Colors.white,
@@ -224,7 +179,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? const SizedBox(
                       height: 20,
                       width: 20,
