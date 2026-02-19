@@ -41,7 +41,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late final MapController _mapController;
   late AnimationController _pulseController;
   late AnimationController _popupAnimationController;
-  model.Platform? _selectedPlatform;
+  String? _selectedPlatformRef;
   LatLng? _selectedPlatformPosition;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
@@ -133,9 +133,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
-  void _selectPlatformMarker(model.Platform platform, LatLng position) {
+  void _selectPlatformMarker(String platformRef, LatLng position) {
     setState(() {
-      _selectedPlatform = platform;
+      _selectedPlatformRef = platformRef;
       _selectedPlatformPosition = position;
     });
     // Reset and play animation
@@ -151,7 +151,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   /// Clears the selected platform and its position.
   void _clearSelection() {
     setState(() {
-      _selectedPlatform = null;
+      _selectedPlatformRef = null;
       _selectedPlatformPosition = null;
     });
     // Reset animation when clearing selection
@@ -292,31 +292,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           point: point,
           child: GestureDetector(
             onTap: () {
-              final platformModel = model.Platform(
-                platformRef: dbPlatform.ref,
-                model: dbPlatform.model,
-                network: dbPlatform.network,
-                latestPosition: point,
-                status: dbPlatform.status == 'Active' ? model.PlatformStatus.active : model.PlatformStatus.inactive,
-                operationalStatus: dbPlatform.operationalStatus == 'Deployed'
-                    ? model.OperationalStatus.deployed
-                    : model.OperationalStatus.recovered,
-                lastUpdated: dbPlatform.lastUpdated,
-                operationLocation: LatLng(
-                  dbPlatform.operationLat,
-                  dbPlatform.operationLon,
-                ),
-              );
-              _selectPlatformMarker(platformModel, point);
+              _selectPlatformMarker(dbPlatform.ref, point);
             },
             child: Icon(
               Icons.location_on,
               // Color depends on status and selection.
-              color: _selectedPlatformPosition == point
+              color: _selectedPlatformRef == dbPlatform.ref
                   ? const Color.fromARGB(255, 2, 0, 101)
                   : (dbPlatform.status == 'Active' ? Colors.green : Colors.red),
               // Size increases if this marker is selected.
-              size: _selectedPlatformPosition == point ? 40 : 30,
+              size: _selectedPlatformRef == dbPlatform.ref ? 40 : 30,
             ),
           ),
         ),
@@ -346,7 +331,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 children: [
                   // GestureDetector for tiles to handle clear platform selection on tap.
                   GestureDetector(
-                    onTap: _selectedPlatform != null ? _clearSelection : null,
+                    onTap: _selectedPlatformRef != null ? _clearSelection : null,
                     behavior: HitTestBehavior.opaque,
                     child: Stack(
                       children: [
@@ -373,7 +358,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   ),
                 ],
               ),
-              if (_selectedPlatform != null && _selectedPlatformPosition != null) ...[
+              if (_selectedPlatformRef != null && _selectedPlatformPosition != null) ...[
                 Positioned(
                   top: 20,
                   left: 16,
@@ -384,7 +369,32 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                     alignment: Alignment.topLeft,
                     child: GestureDetector(
                       onTap: () {},
-                      child: _buildPopup(context, _selectedPlatform!),
+                      child: _buildPopup(
+                        context,
+                        platforms
+                            .where((p) => p.ref == _selectedPlatformRef)
+                            .map((dbPlatform) {
+                              final point = LatLng(dbPlatform.lat, dbPlatform.lon);
+                              return model.Platform(
+                                platformRef: dbPlatform.ref,
+                                model: dbPlatform.model,
+                                network: dbPlatform.network,
+                                latestPosition: point,
+                                status: dbPlatform.status == 'Active'
+                                    ? model.PlatformStatus.active
+                                    : model.PlatformStatus.inactive,
+                                operationalStatus: dbPlatform.operationalStatus == 'Deployed'
+                                    ? model.OperationalStatus.deployed
+                                    : model.OperationalStatus.recovered,
+                                lastUpdated: dbPlatform.lastUpdated,
+                                operationLocation: LatLng(
+                                  dbPlatform.operationLat,
+                                  dbPlatform.operationLon,
+                                ),
+                              );
+                            })
+                            .first,
+                      ),
                     ),
                   ),
                 ),
