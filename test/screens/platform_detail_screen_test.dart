@@ -14,16 +14,13 @@ final testDbPlatform = Platform(
   ref: testRef,
   model: 'Model 1',
   network: 'Network 1',
-  lat: 0.0,
-  lon: 0.0,
+  lat: 0,
+  lon: 0,
   status: 'Active',
   operationalStatus: 'Deployed',
   lastUpdated: DateTime(2025),
-  operationLat: 0.0,
-  operationLon: 0.0,
-  wigosId: null,
-  gtsId: null,
-  batchRef: null,
+  operationLat: 0,
+  operationLon: 0,
 );
 
 /// Builds a [ProviderScope] with [platformByRefStreamProvider] overridden

@@ -1,12 +1,3 @@
-// Screen for with a form deploying or recovering a platform.
-// Form fields:
-// Platform ID
-// Platform model
-// Event type (deployment/recovery)
-// location (editable)
-// Time (UTC) (editable)
-// Notes (editable)
-
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,11 +10,23 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
-enum DeployAction { deploy, recover }
+/// enum representing the type of operation being performed on the platform.
+enum DeployAction { 
+  /// Deploying a platform.
+  deploy, 
+  /// Recovering a platform.
+  recover 
+}
 
+/// A screen for deploying or recovering a platform, allowing users to input relevant details.
 class DeployPlatformScreen extends ConsumerStatefulWidget {
-  const DeployPlatformScreen({super.key, required this.action, required this.platform});
+  /// Creates a [DeployPlatformScreen] widget.
+  /// [action] specifies whether the user is deploying or recovering a platform.
+  /// [platform] is the platform being deployed or recovered.
+  const DeployPlatformScreen({required this.action, required this.platform, super.key});
+  /// The type of operation being performed (deploy or recover).
   final DeployAction action;
+  /// The platform being deployed or recovered.
   final Platform platform;
 
   @override
