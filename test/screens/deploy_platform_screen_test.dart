@@ -18,8 +18,9 @@ class FakeLocationFetcher extends LocationFetcher {
   Future<LatLng?> getUserLocation() async => location;
 }
 
-class MockAppDatabase extends AppDatabase {
-  MockAppDatabase() : super.executor(conn.inMemoryConnection());
+class MockErrorDatabase extends AppDatabase {
+  /// A mock database that throws an error on update, used to test error handling in the UI.
+  MockErrorDatabase() : super.executor(conn.inMemoryConnection());
 
   @override
   Future<void> updatePlatforms(List<PlatformsCompanion> platforms) async {
@@ -289,7 +290,7 @@ void main() {
     );
 
     // Set up mocked db that will error on update.
-    final db = MockAppDatabase();
+    final db = MockErrorDatabase();
 
     await tester.pumpWidget(
       ProviderScope(
