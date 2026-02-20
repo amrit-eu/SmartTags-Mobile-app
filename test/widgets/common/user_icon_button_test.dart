@@ -66,7 +66,7 @@ void main() {
 
     // Verify navigation occurred by checking for profile content
     expect(find.text('User ID'), findsOneWidget);
-    expect(find.text('My Profile'), findsWidgets);
-    expect(find.text('Joe Bloggs'), findsWidgets);
+    expect(find.text('My Profile'), findsOneWidget);
+    expect(find.text('Joe Bloggs'), findsOneWidget);
   });
 }

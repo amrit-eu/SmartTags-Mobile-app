@@ -126,6 +126,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
 
                   // Password Field
                   TextFormField(
+                    key: const Key('passwordField'),
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
@@ -163,6 +164,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                   const SizedBox(height: 24),
                   // Login Button
                   ElevatedButton(
+                    key: const Key('logInButton'),
                     onPressed: isLoading ? null : () async {
                       final form = _formKey.currentState;
                       if (form == null || !form.validate()) {
