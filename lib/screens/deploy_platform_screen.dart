@@ -48,7 +48,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
   late Timer timeSubscription;
-  bool useSystemTime = false;
+  bool useSystemTime = true; // Default to true.
   DateTime? _selectedDateTime;
 
   String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
@@ -56,27 +56,40 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   @override
   void initState() {
     super.initState();
-    // Start the time stream subscription to update the time field if the user has selected to use system time.
-    timeSubscription = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (useSystemTime && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime.now();
-          _dateTimeController.text = DateFormat('MMM dd, yyyy, hh:mm a').format(_selectedDateTime!);
-        });
-      }
-    });
-    // Try to fetch the current location and time to pre-populate the form fields. This is done in the build method to ensure it happens when the screen is shown.
-    if (_latitudeController.text.isEmpty || _longitudeController.text.isEmpty) {
-      final locationFetcher = widget.locationFetcher ?? LocationFetcher();
-      unawaited(locationFetcher.getUserLocation().then((location) {
-        if (location != null && mounted) {
-          setState(() {
-            _latitudeController.text = location.latitude.toStringAsFixed(6);
-            _longitudeController.text = location.longitude.toStringAsFixed(6);
-          });
+
+    if (mounted) {
+      _setSelectedDateTime(DateTime.now());
+      // Start the time stream subscription to update the time field if the user has selected to use system time.
+      timeSubscription = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (useSystemTime) {
+          _setSelectedDateTime(DateTime.now());
         }
-      }));
+      });
+      // Try to fetch the current location and time to pre-populate the form fields.
+      if (_latitudeController.text.isEmpty || _longitudeController.text.isEmpty) {
+        final locationFetcher = widget.locationFetcher ?? LocationFetcher();
+        unawaited(
+          locationFetcher.getUserLocation().then((location) {
+            if (location != null) {
+              setState(() {
+                _latitudeController.text = location.latitude.toStringAsFixed(6);
+                _longitudeController.text = location.longitude.toStringAsFixed(6);
+              });
+            }
+          }),
+        );
+      }
     }
+  }
+
+  void _setSelectedDateTime(DateTime? dateTime) {
+    /// Helper method to update the selected date and time, and update the corresponding text field.
+    setState(() {
+      _selectedDateTime = dateTime;
+      _dateTimeController.text = _selectedDateTime != null
+          ? DateFormat('MMM dd, yyyy, hh:mm a').format(_selectedDateTime!)
+          : '';
+    });
   }
 
   @override
@@ -189,16 +202,19 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       spacing: 8,
                       children: [
                         const Text('Use System Time', style: TextStyle(fontSize: 16)),
-                        Checkbox(value: useSystemTime, onChanged: (value) {
-                          setState(() {
-                            useSystemTime = value ?? false;
-                            if (useSystemTime) {
-                              _selectedDateTime = DateTime.now();
-                              _dateTimeController.text = DateFormat('MMM dd, yyyy, hh:mm a').format(_selectedDateTime!);
-                            }
-                          });
-                        }),
-                      ]),
+                        Checkbox(
+                          value: useSystemTime,
+                          onChanged: (value) {
+                            setState(() {
+                              useSystemTime = value ?? false;
+                              if (useSystemTime) {
+                                _setSelectedDateTime(DateTime.now());
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                     TextFormField(
                       decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
                       controller: _dateTimeController,
@@ -230,12 +246,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                           time.hour,
                           time.minute,
                         );
-                        setState(() {
-                          _selectedDateTime = combined;
-                          _dateTimeController.text = DateFormat(
-                            'MMM dd, yyyy, hh:mm a',
-                          ).format(combined);
-                        });
+                        _setSelectedDateTime(combined);
                       },
                     ),
                     TextFormField(
