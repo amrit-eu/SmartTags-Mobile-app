@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,9 +47,37 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
+  late Timer timeSubscription;
+  bool useSystemTime = false;
   DateTime? _selectedDateTime;
 
   String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
+
+  @override
+  void initState() {
+    super.initState();
+    // Start the time stream subscription to update the time field if the user has selected to use system time.
+    timeSubscription = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (useSystemTime && mounted) {
+        setState(() {
+          _selectedDateTime = DateTime.now();
+          _dateTimeController.text = DateFormat('MMM dd, yyyy, hh:mm a').format(_selectedDateTime!);
+        });
+      }
+    });
+    // Try to fetch the current location and time to pre-populate the form fields. This is done in the build method to ensure it happens when the screen is shown.
+    if (_latitudeController.text.isEmpty || _longitudeController.text.isEmpty) {
+      final locationFetcher = widget.locationFetcher ?? LocationFetcher();
+      unawaited(locationFetcher.getUserLocation().then((location) {
+        if (location != null && mounted) {
+          setState(() {
+            _latitudeController.text = location.latitude.toStringAsFixed(6);
+            _longitudeController.text = location.longitude.toStringAsFixed(6);
+          });
+        }
+      }));
+    }
+  }
 
   @override
   void dispose() {
@@ -55,6 +85,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _longitudeController.dispose();
     _dateTimeController.dispose();
     _notesController.dispose();
+    timeSubscription.cancel();
     super.dispose();
   }
 
@@ -137,6 +168,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                           onPressed: () async {
                             final locationFetcher = widget.locationFetcher ?? LocationFetcher();
                             final location = await locationFetcher.getUserLocation();
+                            if (!mounted) return;
                             if (location != null) {
                               setState(() {
                                 _latitudeController.text = location.latitude.toStringAsFixed(6);
@@ -153,28 +185,44 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                         ),
                       ],
                     ),
+                    Row(
+                      spacing: 8,
+                      children: [
+                        const Text('Use System Time', style: TextStyle(fontSize: 16)),
+                        Checkbox(value: useSystemTime, onChanged: (value) {
+                          setState(() {
+                            useSystemTime = value ?? false;
+                            if (useSystemTime) {
+                              _selectedDateTime = DateTime.now();
+                              _dateTimeController.text = DateFormat('MMM dd, yyyy, hh:mm a').format(_selectedDateTime!);
+                            }
+                          });
+                        }),
+                      ]),
                     TextFormField(
                       decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
                       controller: _dateTimeController,
                       readOnly: true,
+                      enabled: !useSystemTime, // Disable manual input if using system time.
                       onTap: () async {
                         final date = await showDatePicker(
-                          context: context,
+                          context: this.context,
                           initialDate: _selectedDateTime ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                           helpText: 'Date',
                         );
                         if (date == null) return;
-                        if (!context.mounted) return;
+                        if (!mounted) return;
                         final time = await showTimePicker(
-                          context: context,
+                          context: this.context,
                           initialTime: _selectedDateTime != null
                               ? TimeOfDay.fromDateTime(_selectedDateTime!)
                               : TimeOfDay.now(),
                           helpText: 'Time (UTC)',
                         );
                         if (time == null) return;
+                        if (!mounted) return;
                         final combined = DateTime(
                           date.year,
                           date.month,
