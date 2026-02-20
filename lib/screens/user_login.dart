@@ -34,7 +34,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
       await next.whenOrNull(
         data: (user) async {
           if (user != null) {
-            await Navigator.of(context).push(
+            await Navigator.of(context).pushReplacement(
                 MaterialPageRoute<UserProfileScreen>(
                   builder: (BuildContext ctx) => UserProfileScreen(
                     user: user,
@@ -69,29 +69,23 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                 children: [
                   const SizedBox(height: 60),
                   // Header
-                  Icon(
+                  const Icon(
                     Icons.lock_outline,
                     size: 80,
-                    color: Colors.blue.shade600,
                   ),
                   const SizedBox(height: 24),
-                  Text(
+                  const Text(
                     'Welcome Back',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Sign in to your account',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
                   ),
                   const SizedBox(height: 48),
 
@@ -100,17 +94,10 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                     key: const Key('emailField'),
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Email',
                       hintText: 'Enter your email',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
-                      ),
+                      prefixIcon: Icon(Icons.email_outlined),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -143,13 +130,6 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                           });
                         },
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.blue.shade600, width: 2),
-                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -174,14 +154,6 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                       final password = _passwordController.text;
                       await ref.read(authProvider.notifier).login(email, password);
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade600,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                     child: isLoading
                         ? const SizedBox(
                       height: 20,
@@ -193,10 +165,6 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                     )
                         : const Text(
                       'Sign In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
                     ),
                   ),
                   const SizedBox(height: 16),

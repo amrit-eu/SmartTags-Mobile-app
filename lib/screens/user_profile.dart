@@ -51,32 +51,21 @@ class UserProfileScreen extends ConsumerWidget {
                     label: 'Full Name',
                     value: user.fullName,
                   ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      ref.read(authProvider.notifier).logout();
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<MainNavigation>(
-                          builder: (BuildContext ctx) => const MainNavigation(),
-                        )
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade600,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Log Out',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                 ],
+              ),
+            ),
+            Container(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton(
+                onPressed: () async {
+                  ref.read(authProvider.notifier).logout();
+                  await Navigator.of(context).push(
+                      MaterialPageRoute<MainNavigation>(
+                        builder: (BuildContext ctx) => const MainNavigation(),
+                      )
+                  );
+                },
+                child: const Text('Log Out'),
               ),
             ),
           ],
