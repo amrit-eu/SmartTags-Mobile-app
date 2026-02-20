@@ -276,7 +276,7 @@ void main() {
     // Clean up the database
     await db.close();
   });
-  testWidgets('Submitting the form with failure of database update.', (tester) async {
+  testWidgets('Submitting the form with failure of database update shows error in the UI.', (tester) async {
     final platform = Platform(
       platformRef: 'TEST-001',
       model: 'Model 1',
