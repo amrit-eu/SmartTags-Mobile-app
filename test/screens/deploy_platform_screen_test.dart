@@ -243,6 +243,9 @@ void main() {
       ),
     );
     await tester.pump();
+    // Uncheck use system time checkbox to enable the recovery time field
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
     await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
@@ -305,6 +308,10 @@ void main() {
       ),
     );
     await tester.pump();
+    // Uncheck use system time checkbox to enable the recovery time field
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
     await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
@@ -317,5 +324,44 @@ void main() {
 
     // Verify that an error SnackBar is shown
     expect(find.text('Failed to update platform.'), findsOneWidget);
+  });
+  // Test that the form submits system time when the checkbox is checked, and that the recovery time field is disabled
+  testWidgets('Test use system time checkbox disables user input into the time field.', (tester) async {
+    final platform = Platform(
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.active,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: platform,
+            action: DeployAction.recover,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    // Verify that the recovery time field is disabled and the checkbox is checked by default
+    final recoveryTimeField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
+    final useSystemTimeCheckbox = tester.widget<Checkbox>(find.byType(Checkbox));
+    expect(recoveryTimeField.enabled, false);
+    expect(useSystemTimeCheckbox.value, true);
+
+    // Uncheck the checkbox to enable the recovery time field
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    // Re-fetch the widgets after the state change
+    final updatedRecoveryTimeField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
+    final updatedUseSystemTimeCheckbox = tester.widget<Checkbox>(find.byType(Checkbox));
+    expect(updatedRecoveryTimeField.enabled, true);
+    expect(updatedUseSystemTimeCheckbox.value, false);
   });
 }
