@@ -50,7 +50,7 @@ void main() {
       );
 
       expect(find.byType(UserIconButton), findsOneWidget);
-      expect(find.byIcon(Icons.person), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
     });
 
     testWidgets('TopNavigation displays SettingsMenu action by default', (tester) async {
@@ -153,7 +153,7 @@ void main() {
       );
 
       expect(find.byType(UserIconButton), findsOne);
-      expect(find.byIcon(Icons.person), findsOne);
+      expect(find.byIcon(Icons.person_outline), findsOne);
     });
   });
 }

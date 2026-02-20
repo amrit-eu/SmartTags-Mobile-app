@@ -22,7 +22,7 @@ class AuthException implements Exception {
 /// or malformed responses.
 class AuthService {
   /// Creates an [AuthService] with the provided HTTP client.
-  AuthService(this._client);
+  AuthService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 

@@ -1,13 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/services/auth_service.dart';
 
 /// Riverpod provider exposing an [AuthService] instance.
 /// Use this provider to access authentication API via the [AuthNotifier].
 final authServiceProvider = Provider<AuthService>((ref) {
-  final client = http.Client();
-  return AuthService(client);
+  return AuthService();
 });
 
 /// A Riverpod [AsyncNotifier] managing authentication state.

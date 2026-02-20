@@ -97,6 +97,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
 
                   // Email Field
                   TextFormField(
+                    key: const Key('emailField'),
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(

@@ -19,7 +19,7 @@ class UserIconButton extends ConsumerWidget {
       icon: user != null
             ? const Icon(Icons.person)
             : const Icon(Icons.person_outline),
-      onPressed: isLoading 
+      onPressed: isLoading
         ? null
         : () async {
         if (user != null) {
