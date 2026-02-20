@@ -37,7 +37,8 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final uri = Uri.parse('https://amrit-gateway.isival.ifremer.fr/api/oceanops/data/auth/login');
+    // TODO(eawetchy): Change to https://amrit-gateway.isival.ifremer.fr/api/oceanops/auth/login once code on Isival is up to date)
+    final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/login');
 
     try {
       final response = await _client.post(
