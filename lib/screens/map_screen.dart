@@ -373,19 +373,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 Builder(
                   builder: (context) {
                     final platformAsync = ref.watch(platformByRefStreamProvider(_selectedPlatformRef!));
-                    final selectedDb = platformAsync.value?.toDomain();
-                    if (selectedDb == null) return const SizedBox.shrink();
-                    final selectedPoint = selectedDb.latestPosition;
-                    final selectedPlatform = model.Platform(
-                      platformRef: selectedDb.platformRef,
-                      model: selectedDb.model,
-                      network: selectedDb.network,
-                      latestPosition: selectedPoint,
-                      status: selectedDb.status,
-                      operationalStatus: selectedDb.operationalStatus,
-                      lastUpdated: selectedDb.lastUpdated,
-                      operationLocation: selectedDb.operationLocation,
-                    );
+                    final selectedPlatform = platformAsync.value?.toDomain();
+                    if (selectedPlatform == null) return const SizedBox.shrink();
                     return Positioned(
                       top: 20,
                       left: 16,
