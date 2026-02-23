@@ -30,7 +30,7 @@ class MockFailedAuthService extends AuthService {
   }
 }
 
-ProviderContainer MockSetup() {
+ProviderContainer mockSetup() {
   final mockService = MockSuccessAuthService();
   return ProviderContainer(
     overrides: [
@@ -49,7 +49,7 @@ void main() {
   });
 
   test('login success sets user', () async {
-    final container = MockSetup();
+    final container = mockSetup();
     final notifier = container.read(authProvider.notifier);
 
     await notifier.login('test@test.com', 'password');
@@ -73,7 +73,7 @@ void main() {
   });
 
   test('logout sets user to null', () async {
-    final container = MockSetup();
+    final container = mockSetup();
     final notifier = container.read(authProvider.notifier);
     await notifier.login('test@test.com', 'password');
     expect(container.read(authProvider).value, testUser);
@@ -83,7 +83,7 @@ void main() {
   });
 
   test('login emits loading then data', () async {
-    final container = MockSetup();
+    final container = mockSetup();
 
     final notifier = container.read(authProvider.notifier);
     final future = notifier.login('test@test.com', 'password');
