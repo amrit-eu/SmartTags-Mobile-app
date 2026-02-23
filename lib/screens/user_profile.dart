@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that displays information about a [UserProfile].
 ///
 /// Shows the user's avatar, ID, email, and full name.
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends ConsumerWidget {
   /// Creates a [UserProfileScreen] for the given [user].
   const UserProfileScreen({required this.user, super.key});
 
@@ -14,7 +17,7 @@ class UserProfileScreen extends StatelessWidget {
   final UserProfile user;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: TopNavigation(title: const Text('My Profile'), leading: const BackButton()),
       body: SingleChildScrollView(
@@ -49,6 +52,26 @@ class UserProfileScreen extends StatelessWidget {
                     value: user.fullName,
                   ),
                 ],
+              ),
+            ),
+            Container(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton(
+                onPressed: () async {
+                  ref.read(authProvider.notifier).logout();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                      Text('Logout successful'),
+                    ),
+                  );
+                  await Navigator.of(context).push(
+                      MaterialPageRoute<MainNavigation>(
+                        builder: (BuildContext ctx) => const MainNavigation(),
+                      )
+                  );
+                },
+                child: const Text('Log Out'),
               ),
             ),
           ],
