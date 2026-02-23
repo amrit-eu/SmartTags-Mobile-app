@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/helpers/connection/connection_checking.dart';
@@ -26,6 +29,10 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp> {
 
+  late CheckConnection checker;
+  late Connectivity connectivity;
+  late Stream<List<ConnectivityResult>> connectivityStream;
+
   @override
   Widget build(BuildContext context) {
     ref.watch(initialSyncProvider);
@@ -42,12 +49,19 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
-    CheckConnection().init();
+    connectivity = Connectivity();
+    connectivityStream = connectivity.onConnectivityChanged;
+    checker = CheckConnection(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
+      connectivityStream: connectivityStream
+    );
+    unawaited(checker.check());
+    checker.init();
   }
 
   @override
   void dispose() {
-    CheckConnection().stop();
+    unawaited(checker.stop());
     super.dispose();
   }
 }
