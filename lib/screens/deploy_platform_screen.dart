@@ -89,6 +89,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$_eventType successful!')),
       );
+      Navigator.pop(context);
     }
   }
 

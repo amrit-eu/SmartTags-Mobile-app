@@ -189,7 +189,7 @@ void main() {
           home: DeployPlatformScreen(
             platform: testPlatform,
             action: DeployAction.deploy,
-            locationFetcher: FakeLocationFetcher(null), // Simulate location fetch failure
+            locationFetcher: FakeLocationFetcher(null),
           ),
         ),
       ),
@@ -238,9 +238,17 @@ void main() {
           databaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: platform,
-            action: DeployAction.recover,
+          home: Navigator(
+            pages: [
+              MaterialPage(child: Scaffold(body: Container())),
+              MaterialPage(
+                child: DeployPlatformScreen(
+                  platform: platform,
+                  action: DeployAction.recover,
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {},
           ),
         ),
       ),
@@ -300,9 +308,17 @@ void main() {
           databaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: platform,
-            action: DeployAction.recover,
+          home: Navigator(
+            pages: [
+              MaterialPage(child: Scaffold(body: Container())),
+              MaterialPage(
+                child: DeployPlatformScreen(
+                  platform: platform,
+                  action: DeployAction.recover,
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {},
           ),
         ),
       ),
