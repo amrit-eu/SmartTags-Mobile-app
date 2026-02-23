@@ -127,7 +127,7 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Notes'), findsOneWidget);
   });
-  testWidgets('Deploy Platform has correct button', (tester) async {
+  testWidgets('Deploy Platform has correct buttons', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
@@ -140,8 +140,9 @@ void main() {
     );
     await tester.pump();
     expect(find.widgetWithText(ElevatedButton, 'Deploy Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
-  testWidgets('Recover Platform has correct button', (tester) async {
+  testWidgets('Recover Platform has correct buttons', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
@@ -154,6 +155,7 @@ void main() {
     );
     await tester.pump();
     expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
   testWidgets('Tapping location icon auto-populates lat/lon', (tester) async {
     const fakeLocation = LatLng(12.345, 67.890);
