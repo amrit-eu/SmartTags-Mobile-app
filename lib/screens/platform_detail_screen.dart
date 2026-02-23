@@ -218,44 +218,29 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'deploy',
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute<DeployPlatformScreen>(
-                  builder: (context) => DeployPlatformScreen(
-                    action: DeployAction.deploy,
-                    platform: platform,
-                  ),
+      floatingActionButton: 
+        FloatingActionButton.extended(
+          heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute<DeployPlatformScreen>(
+                builder: (context) => DeployPlatformScreen(
+                  action: platform.operationalStatus == OperationalStatus.deployed
+                  ? DeployAction.recover
+                  : DeployAction.deploy,
+                  platform: platform,
                 ),
-              );
-            },
-            icon: const Icon(Icons.arrow_circle_up_rounded),
-            label: const Text('Deploy'),
-          ),
-          const SizedBox(width: 12),
-          FloatingActionButton.extended(
-            heroTag: 'recover',
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute<DeployPlatformScreen>(
-                  builder: (context) => DeployPlatformScreen(
-                    action: DeployAction.recover,
-                    platform: platform,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.repeat),
-            label: const Text('Recover'),
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+          icon: platform.operationalStatus == OperationalStatus.deployed
+          ? const Icon(Icons.repeat)
+          : const Icon(Icons.arrow_circle_up_rounded),
+          label: platform.operationalStatus == OperationalStatus.deployed
+          ? const Text('Recover')
+          : const Text('Deploy'),
+        ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
