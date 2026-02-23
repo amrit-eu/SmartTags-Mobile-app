@@ -59,6 +59,12 @@ class UserProfileScreen extends ConsumerWidget {
               child: ElevatedButton(
                 onPressed: () async {
                   ref.read(authProvider.notifier).logout();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                      Text('Logout successful'),
+                    ),
+                  );
                   await Navigator.of(context).push(
                       MaterialPageRoute<MainNavigation>(
                         builder: (BuildContext ctx) => const MainNavigation(),

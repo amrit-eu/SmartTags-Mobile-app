@@ -34,6 +34,12 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
       await next.whenOrNull(
         data: (user) async {
           if (user != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content:
+                Text('Login successful'),
+              ),
+            );
             await Navigator.of(context).pushReplacement(
                 MaterialPageRoute<UserProfileScreen>(
                   builder: (BuildContext ctx) => UserProfileScreen(
