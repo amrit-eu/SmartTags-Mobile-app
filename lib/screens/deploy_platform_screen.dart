@@ -133,6 +133,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$_eventType successful!')),
       );
+      Navigator.pop(context);
     }
   }
 
@@ -254,10 +255,21 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       controller: _notesController,
                       maxLines: 3,
                     ),
-                    ElevatedButton(
-                      onPressed: _submitForm,
-                      child: Text('${widget.action.name.capitalize()} Platform'),
-                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 16,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                          ),
+                          child: Text('${widget.action.name.capitalize()} Platform'),
+                        ),
+                        ElevatedButton(onPressed: () => {
+                          Navigator.pop(context)
+                        }, child: const Text('Cancel')),
+                      ],)
                   ],
                 ),
               ),

@@ -18,8 +18,9 @@ class FakeLocationFetcher extends LocationFetcher {
   Future<LatLng?> getUserLocation() async => location;
 }
 
-class MockAppDatabase extends AppDatabase {
-  MockAppDatabase() : super.executor(conn.inMemoryConnection());
+class MockErrorDatabase extends AppDatabase {
+  /// A mock database that throws an error on update, used to test error handling in the UI.
+  MockErrorDatabase() : super.executor(conn.inMemoryConnection());
 
   @override
   Future<void> updatePlatforms(List<PlatformsCompanion> platforms) async {
@@ -126,7 +127,7 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Notes'), findsOneWidget);
   });
-  testWidgets('Deploy Platform has correct button', (tester) async {
+  testWidgets('Deploy Platform has correct buttons', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
@@ -139,8 +140,9 @@ void main() {
     );
     await tester.pump();
     expect(find.widgetWithText(ElevatedButton, 'Deploy Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
-  testWidgets('Recover Platform has correct button', (tester) async {
+  testWidgets('Recover Platform has correct buttons', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
@@ -153,6 +155,7 @@ void main() {
     );
     await tester.pump();
     expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
   testWidgets('Tapping location icon auto-populates lat/lon', (tester) async {
     const fakeLocation = LatLng(12.345, 67.890);
@@ -186,7 +189,7 @@ void main() {
           home: DeployPlatformScreen(
             platform: testPlatform,
             action: DeployAction.deploy,
-            locationFetcher: FakeLocationFetcher(null), // Simulate location fetch failure
+            locationFetcher: FakeLocationFetcher(null),
           ),
         ),
       ),
@@ -235,9 +238,17 @@ void main() {
           databaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: platform,
-            action: DeployAction.recover,
+          home: Navigator(
+            pages: [
+              MaterialPage(child: Scaffold(body: Container())),
+              MaterialPage(
+                child: DeployPlatformScreen(
+                  platform: platform,
+                  action: DeployAction.recover,
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {},
           ),
         ),
       ),
@@ -279,7 +290,7 @@ void main() {
     // Clean up the database
     await db.close();
   });
-  testWidgets('Submitting the form with failure of database update.', (tester) async {
+  testWidgets('Submitting the form with failure of database update shows error in the UI.', (tester) async {
     final platform = Platform(
       platformRef: 'TEST-001',
       model: 'Model 1',
@@ -292,7 +303,7 @@ void main() {
     );
 
     // Set up mocked db that will error on update.
-    final db = MockAppDatabase();
+    final db = MockErrorDatabase();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -300,9 +311,17 @@ void main() {
           databaseProvider.overrideWithValue(db),
         ],
         child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: platform,
-            action: DeployAction.recover,
+          home: Navigator(
+            pages: [
+              MaterialPage(child: Scaffold(body: Container())),
+              MaterialPage(
+                child: DeployPlatformScreen(
+                  platform: platform,
+                  action: DeployAction.recover,
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {},
           ),
         ),
       ),
