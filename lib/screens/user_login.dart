@@ -90,7 +90,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sign in to your account',
+                    'Sign in to your OceanOPS account',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
