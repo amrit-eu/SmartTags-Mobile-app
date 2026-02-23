@@ -38,7 +38,7 @@ class AuthService {
     required String password,
   }) async {
     // TODO(eawetchy): Change to https://amrit-gateway.isival.ifremer.fr/api/oceanops/auth/login once code on Isival is up to date)
-    final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/login');
+    final uri = Uri.parse('https://amrit-gateway.isival.ifremer.fr/api/oceanops/data/auth/login');
 
     try {
       final response = await _client.post(
@@ -52,14 +52,16 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode != 200) {
+      final successCodes = <int>[200, 201];
+      if (successCodes.contains(response.statusCode)) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final authResponse = AuthResponse.fromJson(json);
+        return authResponse.contact;
+      } else if (response.statusCode == 401) {
         throw const AuthException('Invalid credentials');
+      } else {
+        throw const AuthException('Unable to authenticate');
       }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final authResponse = AuthResponse.fromJson(json);
-      return authResponse.contact;
-
     } on http.ClientException catch (e) {
       throw AuthException('Network error: ${e.message}');
     } on FormatException {
