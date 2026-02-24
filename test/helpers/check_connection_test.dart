@@ -33,7 +33,7 @@ void main() {
       controller.add([ConnectivityResult.none]);
       await tester.pumpAndSettle();
       expect(find.byType(SnackBar), findsOneWidget);
-      expect(find.text('You are not connected to any network'), findsOne);
+      expect(find.text('Network connection lost'), findsOne);
 
       await tester.runAsync(() async {
         await checker.stop();
@@ -56,7 +56,7 @@ void main() {
       controller.add([ConnectivityResult.wifi]);
       await tester.pumpAndSettle();
       expect(find.byType(SnackBar), findsOneWidget);
-      expect(find.text('You are now connected to wifi'), findsOne);
+      expect(find.text('Network connection available (WiFi)'), findsOne);
 
       await tester.runAsync(() async {
         await checker.stop();
