@@ -47,38 +47,48 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
-  late Timer timeSubscription;
-  bool useSystemTime = true; // Default to true.
+  Timer? liveLocationSubscription;
+  bool useLiveLocation = false; // Default to false to save battery.
   DateTime? _selectedDateTime;
 
   String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
 
-  @override
-  void initState() {
-    super.initState();
-
-    if (mounted) {
-      _setSelectedDateTime(DateTime.now());
-      // Start the time stream subscription to update the time field if the user has selected to use system time.
-      timeSubscription = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (useSystemTime) {
-          _setSelectedDateTime(DateTime.now());
-        }
-      });
-      // Try to fetch the current location and time to pre-populate the form fields.
-      if (_latitudeController.text.isEmpty || _longitudeController.text.isEmpty) {
+  void toggleLiveUpdates() {
+    setState(() {
+      useLiveLocation = !useLiveLocation; // Toggle the live location updates on or off.
+    });
+    if (useLiveLocation) {
+      // Start the time stream subscription to update the lat/lon and time fields if the user has clicked icon.
+      liveLocationSubscription = Timer.periodic(const Duration(seconds: 1), (timer) {
         final locationFetcher = widget.locationFetcher ?? LocationFetcher();
         unawaited(
           locationFetcher.getUserLocation().then((location) {
             if (location != null) {
+              // Update the lat/lon fields with the live location data.
               setState(() {
                 _latitudeController.text = location.latitude.toStringAsFixed(6);
                 _longitudeController.text = location.longitude.toStringAsFixed(6);
               });
+              // Update the time field as well to reflect the current time.
+              _setSelectedDateTime(DateTime.now());
+            } else {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to fetch location. Live updates disabled.')),
+                );
+              }
+              setState(() {
+                useLiveLocation = false; // Disable live location if fetching fails to save battery.
+              });
+              liveLocationSubscription?.cancel();
             }
           }),
         );
-      }
+      });
+    }
+    // If live location updates are turned off, cancel the subscription to stop fetching location data.
+    if (!useLiveLocation && (liveLocationSubscription?.isActive ?? false)) {
+      liveLocationSubscription?.cancel();
     }
   }
 
@@ -98,7 +108,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _longitudeController.dispose();
     _dateTimeController.dispose();
     _notesController.dispose();
-    timeSubscription.cancel();
+    if (liveLocationSubscription?.isActive ?? false) {
+      liveLocationSubscription?.cancel();
+    }
     super.dispose();
   }
 
@@ -168,6 +180,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                             decoration: const InputDecoration(labelText: 'Latitude'),
                             controller: _latitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                            enabled: !useLiveLocation, // Disable manual input if using live location.
                           ),
                         ),
                         Expanded(
@@ -175,44 +188,14 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                             decoration: const InputDecoration(labelText: 'Longitude'),
                             controller: _longitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                            enabled: !useLiveLocation, // Disable manual input if using live location.
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.my_location),
-                          onPressed: () async {
-                            final locationFetcher = widget.locationFetcher ?? LocationFetcher();
-                            final location = await locationFetcher.getUserLocation();
-                            if (!mounted) return;
-                            if (location != null) {
-                              setState(() {
-                                _latitudeController.text = location.latitude.toStringAsFixed(6);
-                                _longitudeController.text = location.longitude.toStringAsFixed(6);
-                              });
-                            } else {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to fetch location. Please enter manually.')),
-                                );
-                              }
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    Row(
-                      spacing: 8,
-                      children: [
-                        const Text('Use System Time', style: TextStyle(fontSize: 16)),
-                        Checkbox(
-                          value: useSystemTime,
-                          onChanged: (value) {
-                            setState(() {
-                              useSystemTime = value ?? false;
-                              if (useSystemTime) {
-                                _setSelectedDateTime(DateTime.now());
-                              }
-                            });
-                          },
+                          color: useLiveLocation ? Colors.lightBlue : null,
+                          onPressed: toggleLiveUpdates,
+                          tooltip: useLiveLocation ? 'Disable live location updates' : 'Enable live location updates',
                         ),
                       ],
                     ),
@@ -220,7 +203,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
                       controller: _dateTimeController,
                       readOnly: true,
-                      enabled: !useSystemTime, // Disable manual input if using system time.
+                      enabled: !useLiveLocation, // Disable manual input if using system time.
                       onTap: () async {
                         final date = await showDatePicker(
                           context: this.context,
@@ -266,10 +249,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                           ),
                           child: Text('${widget.action.name.capitalize()} Platform'),
                         ),
-                        ElevatedButton(onPressed: () => {
-                          Navigator.pop(context)
-                        }, child: const Text('Cancel')),
-                      ],)
+                        ElevatedButton(onPressed: () => {Navigator.pop(context)}, child: const Text('Cancel')),
+                      ],
+                    ),
                   ],
                 ),
               ),
