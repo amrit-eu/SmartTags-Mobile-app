@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
@@ -47,7 +48,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
-  Timer? liveLocationSubscription;
+
+  StreamSubscription<Position>? _liveLocationSubscription;
+  StreamSubscription<ServiceStatus>? _serviceStatusSubscription;
   bool useLiveLocation = false; // Default to false to save battery.
   DateTime? _selectedDateTime;
 
@@ -58,37 +61,38 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       useLiveLocation = !useLiveLocation; // Toggle the live location updates on or off.
     });
     if (useLiveLocation) {
-      // Start the time stream subscription to update the lat/lon and time fields if the user has clicked icon.
-      liveLocationSubscription = Timer.periodic(const Duration(seconds: 1), (timer) {
-        final locationFetcher = widget.locationFetcher ?? LocationFetcher();
-        unawaited(
-          locationFetcher.getUserLocation().then((location) {
-            if (location != null) {
-              // Update the lat/lon fields with the live location data.
-              setState(() {
-                _latitudeController.text = location.latitude.toStringAsFixed(6);
-                _longitudeController.text = location.longitude.toStringAsFixed(6);
-              });
-              // Update the time field as well to reflect the current time.
+      // Store the subscription so it can be properly canceled later
+      _liveLocationSubscription = Geolocator.getPositionStream().listen(
+        (position) {
+          if (mounted) {
+            setState(() {
+              _latitudeController.text = position.latitude.toStringAsFixed(6);
+              _longitudeController.text = position.longitude.toStringAsFixed(6);
               _setSelectedDateTime(DateTime.now());
-            } else {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Failed to fetch location. Live updates disabled.')),
-                );
-              }
-              setState(() {
-                useLiveLocation = false; // Disable live location if fetching fails to save battery.
-              });
-              liveLocationSubscription?.cancel();
-            }
-          }),
-        );
-      });
+            });
+          }
+        },
+        onError: (Object error) {
+          debugPrint('Location stream error: $error');
+          if (mounted && useLiveLocation) {
+            toggleLiveUpdates(); // Stop live updates on error
+          }
+        },
+      );
+      // Monitor location service status changes
+      _serviceStatusSubscription = Geolocator.getServiceStatusStream().listen(
+        (status) {
+          if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
+            debugPrint('Location services disabled. Stopping live updates.');
+            toggleLiveUpdates(); // Stop live updates when services are disabled
+          }
+        },
+      );
     }
-    // If live location updates are turned off, cancel the subscription to stop fetching location data.
-    if (!useLiveLocation && (liveLocationSubscription?.isActive ?? false)) {
-      liveLocationSubscription?.cancel();
+    // Cancel the listener subscription to stop battery drain
+    if (!useLiveLocation) {
+      unawaited(_liveLocationSubscription?.cancel());
+      unawaited(_serviceStatusSubscription?.cancel());
     }
   }
 
@@ -108,9 +112,8 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _longitudeController.dispose();
     _dateTimeController.dispose();
     _notesController.dispose();
-    if (liveLocationSubscription?.isActive ?? false) {
-      liveLocationSubscription?.cancel();
-    }
+    unawaited(_liveLocationSubscription?.cancel());
+    unawaited(_serviceStatusSubscription?.cancel());
     super.dispose();
   }
 
