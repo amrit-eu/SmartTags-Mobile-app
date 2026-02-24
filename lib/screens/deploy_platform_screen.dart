@@ -157,7 +157,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           model: Value(widget.platform.model),
           lat: Value(double.parse(_latitudeController.text)),
           lon: Value(double.parse(_longitudeController.text)),
-          lastUpdated: Value(_selectedDateTime ?? DateTime.now()),
+          lastUpdated: Value(_selectedDateTime!),
           operationLat: Value(double.parse(_latitudeController.text)),
           operationLon: Value(double.parse(_longitudeController.text)),
           operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
