@@ -1,22 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/database/db_connection.dart' as conn;
-import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
-
-class FakeLocationFetcher extends LocationFetcher {
-  FakeLocationFetcher(this.location);
-  final LatLng? location;
-
-  @override
-  Future<LatLng?> getUserLocation() async => location;
-}
 
 class MockErrorDatabase extends AppDatabase {
   /// A mock database that throws an error on update, used to test error handling in the UI.
@@ -157,25 +151,7 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
-  testWidgets('Tapping location icon shows toast when location is not found', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: testPlatform,
-            action: DeployAction.deploy,
-            locationFetcher: FakeLocationFetcher(null),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    // Tap the location icon button
-    await tester.tap(find.byIcon(Icons.my_location));
-    await tester.pump(const Duration(milliseconds: 1500)); // Wait for async operations to complete
-    // Verify that a SnackBar is shown with the expected message
-    expect(find.text('Failed to fetch location. Live updates disabled.'), findsOneWidget);
-  });
+
   testWidgets('Submitting the form updates the corresponding platform record in the database', (tester) async {
     final platform = Platform(
       platformRef: 'TEST-001',
@@ -314,7 +290,7 @@ void main() {
     // Verify that an error SnackBar is shown
     expect(find.text('Failed to update platform.'), findsOneWidget);
   });
-  testWidgets('Test live location updates the lat/lon and time fields when enabled.', (tester) async {
+  testWidgets('Live location updates the lat/lon and time fields when enabled.', (tester) async {
     final platform = Platform(
       platformRef: 'TEST-001',
       model: 'Model 1',
@@ -325,9 +301,10 @@ void main() {
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
-    
-    // Use a fake location fetcher that returns a fixed location for testing.
-    final fakeLocationFetcher = FakeLocationFetcher(const LatLng(12.345, 67.890));
+
+    // Create mock streams for testing
+    final positionController = StreamController<Position>();
+    final statusController = StreamController<ServiceStatus>();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -335,25 +312,93 @@ void main() {
           home: DeployPlatformScreen(
             platform: platform,
             action: DeployAction.deploy,
-            locationFetcher: fakeLocationFetcher,
+            positionStream: positionController.stream,
+            serviceStatusStream: statusController.stream,
           ),
         ),
       ),
     );
     await tester.pump();
+
     // Tap the location icon button to enable live location updates
     await tester.tap(find.byIcon(Icons.my_location));
-    await tester.pump(const Duration(milliseconds: 1500)); // Wait for async operations to complete
-    
-    // Verify that the latitude and longitude fields are updated with the fake location
+    await tester.pump();
+
+    // Emit a position update
+    final mockPosition = Position(
+      latitude: 12.345,
+      longitude: 67.890,
+      timestamp: DateTime(2026, 1, 1, 12),
+      accuracy: 10,
+      altitude: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      headingAccuracy: 0,
+      speed: 0,
+      speedAccuracy: 0,
+    );
+    positionController.add(mockPosition);
+    await tester.pump();
+
+    // Make sure that the latitude and longitude fields are updated
     final latField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Latitude'));
     final lonField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Longitude'));
     expect(latField.controller?.text, '12.345000');
     expect(lonField.controller?.text, '67.890000');
 
-    // Verify that the time field is populated with a time.
+    // Make sure that the time field is updated
     final timeField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Deployment Time (UTC)'));
     final timeValue = timeField.controller?.text;
-    expect(timeValue, isNotNull);
+    expect(timeValue, 'Jan 01, 2026, 12:00 PM');
+
+    // Clean up
+    await positionController.close();
+    await statusController.close();
+  });
+  testWidgets('Live location stops when location services are disabled.', (tester) async {
+    final platform = Platform(
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.active,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    // Create mock streams for testing
+    final positionController = StreamController<Position>();
+    final statusController = StreamController<ServiceStatus>();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: platform,
+            action: DeployAction.deploy,
+            positionStream: positionController.stream,
+            serviceStatusStream: statusController.stream,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Tap the location icon button to enable live location updates
+    await tester.tap(find.byIcon(Icons.my_location));
+    await tester.pump();
+
+    // Emit a ServiceStatus.disabled event
+    statusController.add(ServiceStatus.disabled);
+    // Allow time for callback and the snackbar to appear
+    await tester.pumpAndSettle();
+
+    // Make sure that the expected SnackBar is shown
+    expect(find.text('Location services disabled. Live updates stopped.'), findsOneWidget);
+
+    // Clean up
+    await positionController.close();
+    await statusController.close();
   });
 }

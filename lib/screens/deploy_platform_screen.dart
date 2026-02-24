@@ -7,7 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
-import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -27,7 +26,13 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// Creates a [DeployPlatformScreen] widget.
   /// [action] specifies whether the user is deploying or recovering a platform.
   /// [platform] is the platform being deployed or recovered.
-  const DeployPlatformScreen({required this.action, required this.platform, this.locationFetcher, super.key});
+  const DeployPlatformScreen({
+    required this.action,
+    required this.platform,
+    this.positionStream,
+    this.serviceStatusStream,
+    super.key,
+  });
 
   /// The type of operation being performed (deploy or recover).
   final DeployAction action;
@@ -35,9 +40,13 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// The platform being deployed or recovered.
   final Platform platform;
 
-  /// Optional test / injection hook to provide a LocationFetcher
+  /// Optional test injection for position stream
   @visibleForTesting
-  final LocationFetcher? locationFetcher;
+  final Stream<Position>? positionStream;
+
+  /// Optional test injection for service status stream
+  @visibleForTesting
+  final Stream<ServiceStatus>? serviceStatusStream;
 
   @override
   ConsumerState<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
@@ -61,35 +70,51 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       useLiveLocation = !useLiveLocation; // Toggle the live location updates on or off.
     });
     if (useLiveLocation) {
-      // Store the subscription so it can be properly canceled later
-      _liveLocationSubscription = Geolocator.getPositionStream().listen(
+      // Create fresh streams from providers or use injected ones (for testing)
+      // Injected streams are broadcast streams from tests, production streams are created fresh
+      final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
+      final serviceStatusStream = widget.serviceStatusStream ?? Geolocator.getServiceStatusStream();
+
+      // Monitor location changes.
+      _liveLocationSubscription = positionStream.listen(
         (position) {
           if (mounted) {
             setState(() {
               _latitudeController.text = position.latitude.toStringAsFixed(6);
               _longitudeController.text = position.longitude.toStringAsFixed(6);
-              _setSelectedDateTime(DateTime.now());
+              _setSelectedDateTime(position.timestamp);
             });
           }
         },
         onError: (Object error) {
           debugPrint('Location stream error: $error');
           if (mounted && useLiveLocation) {
-            toggleLiveUpdates(); // Stop live updates on error
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Error fetching live location. Live updates stopped.')),
+            );
+            // addPostFrameCallback used to avoid setState during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) toggleLiveUpdates();
+            });
           }
         },
       );
-      // Monitor location service status changes
-      _serviceStatusSubscription = Geolocator.getServiceStatusStream().listen(
+      // Monitor location service status changes.
+      _serviceStatusSubscription = serviceStatusStream.listen(
         (status) {
           if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
-            debugPrint('Location services disabled. Stopping live updates.');
-            toggleLiveUpdates(); // Stop live updates when services are disabled
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
+            );
+            // addPostFrameCallback used to avoid setState during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) toggleLiveUpdates();
+            });
           }
         },
       );
     }
-    // Cancel the listener subscription to stop battery drain
+    // Cancel the listener subscriptions to stop battery drain
     if (!useLiveLocation) {
       unawaited(_liveLocationSubscription?.cancel());
       unawaited(_serviceStatusSubscription?.cancel());
@@ -97,7 +122,8 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   }
 
   void _setSelectedDateTime(DateTime? dateTime) {
-    /// Helper method to update the selected date and time, and update the corresponding text field.
+    /// Helper method to update the selected date and time,
+    /// and update the corresponding text field.
     setState(() {
       _selectedDateTime = dateTime;
       _dateTimeController.text = _selectedDateTime != null
