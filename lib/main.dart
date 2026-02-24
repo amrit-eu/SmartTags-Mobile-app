@@ -1,5 +1,10 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/helpers/connection/connection_checking.dart';
+import 'package:smart_tags/helpers/scaffold_messenger.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
@@ -14,20 +19,50 @@ Future<void> main() async {
 }
 
 /// The root widget of the application.
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   /// Creates a [MyApp] widget.
   const MyApp({super.key});
 
+@override
+  ConsumerState<ConsumerStatefulWidget> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+
+  late CheckConnection checker;
+  late Connectivity connectivity;
+  late Stream<List<ConnectivityResult>> connectivityStream;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     ref.watch(initialSyncProvider);
     return MaterialApp(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       home: const MainNavigation(),
       themeMode: ref.watch(themeProvider),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    connectivity = Connectivity();
+    connectivityStream = connectivity.onConnectivityChanged;
+    checker = CheckConnection(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
+      connectivityStream: connectivityStream
+    );
+    unawaited(checker.check());
+    checker.init();
+  }
+
+  @override
+  void dispose() {
+    unawaited(checker.stop());
+    super.dispose();
   }
 }
 
