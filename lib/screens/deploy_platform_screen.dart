@@ -71,7 +71,6 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     });
     if (useLiveLocation) {
       // Create fresh streams from providers or use injected ones (for testing)
-      // Injected streams are broadcast streams from tests, production streams are created fresh
       final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
       final serviceStatusStream = widget.serviceStatusStream ?? Geolocator.getServiceStatusStream();
 
