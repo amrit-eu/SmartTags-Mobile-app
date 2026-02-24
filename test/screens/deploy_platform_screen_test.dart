@@ -157,31 +157,6 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
-  testWidgets('Tapping location icon auto-populates lat/lon', (tester) async {
-    const fakeLocation = LatLng(12.345, 67.890);
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: testPlatform,
-            action: DeployAction.deploy,
-            locationFetcher: FakeLocationFetcher(fakeLocation),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    // Tap the location icon button
-    await tester.tap(find.byIcon(Icons.my_location));
-    await tester.pumpAndSettle();
-    // Verify that the latitude and longitude fields are populated with the fake location
-    expect(find.widgetWithText(TextFormField, 'Latitude'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Longitude'), findsOneWidget);
-    final latField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Latitude'));
-    final lonField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Longitude'));
-    expect(latField.controller?.text, fakeLocation.latitude.toStringAsFixed(6));
-    expect(lonField.controller?.text, fakeLocation.longitude.toStringAsFixed(6));
-  });
   testWidgets('Tapping location icon shows toast when location is not found', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -197,9 +172,9 @@ void main() {
     await tester.pump();
     // Tap the location icon button
     await tester.tap(find.byIcon(Icons.my_location));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1500)); // Wait for async operations to complete
     // Verify that a SnackBar is shown with the expected message
-    expect(find.text('Failed to fetch location. Please enter manually.'), findsOneWidget);
+    expect(find.text('Failed to fetch location. Live updates disabled.'), findsOneWidget);
   });
   testWidgets('Submitting the form updates the corresponding platform record in the database', (tester) async {
     final platform = Platform(
@@ -254,9 +229,7 @@ void main() {
       ),
     );
     await tester.pump();
-    // Uncheck use system time checkbox to enable the recovery time field
-    await tester.tap(find.byType(Checkbox));
-    await tester.pumpAndSettle();
+
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
     await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
@@ -327,9 +300,6 @@ void main() {
       ),
     );
     await tester.pump();
-    // Uncheck use system time checkbox to enable the recovery time field
-    await tester.tap(find.byType(Checkbox));
-    await tester.pumpAndSettle();
 
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
@@ -344,8 +314,7 @@ void main() {
     // Verify that an error SnackBar is shown
     expect(find.text('Failed to update platform.'), findsOneWidget);
   });
-  // Test that the form submits system time when the checkbox is checked, and that the recovery time field is disabled
-  testWidgets('Test use system time checkbox disables user input into the time field.', (tester) async {
+  testWidgets('Test live location updates the lat/lon and time fields when enabled.', (tester) async {
     final platform = Platform(
       platformRef: 'TEST-001',
       model: 'Model 1',
@@ -356,31 +325,35 @@ void main() {
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
+    
+    // Use a fake location fetcher that returns a fixed location for testing.
+    final fakeLocationFetcher = FakeLocationFetcher(const LatLng(12.345, 67.890));
 
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
           home: DeployPlatformScreen(
             platform: platform,
-            action: DeployAction.recover,
+            action: DeployAction.deploy,
+            locationFetcher: fakeLocationFetcher,
           ),
         ),
       ),
     );
     await tester.pump();
-    // Verify that the recovery time field is disabled and the checkbox is checked by default
-    final recoveryTimeField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
-    final useSystemTimeCheckbox = tester.widget<Checkbox>(find.byType(Checkbox));
-    expect(recoveryTimeField.enabled, false);
-    expect(useSystemTimeCheckbox.value, true);
+    // Tap the location icon button to enable live location updates
+    await tester.tap(find.byIcon(Icons.my_location));
+    await tester.pump(const Duration(milliseconds: 1500)); // Wait for async operations to complete
+    
+    // Verify that the latitude and longitude fields are updated with the fake location
+    final latField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Latitude'));
+    final lonField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Longitude'));
+    expect(latField.controller?.text, '12.345000');
+    expect(lonField.controller?.text, '67.890000');
 
-    // Uncheck the checkbox to enable the recovery time field
-    await tester.tap(find.byType(Checkbox));
-    await tester.pumpAndSettle();
-    // Re-fetch the widgets after the state change
-    final updatedRecoveryTimeField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
-    final updatedUseSystemTimeCheckbox = tester.widget<Checkbox>(find.byType(Checkbox));
-    expect(updatedRecoveryTimeField.enabled, true);
-    expect(updatedUseSystemTimeCheckbox.value, false);
+    // Verify that the time field is populated with a time.
+    final timeField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Deployment Time (UTC)'));
+    final timeValue = timeField.controller?.text;
+    expect(timeValue, isNotNull);
   });
 }
