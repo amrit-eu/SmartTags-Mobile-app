@@ -24,25 +24,71 @@ class AuthException implements Exception {
 /// or malformed responses.
 class AuthService {
   /// Creates an [AuthService] with the provided HTTP client.
-  AuthService({http.Client? client}) : _client = client ?? http.Client();
+  AuthService({
+    http.Client? client,
+    FlutterSecureStorage? storage,
+  }) :
+    _client = client ?? http.Client(),
+    _storage = storage ?? const FlutterSecureStorage();
 
   final http.Client _client;
-  static const storage = FlutterSecureStorage();
+  final FlutterSecureStorage _storage;
 
-  Future<UserProfile?> retrieveLoggedInUser() async {
-    final token = await storage.read(key: 'token');
+  String? _cachedToken;
+
+  Future<void> _saveToken(String token, String refreshToken) async {
+    _cachedToken = token;
+    await _storage.write(key: 'token', value: token);
+    await _storage.write(key: 'refresh_token', value: refreshToken);
+  }
+
+  bool _isExpired(String token) {
+    final claims = decodeJwtClaims(token);
+    if (claims != null) {
+      final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
+      return !DateTime.now().isBefore(tokenExpiry);
+    }
+    return true;
+  }
+
+  Future<String?> _refreshToken() async {
+    // stub to implement in issue #23
+    // update storage + _cachedToken
+    return null;
+  }
+
+  UserProfile? _decodeUserFromToken(String token) {
+    final claims = decodeJwtClaims(token);
+    if (claims != null) {
+      return UserProfile(
+          id: claims['contactId'] as int,
+          fullName: claims['name'] as String,
+          email: claims['sub'] as String
+      );
+    }
+    return null;
+  }
+
+  /// Returns JWT from memory cache or secure storage if expiry time has not passed
+  /// If stored token is expired, attempts to refresh
+  Future<String?> getAccessToken() async {
+    // check token cached in memory first
+    if (_cachedToken != null) {
+      if (!_isExpired(_cachedToken!)) return _cachedToken;
+      return _refreshToken();
+    }
+    // else return token from storage
+    final token = await _storage.read(key: 'token');
+    if (token == null) return null;
+    if (!_isExpired(token)) return _cachedToken = token;
+    return _refreshToken();
+  }
+
+  /// Decode user information from stored JWT
+  Future<UserProfile?> getAuthenticatedUser() async {
+    final token = await getAccessToken();
     if (token != null) {
-      final claims = decodeJwtClaims(token);
-      if (claims != null) {
-        final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
-        if (DateTime.now().isBefore(tokenExpiry)) {
-          return UserProfile(
-              id: claims['contactId'] as int,
-              fullName: claims['name'] as String,
-              email: claims['sub'] as String
-          );
-        }
-      }
+      return _decodeUserFromToken(token);
     }
     return null;
   }
@@ -58,11 +104,6 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final loggedInUser = await retrieveLoggedInUser();
-    if (loggedInUser != null) {
-      return loggedInUser;
-    }
-
     // TODO(eawetchy): Change to https://amrit-gateway.isival.ifremer.fr/api/oceanops/auth/login once code on Isival is up to date)
     final uri = Uri.parse('https://amrit-gateway.isival.ifremer.fr/api/oceanops/data/auth/login');
 
@@ -83,8 +124,7 @@ class AuthService {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
 
-        await storage.write(key: 'token', value: authResponse.accessTokenRs256);
-        await storage.write(key: 'refresh_token', value: authResponse.refreshToken);
+        await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
 
         return authResponse.contact;
       } else if (response.statusCode == 401) {
@@ -99,8 +139,11 @@ class AuthService {
     }
   }
 
+  /// Delete tokens from cache and secure storage.
+  /// Should send a logout request to Gateway API, but no logout URL is currently documented.
   Future<void> logout() async {
-    await storage.delete(key: 'token');
-    await storage.delete(key: 'refresh_token');
+    _cachedToken = null;
+    await _storage.delete(key: 'token');
+    await _storage.delete(key: 'refresh_token');
   }
 }
