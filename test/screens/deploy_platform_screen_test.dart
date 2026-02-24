@@ -209,7 +209,23 @@ void main() {
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
     await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'), '2025-01-01 12:00:00');
+    
+    // Use datepicker for Recovery Time
+    await tester.tap(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
+    await tester.pumpAndSettle();
+    // Select date: Jan 1, 2025
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    // Confirm date picker (OK button)
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    // use .last to get the time picker's input field
+    await tester.enterText(find.byType(TextField).last, '12:00');
+    await tester.pumpAndSettle();
+    // use .last to get the dialog's OK button
+    await tester.tap(find.text('OK').last);
+    await tester.pumpAndSettle();
+    
     await tester.enterText(find.widgetWithText(TextFormField, 'Notes'), 'Recovered successfully');
 
     // Tap the submit button
@@ -280,7 +296,21 @@ void main() {
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
     await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
-    await tester.enterText(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'), '2025-01-01 12:00:00');
+    // Use datepicker for Recovery Time
+    await tester.tap(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
+    await tester.pumpAndSettle();
+    // Select date: Jan 1, 2025
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    // Confirm date picker (OK button)
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    // use .last to get the time picker's input field
+    await tester.enterText(find.byType(TextField).last, '12:00');
+    await tester.pumpAndSettle();
+    // use .last to get the dialog's OK button
+    await tester.tap(find.text('OK').last);
+    await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextFormField, 'Notes'), 'Recovered successfully');
 
     // Tap the submit button

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -73,7 +74,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     if (useLiveLocation) {
       // Create fresh streams from providers or use injected ones (for testing)
       final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
-      final serviceStatusStream = widget.serviceStatusStream ?? Geolocator.getServiceStatusStream();
+      // getServiceStatusStream is not supported on web platform
+      final serviceStatusStream = widget.serviceStatusStream ?? 
+          (!kIsWeb ? Geolocator.getServiceStatusStream() : null);
 
       // Monitor location changes.
       _liveLocationSubscription = positionStream.listen(
@@ -99,20 +102,22 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           }
         },
       );
-      // Monitor location service status changes.
-      _serviceStatusSubscription = serviceStatusStream.listen(
-        (status) {
-          if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
-            );
-            // addPostFrameCallback used to avoid setState during build
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) toggleLiveUpdates();
-            });
-          }
-        },
-      );
+      // Monitor location service status changes (mobile only).
+      if (serviceStatusStream != null) {
+        _serviceStatusSubscription = serviceStatusStream.listen(
+          (status) {
+            if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
+              );
+              // addPostFrameCallback used to avoid setState during build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) toggleLiveUpdates();
+              });
+            }
+          },
+        );
+      }
     }
     // Cancel the listener subscriptions to stop battery drain
     if (!useLiveLocation) {
