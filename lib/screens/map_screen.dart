@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
@@ -41,8 +42,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late final MapController _mapController;
   late AnimationController _pulseController;
   late AnimationController _popupAnimationController;
-  model.Platform? _selectedPlatform;
-  LatLng? _selectedPlatformPosition;
+  String? _selectedPlatformRef;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
   static const LatLng _defaultCenter = LatLng(45, -5);
@@ -133,10 +133,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
-  void _selectPlatformMarker(model.Platform platform, LatLng position) {
+  void _selectPlatformMarker(String platformRef, LatLng position) {
     setState(() {
-      _selectedPlatform = platform;
-      _selectedPlatformPosition = position;
+      _selectedPlatformRef = platformRef;
     });
     // Reset and play animation
     if (mounted) {
@@ -148,11 +147,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     });
   }
 
-  /// Clears the selected platform and its position.
+  /// Clears the selected platform.
   void _clearSelection() {
     setState(() {
-      _selectedPlatform = null;
-      _selectedPlatformPosition = null;
+      _selectedPlatformRef = null;
     });
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
@@ -200,7 +198,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ID: ${platform.id}',
+                          'ID: ${platform.platformRef}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -232,7 +230,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                     unawaited(
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (context) => PlatformDetailScreen(platform: platform),
+                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
                         ),
                       ),
                     );
@@ -292,31 +290,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           point: point,
           child: GestureDetector(
             onTap: () {
-              final platformModel = model.Platform(
-                id: dbPlatform.ref,
-                model: dbPlatform.model,
-                network: dbPlatform.network,
-                latestPosition: point,
-                status: dbPlatform.status == 'Active' ? model.PlatformStatus.active : model.PlatformStatus.inactive,
-                operationalStatus: dbPlatform.operationalStatus == 'Deployed'
-                    ? model.OperationalStatus.deployed
-                    : model.OperationalStatus.recovered,
-                lastUpdated: dbPlatform.lastUpdated,
-                operationLocation: LatLng(
-                  dbPlatform.operationLat,
-                  dbPlatform.operationLon,
-                ),
-              );
-              _selectPlatformMarker(platformModel, point);
+              _selectPlatformMarker(dbPlatform.ref, point);
             },
             child: Icon(
               Icons.location_on,
               // Color depends on status and selection.
-              color: _selectedPlatformPosition == point
+              color: _selectedPlatformRef == dbPlatform.ref
                   ? const Color.fromARGB(255, 2, 0, 101)
                   : (dbPlatform.status == 'Active' ? Colors.green : Colors.red),
               // Size increases if this marker is selected.
-              size: _selectedPlatformPosition == point ? 40 : 30,
+              size: _selectedPlatformRef == dbPlatform.ref ? 40 : 30,
             ),
           ),
         ),
@@ -329,6 +312,19 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final platformsAsync = ref.watch(platformsStreamProvider);
+    
+    // Listen for position updates of the selected platform and auto-center map
+    if (_selectedPlatformRef != null) {
+      ref.listen(platformByRefStreamProvider(_selectedPlatformRef!), (previous, next) {
+        next.whenData((platform) {
+          if (platform != null && mounted) {
+            final newPosition = LatLng(platform.lat, platform.lon);
+            _mapController.move(newPosition, _mapController.camera.zoom);
+          }
+        });
+      });
+    }
+    
     return Scaffold(
       appBar: TopNavigation(title: const Text('SmartTags')),
       body: platformsAsync.when(
@@ -346,7 +342,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 children: [
                   // GestureDetector for tiles to handle clear platform selection on tap.
                   GestureDetector(
-                    onTap: _selectedPlatform != null ? _clearSelection : null,
+                    onTap: _selectedPlatformRef != null ? _clearSelection : null,
                     behavior: HitTestBehavior.opaque,
                     child: Stack(
                       children: [
@@ -373,20 +369,27 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   ),
                 ],
               ),
-              if (_selectedPlatform != null && _selectedPlatformPosition != null) ...[
-                Positioned(
-                  top: 20,
-                  left: 16,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.5, end: 1).animate(
-                      CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
-                    ),
-                    alignment: Alignment.topLeft,
-                    child: GestureDetector(
-                      onTap: () {},
-                      child: _buildPopup(context, _selectedPlatform!),
-                    ),
-                  ),
+              if (_selectedPlatformRef != null) ...[
+                Builder(
+                  builder: (context) {
+                    final platformAsync = ref.watch(platformByRefStreamProvider(_selectedPlatformRef!));
+                    final selectedPlatform = platformAsync.value?.toDomain();
+                    if (selectedPlatform == null) return const SizedBox.shrink();
+                    return Positioned(
+                      top: 20,
+                      left: 16,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.5, end: 1).animate(
+                          CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
+                        ),
+                        alignment: Alignment.topLeft,
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: _buildPopup(context, selectedPlatform),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ],

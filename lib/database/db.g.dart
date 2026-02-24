@@ -158,6 +158,17 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _operationNotesMeta = const VerificationMeta(
+    'operationNotes',
+  );
+  @override
+  late final GeneratedColumn<String> operationNotes = GeneratedColumn<String>(
+    'operation_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -174,6 +185,7 @@ class $PlatformsTable extends Platforms
     wigosId,
     gtsId,
     batchRef,
+    operationNotes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -300,6 +312,15 @@ class $PlatformsTable extends Platforms
         batchRef.isAcceptableOrUnknown(data['batch_ref']!, _batchRefMeta),
       );
     }
+    if (data.containsKey('operation_notes')) {
+      context.handle(
+        _operationNotesMeta,
+        operationNotes.isAcceptableOrUnknown(
+          data['operation_notes']!,
+          _operationNotesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -365,6 +386,10 @@ class $PlatformsTable extends Platforms
         DriftSqlType.string,
         data['${effectivePrefix}batch_ref'],
       ),
+      operationNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_notes'],
+      ),
     );
   }
 
@@ -416,6 +441,9 @@ class Platform extends DataClass implements Insertable<Platform> {
 
   /// Batch reference (optional).
   final String? batchRef;
+
+  /// Additional notes about the latest operation (optional).
+  final String? operationNotes;
   const Platform({
     required this.id,
     required this.ref,
@@ -431,6 +459,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     this.wigosId,
     this.gtsId,
     this.batchRef,
+    this.operationNotes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -454,6 +483,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     }
     if (!nullToAbsent || batchRef != null) {
       map['batch_ref'] = Variable<String>(batchRef);
+    }
+    if (!nullToAbsent || operationNotes != null) {
+      map['operation_notes'] = Variable<String>(operationNotes);
     }
     return map;
   }
@@ -480,6 +512,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       batchRef: batchRef == null && nullToAbsent
           ? const Value.absent()
           : Value(batchRef),
+      operationNotes: operationNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(operationNotes),
     );
   }
 
@@ -503,6 +538,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       wigosId: serializer.fromJson<String?>(json['wigosId']),
       gtsId: serializer.fromJson<String?>(json['gtsId']),
       batchRef: serializer.fromJson<String?>(json['batchRef']),
+      operationNotes: serializer.fromJson<String?>(json['operationNotes']),
     );
   }
   @override
@@ -523,6 +559,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       'wigosId': serializer.toJson<String?>(wigosId),
       'gtsId': serializer.toJson<String?>(gtsId),
       'batchRef': serializer.toJson<String?>(batchRef),
+      'operationNotes': serializer.toJson<String?>(operationNotes),
     };
   }
 
@@ -541,6 +578,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     Value<String?> wigosId = const Value.absent(),
     Value<String?> gtsId = const Value.absent(),
     Value<String?> batchRef = const Value.absent(),
+    Value<String?> operationNotes = const Value.absent(),
   }) => Platform(
     id: id ?? this.id,
     ref: ref ?? this.ref,
@@ -556,6 +594,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     wigosId: wigosId.present ? wigosId.value : this.wigosId,
     gtsId: gtsId.present ? gtsId.value : this.gtsId,
     batchRef: batchRef.present ? batchRef.value : this.batchRef,
+    operationNotes: operationNotes.present
+        ? operationNotes.value
+        : this.operationNotes,
   );
   Platform copyWithCompanion(PlatformsCompanion data) {
     return Platform(
@@ -581,6 +622,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       wigosId: data.wigosId.present ? data.wigosId.value : this.wigosId,
       gtsId: data.gtsId.present ? data.gtsId.value : this.gtsId,
       batchRef: data.batchRef.present ? data.batchRef.value : this.batchRef,
+      operationNotes: data.operationNotes.present
+          ? data.operationNotes.value
+          : this.operationNotes,
     );
   }
 
@@ -600,7 +644,8 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('operationLon: $operationLon, ')
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
-          ..write('batchRef: $batchRef')
+          ..write('batchRef: $batchRef, ')
+          ..write('operationNotes: $operationNotes')
           ..write(')'))
         .toString();
   }
@@ -621,6 +666,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     wigosId,
     gtsId,
     batchRef,
+    operationNotes,
   );
   @override
   bool operator ==(Object other) =>
@@ -639,7 +685,8 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.operationLon == this.operationLon &&
           other.wigosId == this.wigosId &&
           other.gtsId == this.gtsId &&
-          other.batchRef == this.batchRef);
+          other.batchRef == this.batchRef &&
+          other.operationNotes == this.operationNotes);
 }
 
 class PlatformsCompanion extends UpdateCompanion<Platform> {
@@ -657,6 +704,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<String?> wigosId;
   final Value<String?> gtsId;
   final Value<String?> batchRef;
+  final Value<String?> operationNotes;
   const PlatformsCompanion({
     this.id = const Value.absent(),
     this.ref = const Value.absent(),
@@ -672,6 +720,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.wigosId = const Value.absent(),
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
+    this.operationNotes = const Value.absent(),
   });
   PlatformsCompanion.insert({
     this.id = const Value.absent(),
@@ -688,6 +737,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.wigosId = const Value.absent(),
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
+    this.operationNotes = const Value.absent(),
   }) : ref = Value(ref),
        model = Value(model),
        network = Value(network),
@@ -713,6 +763,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<String>? wigosId,
     Expression<String>? gtsId,
     Expression<String>? batchRef,
+    Expression<String>? operationNotes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -729,6 +780,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (wigosId != null) 'wigos_id': wigosId,
       if (gtsId != null) 'gts_id': gtsId,
       if (batchRef != null) 'batch_ref': batchRef,
+      if (operationNotes != null) 'operation_notes': operationNotes,
     });
   }
 
@@ -747,6 +799,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<String?>? wigosId,
     Value<String?>? gtsId,
     Value<String?>? batchRef,
+    Value<String?>? operationNotes,
   }) {
     return PlatformsCompanion(
       id: id ?? this.id,
@@ -763,6 +816,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       wigosId: wigosId ?? this.wigosId,
       gtsId: gtsId ?? this.gtsId,
       batchRef: batchRef ?? this.batchRef,
+      operationNotes: operationNotes ?? this.operationNotes,
     );
   }
 
@@ -811,6 +865,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     if (batchRef.present) {
       map['batch_ref'] = Variable<String>(batchRef.value);
     }
+    if (operationNotes.present) {
+      map['operation_notes'] = Variable<String>(operationNotes.value);
+    }
     return map;
   }
 
@@ -830,7 +887,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('operationLon: $operationLon, ')
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
-          ..write('batchRef: $batchRef')
+          ..write('batchRef: $batchRef, ')
+          ..write('operationNotes: $operationNotes')
           ..write(')'))
         .toString();
   }
@@ -863,6 +921,7 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       Value<String?> wigosId,
       Value<String?> gtsId,
       Value<String?> batchRef,
+      Value<String?> operationNotes,
     });
 typedef $$PlatformsTableUpdateCompanionBuilder =
     PlatformsCompanion Function({
@@ -880,6 +939,7 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> wigosId,
       Value<String?> gtsId,
       Value<String?> batchRef,
+      Value<String?> operationNotes,
     });
 
 class $$PlatformsTableFilterComposer
@@ -958,6 +1018,11 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<String> get batchRef => $composableBuilder(
     column: $table.batchRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationNotes => $composableBuilder(
+    column: $table.operationNotes,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1040,6 +1105,11 @@ class $$PlatformsTableOrderingComposer
     column: $table.batchRef,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get operationNotes => $composableBuilder(
+    column: $table.operationNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlatformsTableAnnotationComposer
@@ -1100,6 +1170,11 @@ class $$PlatformsTableAnnotationComposer
 
   GeneratedColumn<String> get batchRef =>
       $composableBuilder(column: $table.batchRef, builder: (column) => column);
+
+  GeneratedColumn<String> get operationNotes => $composableBuilder(
+    column: $table.operationNotes,
+    builder: (column) => column,
+  );
 }
 
 class $$PlatformsTableTableManager
@@ -1144,6 +1219,7 @@ class $$PlatformsTableTableManager
                 Value<String?> wigosId = const Value.absent(),
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
+                Value<String?> operationNotes = const Value.absent(),
               }) => PlatformsCompanion(
                 id: id,
                 ref: ref,
@@ -1159,6 +1235,7 @@ class $$PlatformsTableTableManager
                 wigosId: wigosId,
                 gtsId: gtsId,
                 batchRef: batchRef,
+                operationNotes: operationNotes,
               ),
           createCompanionCallback:
               ({
@@ -1176,6 +1253,7 @@ class $$PlatformsTableTableManager
                 Value<String?> wigosId = const Value.absent(),
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
+                Value<String?> operationNotes = const Value.absent(),
               }) => PlatformsCompanion.insert(
                 id: id,
                 ref: ref,
@@ -1191,6 +1269,7 @@ class $$PlatformsTableTableManager
                 wigosId: wigosId,
                 gtsId: gtsId,
                 batchRef: batchRef,
+                operationNotes: operationNotes,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

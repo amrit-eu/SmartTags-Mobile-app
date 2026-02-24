@@ -1,4 +1,5 @@
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/extensions/string_extension.dart';
 
 /// Represents the status of a platform.
 enum PlatformStatus {
@@ -17,6 +18,11 @@ enum PlatformStatus {
           (e) => e.name.toLowerCase() == value.toLowerCase(),
       orElse: () => PlatformStatus.unknown,
     );
+  }
+
+  /// Convert PlatformStatus to string for storing in DB
+  static String platformStatusToDb(PlatformStatus status) {
+    return status.name.capitalize();
   }
 }
 
@@ -44,7 +50,7 @@ enum OperationalStatus {
 class Platform {
   /// Creates a [Platform] instance.
   const Platform({
-    required this.id,
+    required this.platformRef,
     required this.model,
     required this.network,
     required this.latestPosition,
@@ -52,10 +58,11 @@ class Platform {
     required this.operationalStatus,
     required this.lastUpdated,
     required this.operationLocation,
+    this.operationNotes,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
-  final String id;
+  final String platformRef;
 
   /// The model name of the device.
   final String model;
@@ -77,4 +84,7 @@ class Platform {
 
   /// The location of the last operation.
   final LatLng operationLocation;
+
+  /// Additional notes about the latest operation (optional).
+  final String? operationNotes;
 }

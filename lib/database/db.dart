@@ -46,6 +46,9 @@ class Platforms extends Table {
 
   /// Batch reference (optional).
   TextColumn get batchRef => text().nullable()();
+
+  /// Additional notes about the latest operation (optional).
+  TextColumn get operationNotes => text().nullable()();
 }
 
 /// The local SQLite database using Drift ORM.
@@ -67,19 +70,23 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Updates a list of platforms based on their primary keys.
+  /// Updates a list of platforms based on their ref.
   Future<void> updatePlatforms(List<PlatformsCompanion> companions) async {
     await batch((batch) {
       for (final companion in companions) {
-        batch.update(platforms, companion);
+        batch.update(platforms, companion, where: (tbl) => tbl.ref.equals(companion.ref.value));
       }
     });
   }
 
-  /// Helper to handle both (upsert) if needed by the sync service.
+  /// Helper to sync platforms to database.
+  /// Currently empties and re-inserts, but could be optimized to do upserts in the future.
   Future<void> syncPlatforms(List<PlatformsCompanion> companions) async {
-    await batch((batch) {
-      batch.insertAllOnConflictUpdate(platforms, companions);
+    await transaction(() async {
+      await delete(platforms).go();
+      await batch((batch) {
+        batch.insertAll(platforms, companions);
+      });
     });
   }
 
@@ -100,5 +107,11 @@ class AppDatabase extends _$AppDatabase {
   /// Helper function to select a specific platform by its reference. Returns a list
   Future<List<Platform>> getPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref))).get();
+  }
+
+  /// Watches a single platform by its reference, emitting updates when it changes.
+  Stream<Platform?> watchPlatformByRef(String ref) {
+    return (select(platforms)..where((p) => p.ref.equals(ref)))
+        .watchSingleOrNull();
   }
 }

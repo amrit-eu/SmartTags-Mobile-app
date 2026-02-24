@@ -53,6 +53,13 @@ final StreamProviderFamily<List<Platform>, String> platformsWatchProvider =
       return db.watchPlatforms(query: query);
     });
 
+/// Watches a single [Platform] by its reference, emitting updates on changes.
+final StreamProviderFamily<Platform?, String> platformByRefStreamProvider =
+    StreamProvider.family<Platform?, String>((ref, platformRef) {
+      final db = ref.watch(databaseProvider);
+      return db.watchPlatformByRef(platformRef);
+    });
+
 /// Fetches one or more [Platform] records matching the given platform
 /// reference.
 ///
