@@ -266,7 +266,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
                       controller: _dateTimeController,
                       readOnly: true,
-                      enabled: !useLiveLocation, // Disable manual input if using system time.
+                      enabled: !useLiveLocation, // Disable manual input if using live location time.
                       validator: (value) => (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
                       onTap: () async {
                         final date = await showDatePicker(
