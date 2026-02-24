@@ -53,6 +53,7 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
 }
 
 class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
@@ -143,6 +144,11 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   }
 
   Future<void> _submitForm() async {
+    // Validate form before submission
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     // Attempt to update the record in the local sqlite database.
     try {
       await ref.read(databaseProvider).updatePlatforms([
@@ -187,6 +193,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           children: [
             SectionContainer(
               child: Form(
+                key: _formKey,
                 child: Column(
                   spacing: 16,
                   children: [
@@ -209,6 +216,20 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                             controller: _latitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                             enabled: !useLiveLocation, // Disable manual input if using live location.
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Latitude is required';
+                              }
+                              try {
+                                final latitude = double.parse(value);
+                                if (latitude < -90 || latitude > 90) {
+                                  return 'Latitude must be between -90 and 90';
+                                }
+                              } on FormatException {
+                                return 'Latitude must be a valid number';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         Expanded(
@@ -217,6 +238,20 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                             controller: _longitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                             enabled: !useLiveLocation, // Disable manual input if using live location.
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Longitude is required';
+                              }
+                              try {
+                                final longitude = double.parse(value);
+                                if (longitude < -180 || longitude > 180) {
+                                  return 'Longitude must be between -180 and 180';
+                                }
+                              } on FormatException {
+                                return 'Longitude must be a valid number';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         IconButton(
