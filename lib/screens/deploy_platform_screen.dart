@@ -267,6 +267,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       controller: _dateTimeController,
                       readOnly: true,
                       enabled: !useLiveLocation, // Disable manual input if using system time.
+                      validator: (value) => (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
                       onTap: () async {
                         final date = await showDatePicker(
                           context: this.context,
