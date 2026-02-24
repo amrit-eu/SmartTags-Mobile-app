@@ -382,8 +382,8 @@ void main() {
     expect(timeValue, 'Jan 01, 2026, 12:00 PM');
 
     // Clean up
-    await positionController.close();
-    await statusController.close();
+    unawaited(positionController.close());
+    unawaited(statusController.close());
   });
   testWidgets('Live location stops when location services are disabled.', (tester) async {
     final platform = Platform(
@@ -421,6 +421,7 @@ void main() {
 
     // Emit a ServiceStatus.disabled event
     statusController.add(ServiceStatus.disabled);
+    
     // Allow time for callback and the snackbar to appear
     await tester.pumpAndSettle();
 
@@ -428,7 +429,7 @@ void main() {
     expect(find.text('Location services disabled. Live updates stopped.'), findsOneWidget);
 
     // Clean up
-    await positionController.close();
-    await statusController.close();
+    unawaited(positionController.close());
+    unawaited(statusController.close());
   });
 }
