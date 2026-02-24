@@ -53,9 +53,26 @@ class CheckConnection {
 
     if (result.isNotEmpty) {
       if (result[0] == ConnectivityResult.none) {
-        message = 'You are not connected to any network';
+        message = 'Network connection lost';
       } else {
-        message = 'You are now connected to ${result[0].name}';
+        var networkType = result[0].name;
+
+        switch (result[0].name) {
+          case 'bluetooth':
+            networkType = 'Bluetooth';
+          case 'wifi':
+            networkType = 'WiFi';
+          case 'ethernet':
+            networkType = 'Ethernet';
+          case 'mobile':
+            networkType = 'Mobile';
+          case 'vpn':
+            networkType = 'VPN';
+          default:
+            networkType = 'Unknown network type';
+        }
+
+        message = 'Network connection available ($networkType)';
       }
     }
 
