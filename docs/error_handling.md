@@ -26,7 +26,7 @@ This document outlines general error handling approaches that have been used for
 ## 3. Exception Handling
 
 - **Try-Catch Blocks:**  
-  Wrap operations that may fail (such as database or network calls) in `try-catch` blocks. On exception, log the error with `debugPrint` and notify the user via a `SnackBar` if it is imporantant.
+  Wrap operations that may fail (such as database or network calls) in `try-catch` blocks. On exception, log the error with `debugPrint` and notify the user via a `SnackBar` if it is important.
 - **Mounted Checks:**  
   Before updating UI state or showing a `SnackBar` after an asynchronous operation, check if the widget is still mounted.
 
