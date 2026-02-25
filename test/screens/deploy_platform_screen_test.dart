@@ -213,7 +213,7 @@ void main() {
     // Use datepicker for Recovery Time
     await tester.tap(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
     await tester.pumpAndSettle();
-    // Select date: Jan 1, 2025
+    // Select date
     await tester.tap(find.text('1'));
     await tester.pumpAndSettle();
     // Confirm date picker (OK button)
