@@ -217,7 +217,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       children: [
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Latitude'),
+                            decoration: const InputDecoration(labelText: 'Latitude', errorMaxLines: 3,),
                             controller: _latitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                             enabled: !useLiveLocation, // Disable manual input if using live location.
@@ -239,7 +239,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                         ),
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Longitude'),
+                            decoration: const InputDecoration(labelText: 'Longitude', errorMaxLines: 3,),
                             controller: _longitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                             enabled: !useLiveLocation, // Disable manual input if using live location.
@@ -268,7 +268,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       ],
                     ),
                     TextFormField(
-                      decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
+                      decoration: InputDecoration(labelText: '$_eventType Time (UTC)', errorMaxLines: 3,),
                       controller: _dateTimeController,
                       readOnly: true,
                       enabled: !useLiveLocation, // Disable manual input if using live location time.
