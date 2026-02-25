@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -209,7 +210,7 @@ void main() {
     // Fill in the form fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
     await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
-    
+
     // Use datepicker for Recovery Time
     await tester.tap(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
     await tester.pumpAndSettle();
@@ -225,7 +226,7 @@ void main() {
     // use .last to get the dialog's OK button
     await tester.tap(find.text('OK').last);
     await tester.pumpAndSettle();
-    
+
     await tester.enterText(find.widgetWithText(TextFormField, 'Notes'), 'Recovered successfully');
 
     // Tap the submit button
@@ -421,7 +422,7 @@ void main() {
 
     // Emit a ServiceStatus.disabled event
     statusController.add(ServiceStatus.disabled);
-    
+
     // Allow time for callback and the snackbar to appear
     await tester.pumpAndSettle();
 
@@ -431,5 +432,110 @@ void main() {
     // Clean up
     unawaited(positionController.close());
     unawaited(statusController.close());
+  });
+  testWidgets('Form validation shows error messages for non-numeric lat/lon input', (tester) async {
+    final platform = Platform(
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.active,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: platform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Enter invalid latitude and longitude
+    await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), 'abc');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), 'def');
+
+    // Tap the submit button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Deploy Platform'));
+    await tester.pumpAndSettle();
+
+    // Verify that error messages are shown for the latitude and longitude fields
+    expect(find.text('Latitude must be a valid number'), findsOneWidget);
+    expect(find.text('Longitude must be a valid number'), findsOneWidget);
+  });
+  testWidgets('Form validation shows error message for invalid lat/lon values', (tester) async {
+    final platform = Platform(
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.active,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: platform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Enter out-of-range latitude and longitude
+    await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '100');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '-200');
+
+    // Tap the submit button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Deploy Platform'));
+    await tester.pumpAndSettle();
+
+    // Verify that error messages are shown for the latitude and longitude fields
+    expect(find.text('Latitude must be between -90 and 90'), findsOneWidget);
+    expect(find.text('Longitude must be between -180 and 180'), findsOneWidget);
+  });
+  testWidgets('Form validation shows error message for missing required fields', (tester) async {
+    final platform = Platform(
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.active,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: platform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Tap the submit button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Deploy Platform'));
+    await tester.pumpAndSettle();
+
+    // Verify that error messages are shown for the latitude and longitude fields
+    expect(find.text('Latitude is required'), findsOneWidget);
+    expect(find.text('Longitude is required'), findsOneWidget);
+    expect(find.text('Deployment Time is required'), findsOneWidget);
   });
 }
