@@ -67,16 +67,15 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
   String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
 
-  void toggleLiveUpdates() {
+  void setUseLiveLocation({required bool enabled}) {
     setState(() {
-      useLiveLocation = !useLiveLocation; // Toggle the live location updates on or off.
+      useLiveLocation = enabled; // Set live location updates on or off based on the provided flag.
     });
     if (useLiveLocation) {
       // Create fresh streams from providers or use injected ones (for testing)
       final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
       // getServiceStatusStream is not supported on web platform
-      final serviceStatusStream = widget.serviceStatusStream ?? 
-          (!kIsWeb ? Geolocator.getServiceStatusStream() : null);
+      final serviceStatusStream = widget.serviceStatusStream ?? (!kIsWeb ? Geolocator.getServiceStatusStream() : null);
 
       // Monitor location changes.
       _liveLocationSubscription = positionStream.listen(
@@ -97,7 +96,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
             );
             // addPostFrameCallback used to avoid setState during build
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) toggleLiveUpdates();
+              if (mounted) setUseLiveLocation(enabled: false);
             });
           }
         },
@@ -112,7 +111,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
               );
               // addPostFrameCallback used to avoid setState during build
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) toggleLiveUpdates();
+                if (mounted) setUseLiveLocation(enabled: false);
               });
             }
           },
@@ -124,6 +123,10 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       unawaited(_liveLocationSubscription?.cancel());
       unawaited(_serviceStatusSubscription?.cancel());
     }
+  }
+
+  void toggleLiveUpdates() {
+    setUseLiveLocation(enabled: !useLiveLocation); // Toggle the live location updates on or off.
   }
 
   void _setSelectedDateTime(DateTime? dateTime) {
@@ -217,7 +220,10 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       children: [
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Latitude', errorMaxLines: 3,),
+                            decoration: const InputDecoration(
+                              labelText: 'Latitude',
+                              errorMaxLines: 3,
+                            ),
                             controller: _latitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                             enabled: !useLiveLocation, // Disable manual input if using live location.
@@ -239,7 +245,10 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                         ),
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Longitude', errorMaxLines: 3,),
+                            decoration: const InputDecoration(
+                              labelText: 'Longitude',
+                              errorMaxLines: 3,
+                            ),
                             controller: _longitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                             enabled: !useLiveLocation, // Disable manual input if using live location.
@@ -268,7 +277,10 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       ],
                     ),
                     TextFormField(
-                      decoration: InputDecoration(labelText: '$_eventType Time (UTC)', errorMaxLines: 3,),
+                      decoration: InputDecoration(
+                        labelText: '$_eventType Time (UTC)',
+                        errorMaxLines: 3,
+                      ),
                       controller: _dateTimeController,
                       readOnly: true,
                       enabled: !useLiveLocation, // Disable manual input if using live location time.
