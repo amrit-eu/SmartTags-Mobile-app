@@ -11,6 +11,23 @@ class UserProfile {
     required this.email,
   });
 
+  /// Deserialises JSON response from API into a [UserProfile] object
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return switch (json) {
+      {
+      'id': final int id,
+      'fullName': final String fullName,
+      'email': final String email,
+      } => UserProfile(
+        id: id,
+        fullName: fullName,
+        email: email,
+      ),
+      _ => throw const FormatException('Failed to create user.'),
+    };
+  }
+
+
   /// The user's unique numeric identifier.
   final int id;
 

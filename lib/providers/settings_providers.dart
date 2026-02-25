@@ -13,17 +13,17 @@ class AppThemeMode extends Notifier<ThemeMode> {
     return ThemeMode.system;
   }
 
-  /// Reset to system theme
+  /// Resets to system theme
   void setSystem() {
     state = ThemeMode.system;
   }
 
-  /// Enable dark mode
+  /// Enables dark mode
   void setDark() {
     state = ThemeMode.dark;
   }
 
-  /// Enable light mode
+  /// Enables light mode
   void setLight() {
     state = ThemeMode.light;
   }
