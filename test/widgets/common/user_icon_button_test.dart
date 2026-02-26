@@ -5,7 +5,7 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 
-class FakeAuthNotifier extends AuthNotifier {
+class FakeLoggedInAuthNotifier extends AuthNotifier {
   @override
   Future<UserProfile?> build() async {
     return const UserProfile(
@@ -16,10 +16,20 @@ class FakeAuthNotifier extends AuthNotifier {
   }
 }
 
+class FakeLoggedOutAuthNotifier extends AuthNotifier {
+  @override
+  Future<UserProfile?> build() async {
+    return null;
+  }
+}
+
 void main() {
   testWidgets('User Icon Button directs to Login page if logged out', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [
+          authProvider.overrideWith(FakeLoggedOutAuthNotifier.new),
+        ],
         child: MaterialApp(
           home: Scaffold(
             appBar: AppBar(),
@@ -45,7 +55,7 @@ void main() {
     await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authProvider.overrideWith(FakeAuthNotifier.new),
+            authProvider.overrideWith(FakeLoggedInAuthNotifier.new),
           ],
           child: MaterialApp(
             home: Scaffold(

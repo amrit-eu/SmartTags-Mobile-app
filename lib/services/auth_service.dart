@@ -53,7 +53,7 @@ class AuthService {
 
   Future<String?> _refreshToken() async {
     // stub to implement in issue #23
-    // update storage + _cachedToken
+    // update storage and _cachedToken
     return null;
   }
 
@@ -140,10 +140,10 @@ class AuthService {
   }
 
   /// Delete tokens from cache and secure storage.
-  /// Should send a logout request to Gateway API, but no logout URL is currently documented.
   Future<void> logout() async {
     _cachedToken = null;
     await _storage.delete(key: 'token');
     await _storage.delete(key: 'refresh_token');
+    // Should send a logout request to Gateway API, but no logout URL is currently documented.
   }
 }

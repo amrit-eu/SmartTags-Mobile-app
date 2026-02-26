@@ -15,7 +15,6 @@ String? _decodePayload(String encodedPayload) {
   try {
     final base64Decoder = base64.decoder;
     final data = base64.normalize(encodedPayload);
-    print(encodedPayload);
     final payloadBytes = base64Decoder.convert(data);
     // Convert bytes to UTF-8 string
     return utf8.decode(payloadBytes);
@@ -35,6 +34,7 @@ Map<String, dynamic>? _parseClaims(String jsonPayload) {
   }
 }
 
+/// Returns a map of decoded claims from a JWT
 Map<String, dynamic>? decodeJwtClaims(String jwt) {
   try {
     final payload = _extractPayload(jwt);
