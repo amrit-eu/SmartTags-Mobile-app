@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:clock/clock.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,19 +8,22 @@ import 'package:http/testing.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:smart_tags/services/auth_service.dart';
+
+import '../utils/jwt_test_utils.dart';
 import 'auth_service_test.mocks.dart';
 
 @GenerateMocks([FlutterSecureStorage])
 void main() {
   final mockFlutterSecureStorage = MockFlutterSecureStorage();
 
-  // mockJwtPayload = {
-  //   "sub": "joe.bloggs@test.com",
-  //   "name": "Joe Bloggs",
-  //   "exp": 1767225600, // token expiry 01-Jan-2026 00:00:00
-  //   "contactId": 123456
-  // }
-  const mockJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2UuYmxvZ2dzQHRlc3QuY29tIiwibmFtZSI6IkpvZSBCbG9nZ3MiLCJleHAiOjE3NjcyMjU2MDAsImNvbnRhY3RJZCI6MTIzNDU2fQ.Q4cjOX8kKNxa9v4qhOJEEQDR1wlFW6d2_ZPDs54Xk0U';
+  final mockJwt = buildJwt(
+    payload: const {
+      'sub': 'joe.bloggs@test.com',
+      'name': 'Joe Bloggs',
+      'exp': 1767225600, // token expiry 01-Jan-2026 00:00:00
+      'contactId': 123456
+    },
+  );
   final mockAuthResponse = {
     'success': true,
     'access_token_rs256': mockJwt,
@@ -208,6 +212,51 @@ void main() {
       expect(user!.id, 123456);
       expect(user.fullName, 'Joe Bloggs');
       expect(user.email,  'joe.bloggs@test.com');
+    });
+  });
+
+  test('token is deleted and null is returned if JWT has no expiry', () async {
+    // Missing exp
+    final invalidJwt = buildJwt(payload: {
+      'name': 'Alice Example',
+      'sub': 'alice@example.com',
+      'contactId': 123456
+    });
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => invalidJwt);
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    final token = await authService.getAccessToken();
+
+    expect(token, null);
+    verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
+  });
+
+  test('token is deleted and no user is returned if JWT is invalid', () async {
+    // Missing contactId
+    final invalidJwt = buildJwt(payload: {
+      'name': 'Alice Example',
+      'sub': 'alice@example.com',
+      'exp': 1767225600, // token expiry 01-Jan-2026 00:00:00
+    });
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => invalidJwt);
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    await withClock(Clock.fixed(DateTime(2025, 12, 31)), () async {
+      final user = await authService.getAuthenticatedUser();
+      expect(user, null);
+      verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
+    });
+  });
+
+  test('access token is deleted from storage if user claims are invalid', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
+      final token = await authService.getAccessToken();
+      expect(token, null);
+      verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
     });
   });
 }

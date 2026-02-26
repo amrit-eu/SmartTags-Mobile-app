@@ -47,7 +47,10 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
 
   /// Logs out the current user.
   Future<void> logout() async {
-    await _authService.logout();
-    state = const AsyncData(null);
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _authService.logout();
+      return null; // no user after logout
+    });
   }
 }

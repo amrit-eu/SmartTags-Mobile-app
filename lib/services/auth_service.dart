@@ -43,13 +43,26 @@ class AuthService {
     await _storage.write(key: 'refresh_token', value: refreshToken);
   }
 
+  Future<void> _deleteAccessToken() async {
+    _cachedToken = null;
+    await _storage.delete(key: 'token');
+  }
+
   bool _isExpired(String token) {
-    final claims = decodeJwtClaims(token);
-    if (claims != null) {
+    try {
+      final claims = decodeJwtClaims(token);
+      if (claims['exp'] is! int) {
+        throw const AuthException('Invalid JWT expiry');
+      }
       final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
       return !clock.now().isBefore(tokenExpiry);
+    }  on JwtDecodingException {
+      // Token malformed, treat as expired
+      return true;
+    } on AuthException {
+      // Token malformed, treat as expired
+      return true;
     }
-    return true;
   }
 
   Future<String?> _refreshToken() async {
@@ -60,14 +73,18 @@ class AuthService {
 
   UserProfile? _decodeUserFromToken(String token) {
     final claims = decodeJwtClaims(token);
-    if (claims != null) {
-      return UserProfile(
-          id: claims['contactId'] as int,
-          fullName: claims['name'] as String,
-          email: claims['sub'] as String
-      );
+
+    if (claims['contactId'] is! int ||
+        claims['name'] is! String ||
+        claims['sub'] is! String) {
+      throw const AuthException('Invalid JWT user claims');
     }
-    return null;
+
+    return UserProfile(
+        id: claims['contactId'] as int,
+        fullName: claims['name'] as String,
+        email: claims['sub'] as String
+    );
   }
 
   /// Returns JWT from memory cache or secure storage if expiry time has not passed
@@ -76,25 +93,33 @@ class AuthService {
     // check token cached in memory first
     if (_cachedToken != null) {
       if (!_isExpired(_cachedToken!)) return _cachedToken;
+      await _deleteAccessToken();
       return _refreshToken();
     }
     // else return token from storage
     final token = await _storage.read(key: 'token');
     if (token == null) return null;
     if (!_isExpired(token)) return _cachedToken = token;
-    // delete token if expired
-    await _storage.delete(key: 'token');
-    _cachedToken = null;
+    await _deleteAccessToken();
     return _refreshToken();
   }
 
   /// Decode user information from stored JWT
   Future<UserProfile?> getAuthenticatedUser() async {
     final token = await getAccessToken();
-    if (token != null) {
+    if (token == null) return null;
+
+    try {
       return _decodeUserFromToken(token);
+    } on JwtDecodingException {
+      // token corrupted, treat as logged out
+      await _deleteAccessToken();
+      return null;
+    } on AuthException {
+      // Missing required claims, treat as logged out
+      await _deleteAccessToken();
+      return null;
     }
-    return null;
   }
 
   /// Authenticates a user with the given [email] and [password].
@@ -145,8 +170,7 @@ class AuthService {
 
   /// Delete tokens from cache and secure storage.
   Future<void> logout() async {
-    _cachedToken = null;
-    await _storage.delete(key: 'token');
+    await _deleteAccessToken();
     await _storage.delete(key: 'refresh_token');
     // Should send a logout request to Gateway API, but no logout URL is currently documented.
   }
