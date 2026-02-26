@@ -1,55 +1,66 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
+import 'auth_provider_test.mocks.dart';
 
-const testUser = UserProfile(
-  fullName: 'Joe Bloggs',
-  id: 123456,
-  email: 'test@test.com',
-);
-
-class MockSuccessAuthService extends AuthService {
-  @override
-  Future<UserProfile> login({
-    required String email,
-    required String password,
-  }) async {
-    return testUser;
-  }
-}
-
-class MockFailedAuthService extends AuthService {
-  @override
-  Future<UserProfile> login({
-    required String email,
-    required String password,
-  }) async {
-    throw const AuthException('Invalid Credentials');
-  }
-}
-
-ProviderContainer mockSetup() {
-  final mockService = MockSuccessAuthService();
-  return ProviderContainer(
-    overrides: [
-      authServiceProvider.overrideWithValue(mockService),
-    ],
-  );
-}
-
+@GenerateMocks([AuthService])
 void main() {
-  test('initial state is null (logged out)', () async {
-    final container = ProviderContainer();
+  final mockService = MockAuthService();
+  late ProviderContainer container;
 
+  const testUser = UserProfile(
+    fullName: 'Joe Bloggs',
+    id: 123456,
+    email: 'test@test.com',
+  );
+
+  setUp(() {
+    reset(mockService);
+    container = ProviderContainer(
+      overrides: [
+        authServiceProvider.overrideWithValue(mockService),
+      ],
+    );
+  });
+
+  tearDown(() {
+    container.dispose();
+  });
+
+
+  test('initial state is null if no user is authenticated', () async {
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
     final result = await container.read(authProvider.future);
-
     expect(result, isNull);
   });
 
+  test('shows authenticated user as logged in', () async {
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => testUser);
+    final result = await container.read(authProvider.future);
+    expect(result, testUser);
+  });
+
+  test('login emits loading then data', () async {
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
+    when(mockService.login(email: 'test@test.com', password: 'password')).thenAnswer((_) async => testUser);
+
+    final notifier = container.read(authProvider.notifier);
+
+    final future = notifier.login('test@test.com', 'password');
+    expect(container.read(authProvider), isA<AsyncLoading<UserProfile?>>());
+    await future;
+
+    expect(container.read(authProvider).value, testUser);
+  });
+
   test('login success sets user', () async {
-    final container = mockSetup();
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
+    when(mockService.login(email: 'test@test.com', password: 'password')).thenAnswer((_) async => testUser);
+
     final notifier = container.read(authProvider.notifier);
 
     await notifier.login('test@test.com', 'password');
@@ -58,12 +69,10 @@ void main() {
   });
 
   test('login failure sets AsyncError', () async {
-    final mockService = MockFailedAuthService();
-    final container = ProviderContainer(
-      overrides: [
-        authServiceProvider.overrideWithValue(mockService),
-      ],
-    );
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
+    when(mockService.login(email: 'test@test.com', password: 'password'))
+        .thenThrow(const AuthException('Invalid Credentials'));
+
     final notifier = container.read(authProvider.notifier);
 
     await notifier.login('test@test.com', 'password');
@@ -73,25 +82,22 @@ void main() {
   });
 
   test('logout sets user to null', () async {
-    final container = mockSetup();
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
+    when(mockService.login(email: 'test@test.com', password: 'password')).thenAnswer((_) async => testUser);
+
     final notifier = container.read(authProvider.notifier);
     await notifier.login('test@test.com', 'password');
     expect(container.read(authProvider).value, testUser);
 
-    notifier.logout();
+    await notifier.logout();
     expect(container.read(authProvider).value, isNull);
   });
 
-  test('login emits loading then data', () async {
-    final container = mockSetup();
-
+  test('logout calls AuthService logout', () async {
     final notifier = container.read(authProvider.notifier);
-    final future = notifier.login('test@test.com', 'password');
 
-    expect(container.read(authProvider), isA<AsyncLoading<UserProfile?>>());
+    await notifier.logout();
 
-    await future;
-
-    expect(container.read(authProvider).value, testUser);
+    verify(mockService.logout()).called(1);
   });
 }

@@ -1,32 +1,51 @@
 import 'dart:convert';
+import 'package:clock/clock.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:smart_tags/services/auth_service.dart';
+import 'auth_service_test.mocks.dart';
 
+@GenerateMocks([FlutterSecureStorage])
 void main() {
+  final mockFlutterSecureStorage = MockFlutterSecureStorage();
+
+  // mockJwtPayload = {
+  //   "sub": "joe.bloggs@test.com",
+  //   "name": "Joe Bloggs",
+  //   "exp": 1767225600, // token expiry 01-Jan-2026 00:00:00
+  //   "contactId": 123456
+  // }
+  const mockJwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2UuYmxvZ2dzQHRlc3QuY29tIiwibmFtZSI6IkpvZSBCbG9nZ3MiLCJleHAiOjE3NjcyMjU2MDAsImNvbnRhY3RJZCI6MTIzNDU2fQ.Q4cjOX8kKNxa9v4qhOJEEQDR1wlFW6d2_ZPDs54Xk0U';
+  final mockAuthResponse = {
+    'success': true,
+    'access_token_rs256': mockJwt,
+    'refresh_token': 'mockRefreshToken',
+    'refresh_expires_in': 864000,
+    'expires_in': 3600,
+    'contact': {
+      'id': 123456,
+      'email': 'joe.bloggs@test.com',
+      'fullName': 'Joe Bloggs',
+      'firstName': 'Joe',
+      'lastName': 'Bloggs',
+    }
+  };
+
+  setUp(() {
+    reset(mockFlutterSecureStorage);
+  });
+
   group('AuthService', () {
     test('login returns a UserProfile on success', () async {
-      final mockResponse = {
-        'success': true,
-        'access_token_rs256': 'mockToken',
-        'refresh_token': 'mockRefreshToken',
-        'refresh_expires_in': 864000,
-        'expires_in': 3600,
-        'contact': {
-          'id': 123456,
-          'email': 'joe.bloggs@test.com',
-          'fullName': 'Joe Bloggs',
-          'firstName': 'Joe',
-          'lastName': 'Bloggs',
-      }
-    };
-
       final client = MockClient((request) async {
-        return http.Response(json.encode(mockResponse), 200);
+        return http.Response(json.encode(mockAuthResponse), 200);
       });
 
-      final authService = AuthService(client: client);
+      final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
       final user = await authService.login(email: 'joe.bloggs@test.com', password: 'password');
 
       expect(user.fullName, 'Joe Bloggs');
@@ -93,5 +112,102 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('login stores token and refresh token', () async {
+    final client = MockClient((request) async {
+      return http.Response(json.encode(mockAuthResponse), 200);
+    });
+
+    final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
+    await authService.login(email: 'joe.bloggs@test.com', password: 'password');
+
+    verify(mockFlutterSecureStorage.write(key: 'token', value: mockJwt)).called(1);
+    verify(mockFlutterSecureStorage.write(key: 'refresh_token', value: 'mockRefreshToken')).called(1);
+  });
+
+  test('logout deletes stored token and refresh token', () async {
+    final client = MockClient((request) async {
+      return http.Response(json.encode(mockAuthResponse), 200);
+    });
+
+    final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
+    await authService.login(email: 'joe.bloggs@test.com', password: 'password');
+
+    await authService.logout();
+
+    verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
+    verify(mockFlutterSecureStorage.delete(key: 'refresh_token')).called(1);
+  });
+
+  test('access token is retrieved from memory if cached', () async {
+    final client = MockClient((request) async {
+      return http.Response(json.encode(mockAuthResponse), 200);
+    });
+
+    final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
+    await authService.login(email: 'joe.bloggs@test.com', password: 'password');
+    await authService.getAccessToken();
+
+    verifyNever(mockFlutterSecureStorage.read(key: 'token'));
+  });
+
+  test('access token is retrieved from storage if not cached', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    await withClock(Clock.fixed(DateTime(2025, 12, 31)), () async {
+      final token = await authService.getAccessToken();
+      expect(token, mockJwt);
+      verify(mockFlutterSecureStorage.read(key: 'token')).called(1);
+    });
+  });
+
+  test('return null if access token is not cached or stored', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => null);
+
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+    final token = await authService.getAccessToken();
+
+    expect(token, null);
+    verify(mockFlutterSecureStorage.read(key: 'token')).called(1);
+  });
+
+  test('access token from storage is not returned if expired', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
+      final token = await authService.getAccessToken();
+      expect(token, null);
+      verify(mockFlutterSecureStorage.read(key: 'token')).called(1);
+    });
+  });
+
+  test('access token is deleted from storage if expired', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
+      final token = await authService.getAccessToken();
+      expect(token, null);
+      verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
+    });
+  });
+
+  test('user information is retrieved from stored token', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+
+    final authService = AuthService(storage: mockFlutterSecureStorage);
+
+    await withClock(Clock.fixed(DateTime(2025, 12, 31)), () async {
+      final user = await authService.getAuthenticatedUser();
+      expect(user!.id, 123456);
+      expect(user.fullName, 'Joe Bloggs');
+      expect(user.email,  'joe.bloggs@test.com');
+    });
   });
 }

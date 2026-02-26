@@ -58,7 +58,8 @@ class UserProfileScreen extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: ElevatedButton(
                 onPressed: () async {
-                  ref.read(authProvider.notifier).logout();
+                  // TODO(eawetchy): error message here if issues during logout
+                  await ref.read(authProvider.notifier).logout();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content:

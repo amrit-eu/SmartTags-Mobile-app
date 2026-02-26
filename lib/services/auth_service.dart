@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:clock/clock.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/helpers/jwt_decode.dart';
@@ -46,7 +47,7 @@ class AuthService {
     final claims = decodeJwtClaims(token);
     if (claims != null) {
       final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
-      return !DateTime.now().isBefore(tokenExpiry);
+      return !clock.now().isBefore(tokenExpiry);
     }
     return true;
   }
@@ -81,6 +82,9 @@ class AuthService {
     final token = await _storage.read(key: 'token');
     if (token == null) return null;
     if (!_isExpired(token)) return _cachedToken = token;
+    // delete token if expired
+    await _storage.delete(key: 'token');
+    _cachedToken = null;
     return _refreshToken();
   }
 
