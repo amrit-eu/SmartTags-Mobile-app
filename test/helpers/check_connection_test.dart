@@ -2,7 +2,7 @@
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_tags/helpers/connection/connection_checking.dart';
+import 'package:smart_tags/helpers/connection.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
