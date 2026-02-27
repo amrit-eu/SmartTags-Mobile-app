@@ -29,13 +29,23 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp> {
 
-  late CheckConnection checker;
-  late Connectivity connectivity;
-  late Stream<List<ConnectivityResult>> connectivityStream;
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(initialSyncProvider);
+    ref..watch(initialSyncProvider)
+    // Listen for initial and subsequent connectivity changes
+    ..listen<ConnectivityResult?>(
+      checkConnectionProvider.select((state) => state.value),
+      (previous, next) {
+        if (previous != next) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            rootScaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(content: Text(getConnectionMessage(next))),
+            );
+          });
+        }
+      },
+    );
     return MaterialApp(
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'SmartTags',
@@ -49,19 +59,10 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
-    connectivity = Connectivity();
-    connectivityStream = connectivity.onConnectivityChanged;
-    checker = CheckConnection(
-      scaffoldMessengerKey: rootScaffoldMessengerKey,
-      connectivityStream: connectivityStream
-    );
-    unawaited(checker.check());
-    checker.init();
   }
 
   @override
   void dispose() {
-    unawaited(checker.stop());
     super.dispose();
   }
 }

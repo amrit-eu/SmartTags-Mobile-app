@@ -1,83 +1,58 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Checks for a network connection and lets the app know of network
-/// changes by displaying a SnackBar with the details.
-class CheckConnection {
-  /// Creates an instance of CheckConnection, displaying a SnackBar on a provided 
-  /// scaffold. 
-  CheckConnection({
-    required GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey,
-    required Stream<List<ConnectivityResult>> connectivityStream
-  }) {
-    _scaffoldMessengerKey = scaffoldMessengerKey;
-    _connectivityStream = connectivityStream;
+/// A provider that checks the device's connectivity status and updates in real-time.
+final checkConnectionProvider = AsyncNotifierProvider<ConnectivityStatus, ConnectivityResult?>(ConnectivityStatus.new);
+
+/// An AsyncNotifier that listens to connectivity changes and updates the state accordingly.
+class ConnectivityStatus extends AsyncNotifier<ConnectivityResult?> {
+  late StreamSubscription<List<ConnectivityResult>> _sub;
+
+  @override
+  FutureOr<ConnectivityResult?> build() async {
+    final connectivity = Connectivity();
+    // Emit initial connectivity status
+    final initialResults = await connectivity.checkConnectivity();
+    final initialStatus = initialResults.isEmpty ? null : initialResults[0];
+    state = AsyncValue.data(initialStatus);
+    // Listen for connectivity changes and update state
+    _sub = connectivity.onConnectivityChanged.listen((List<ConnectivityResult> result) async {
+      final connectivityStatus = result.isEmpty ? null : result[0];
+      state = AsyncValue.data(connectivityStatus);
+    }, onError: (e, StackTrace st) => state = AsyncValue.error(Null, st));
+    ref.onDispose(() => _sub.cancel());
+    return initialStatus;
   }
+}
 
-  final Connectivity _connectivity = Connectivity();
-  late GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey;
-  late Stream<List<ConnectivityResult>> _connectivityStream;
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+/// A helper function that returns a user-friendly message based on the connectivity status.
+String getConnectionMessage(ConnectivityResult? result) {
+  var message = 'Connection status is not known';
+  if (result != null) {
+    if (result == ConnectivityResult.none) {
+      message = 'Network connection lost';
+    } else {
+      var networkType = result.name;
 
-  /// Initialise connection checking.
-  void init() {
-    _connectivitySubscription = _connectivityStream.listen(_updateConnectionStatus);
-  }
-
-  /// Check the connectivity now. Use at application startup.
-  Future<void> check() async {
-    await _checkConnectivity();
-  }
-
-  /// Stop connection checking.
-  Future<void> stop() async {
-    await _connectivitySubscription.cancel();
-  }
-
-  Future<void> _checkConnectivity() async {
-    late List<ConnectivityResult> result;
-    try {
-      result = await _connectivity.checkConnectivity();
-    } on PlatformException {
-      result = [];
-    }
-
-    return _updateConnectionStatus(result);
-  }
-
-  void _updateConnectionStatus(List<ConnectivityResult> result) {
-    var message = 'Connection status is not known.';
-
-    if (result.isNotEmpty) {
-      if (result[0] == ConnectivityResult.none) {
-        message = 'Network connection lost';
-      } else {
-        var networkType = result[0].name;
-
-        switch (result[0].name) {
-          case 'bluetooth':
-            networkType = 'Bluetooth';
-          case 'wifi':
-            networkType = 'WiFi';
-          case 'ethernet':
-            networkType = 'Ethernet';
-          case 'mobile':
-            networkType = 'Mobile';
-          case 'vpn':
-            networkType = 'VPN';
-          default:
-            networkType = 'Unknown network type';
-        }
-
-        message = 'Network connection available ($networkType)';
+      switch (result.name) {
+        case 'bluetooth':
+          networkType = 'Bluetooth';
+        case 'wifi':
+          networkType = 'WiFi';
+        case 'ethernet':
+          networkType = 'Ethernet';
+        case 'mobile':
+          networkType = 'Mobile';
+        case 'vpn':
+          networkType = 'VPN';
+        default:
+          networkType = 'Unknown network type';
       }
-    }
 
-    _scaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(content: Text(message))
-    );
+      message = 'Network connection available ($networkType)';
+    }
   }
+  return message;
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,8 @@ import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/offline_status.dart';
+import 'package:smart_tags/helpers/connection/connection_checking.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// enum representing the type of operation being performed on the platform.
@@ -199,6 +202,8 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            if (ref.watch(checkConnectionProvider).value == ConnectivityResult.none)
+              const OfflineStatus(), // Show offline status if the device is offline.
             SectionContainer(
               child: Form(
                 key: _formKey,
