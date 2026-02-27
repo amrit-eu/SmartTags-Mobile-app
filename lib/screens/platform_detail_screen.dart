@@ -79,7 +79,10 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                       mapController: _mapController,
                       options: MapOptions(
                         initialCenter: platform.latestPosition,
-                        initialZoom: 6,
+                        initialZoom: 10,
+                        interactionOptions: const InteractionOptions(
+                          flags: InteractiveFlag.none
+                        )
                       ),
                       children: [
                         TileLayer(

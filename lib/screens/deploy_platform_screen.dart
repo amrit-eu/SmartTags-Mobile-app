@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
-import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -24,7 +27,13 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// Creates a [DeployPlatformScreen] widget.
   /// [action] specifies whether the user is deploying or recovering a platform.
   /// [platform] is the platform being deployed or recovered.
-  const DeployPlatformScreen({required this.action, required this.platform, this.locationFetcher, super.key});
+  const DeployPlatformScreen({
+    required this.action,
+    required this.platform,
+    this.positionStream,
+    this.serviceStatusStream,
+    super.key,
+  });
 
   /// The type of operation being performed (deploy or recover).
   final DeployAction action;
@@ -32,22 +41,104 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// The platform being deployed or recovered.
   final Platform platform;
 
-  /// Optional test / injection hook to provide a LocationFetcher
+  /// Optional test injection for position stream
   @visibleForTesting
-  final LocationFetcher? locationFetcher;
+  final Stream<Position>? positionStream;
+
+  /// Optional test injection for service status stream
+  @visibleForTesting
+  final Stream<ServiceStatus>? serviceStatusStream;
 
   @override
   ConsumerState<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
 }
 
 class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
+
+  StreamSubscription<Position>? _liveLocationSubscription;
+  StreamSubscription<ServiceStatus>? _serviceStatusSubscription;
+  bool useLiveLocation = false; // Default to false to save battery.
   DateTime? _selectedDateTime;
 
   String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
+
+  void setUseLiveLocation({required bool enabled}) {
+    setState(() {
+      useLiveLocation = enabled; // Set live location updates on or off based on the provided flag.
+    });
+    if (useLiveLocation) {
+      // Create fresh streams from providers or use injected ones (for testing)
+      final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
+      // getServiceStatusStream is not supported on web platform
+      final serviceStatusStream = widget.serviceStatusStream ?? (!kIsWeb ? Geolocator.getServiceStatusStream() : null);
+
+      // Monitor location changes.
+      _liveLocationSubscription = positionStream.listen(
+        (position) {
+          if (mounted) {
+            setState(() {
+              _latitudeController.text = position.latitude.toStringAsFixed(6);
+              _longitudeController.text = position.longitude.toStringAsFixed(6);
+              _setSelectedDateTime(position.timestamp);
+            });
+          }
+        },
+        onError: (Object error) {
+          debugPrint('Location stream error: $error');
+          if (mounted && useLiveLocation) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Error fetching live location. Live updates stopped.')),
+            );
+            // addPostFrameCallback used to avoid setState during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setUseLiveLocation(enabled: false);
+            });
+          }
+        },
+      );
+      // Monitor location service status changes (mobile only).
+      if (serviceStatusStream != null) {
+        _serviceStatusSubscription = serviceStatusStream.listen(
+          (status) {
+            if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
+              );
+              // addPostFrameCallback used to avoid setState during build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setUseLiveLocation(enabled: false);
+              });
+            }
+          },
+        );
+      }
+    }
+    // Cancel the listener subscriptions to stop battery drain
+    if (!useLiveLocation) {
+      unawaited(_liveLocationSubscription?.cancel());
+      unawaited(_serviceStatusSubscription?.cancel());
+    }
+  }
+
+  void toggleLiveUpdates() {
+    setUseLiveLocation(enabled: !useLiveLocation); // Toggle the live location updates on or off.
+  }
+
+  void _setSelectedDateTime(DateTime? dateTime) {
+    /// Helper method to update the selected date and time,
+    /// and update the corresponding text field.
+    setState(() {
+      _selectedDateTime = dateTime;
+      _dateTimeController.text = _selectedDateTime != null
+          ? DateFormat('MMM dd, yyyy, hh:mm a').format(_selectedDateTime!)
+          : '';
+    });
+  }
 
   @override
   void dispose() {
@@ -55,10 +146,17 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _longitudeController.dispose();
     _dateTimeController.dispose();
     _notesController.dispose();
+    unawaited(_liveLocationSubscription?.cancel());
+    unawaited(_serviceStatusSubscription?.cancel());
     super.dispose();
   }
 
   Future<void> _submitForm() async {
+    // Validate form before submission
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     // Attempt to update the record in the local sqlite database.
     try {
       await ref.read(databaseProvider).updatePlatforms([
@@ -67,7 +165,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           model: Value(widget.platform.model),
           lat: Value(double.parse(_latitudeController.text)),
           lon: Value(double.parse(_longitudeController.text)),
-          lastUpdated: Value(_selectedDateTime ?? DateTime.now()),
+          lastUpdated: Value(_selectedDateTime!),
           operationLat: Value(double.parse(_latitudeController.text)),
           operationLon: Value(double.parse(_longitudeController.text)),
           operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
@@ -103,6 +201,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           children: [
             SectionContainer(
               child: Form(
+                key: _formKey,
                 child: Column(
                   spacing: 16,
                   children: [
@@ -121,61 +220,90 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       children: [
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Latitude'),
+                            decoration: const InputDecoration(
+                              labelText: 'Latitude',
+                              errorMaxLines: 3,
+                            ),
                             controller: _latitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                            enabled: !useLiveLocation, // Disable manual input if using live location.
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Latitude is required';
+                              }
+                              try {
+                                final latitude = double.parse(value);
+                                if (latitude < -90 || latitude > 90) {
+                                  return 'Latitude must be between -90 and 90';
+                                }
+                              } on FormatException {
+                                return 'Latitude must be a valid number';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         Expanded(
                           child: TextFormField(
-                            decoration: const InputDecoration(labelText: 'Longitude'),
+                            decoration: const InputDecoration(
+                              labelText: 'Longitude',
+                              errorMaxLines: 3,
+                            ),
                             controller: _longitudeController,
                             keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                            enabled: !useLiveLocation, // Disable manual input if using live location.
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Longitude is required';
+                              }
+                              try {
+                                final longitude = double.parse(value);
+                                if (longitude < -180 || longitude > 180) {
+                                  return 'Longitude must be between -180 and 180';
+                                }
+                              } on FormatException {
+                                return 'Longitude must be a valid number';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.my_location),
-                          onPressed: () async {
-                            final locationFetcher = widget.locationFetcher ?? LocationFetcher();
-                            final location = await locationFetcher.getUserLocation();
-                            if (location != null) {
-                              setState(() {
-                                _latitudeController.text = location.latitude.toStringAsFixed(6);
-                                _longitudeController.text = location.longitude.toStringAsFixed(6);
-                              });
-                            } else {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to fetch location. Please enter manually.')),
-                                );
-                              }
-                            }
-                          },
+                          color: useLiveLocation ? Colors.lightBlue : null,
+                          onPressed: toggleLiveUpdates,
+                          tooltip: useLiveLocation ? 'Disable live location updates' : 'Enable live location updates',
                         ),
                       ],
                     ),
                     TextFormField(
-                      decoration: InputDecoration(labelText: '$_eventType Time (UTC)'),
+                      decoration: InputDecoration(
+                        labelText: '$_eventType Time (UTC)',
+                        errorMaxLines: 3,
+                      ),
                       controller: _dateTimeController,
                       readOnly: true,
+                      enabled: !useLiveLocation, // Disable manual input if using live location time.
+                      validator: (value) => (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
                       onTap: () async {
                         final date = await showDatePicker(
-                          context: context,
+                          context: this.context,
                           initialDate: _selectedDateTime ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                           helpText: 'Date',
                         );
                         if (date == null) return;
-                        if (!context.mounted) return;
+                        if (!mounted) return;
                         final time = await showTimePicker(
-                          context: context,
+                          context: this.context,
                           initialTime: _selectedDateTime != null
                               ? TimeOfDay.fromDateTime(_selectedDateTime!)
                               : TimeOfDay.now(),
                           helpText: 'Time (UTC)',
                         );
                         if (time == null) return;
+                        if (!mounted) return;
                         final combined = DateTime(
                           date.year,
                           date.month,
@@ -183,12 +311,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                           time.hour,
                           time.minute,
                         );
-                        setState(() {
-                          _selectedDateTime = combined;
-                          _dateTimeController.text = DateFormat(
-                            'MMM dd, yyyy, hh:mm a',
-                          ).format(combined);
-                        });
+                        _setSelectedDateTime(combined);
                       },
                     ),
                     TextFormField(
@@ -207,10 +330,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                           ),
                           child: Text('${widget.action.name.capitalize()} Platform'),
                         ),
-                        ElevatedButton(onPressed: () => {
-                          Navigator.pop(context)
-                        }, child: const Text('Cancel')),
-                      ],)
+                        ElevatedButton(onPressed: () => {Navigator.pop(context)}, child: const Text('Cancel')),
+                      ],
+                    ),
                   ],
                 ),
               ),
