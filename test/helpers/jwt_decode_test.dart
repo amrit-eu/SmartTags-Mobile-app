@@ -42,7 +42,7 @@ void main() {
       expect(() => decodeJwtClaims(jwt), throwsA(isA<JwtDecodingException>()),);
     });
 
-    test('returns null when payload decodes but is not valid UTF-8 JSON', () {
+    test('throws if payload decodes but is not valid UTF-8 JSON', () {
       // Build a payload that is valid base64url but decodes to non-JSON bytes.
       // For instance, raw bytes that don’t represent a JSON string.
       final header = encodeJsonNoPad({'alg': 'none', 'typ': 'JWT'});
