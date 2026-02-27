@@ -54,6 +54,7 @@ class AuthService {
       if (claims['exp'] is! int) {
         throw const AuthException('Invalid JWT expiry');
       }
+      // API returns expiry as seconds since epoch, convert to match available Dart function
       final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
       return !clock.now().isBefore(tokenExpiry);
     }  on JwtDecodingException {
