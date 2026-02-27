@@ -170,9 +170,10 @@ class AuthService {
   }
 
   /// Delete tokens from cache and secure storage.
-  Future<void> logout() async {
+  Future<Null> logout() async {
     await _deleteAccessToken();
     await _storage.delete(key: 'refresh_token');
     // Should send a logout request to Gateway API, but no logout URL is currently documented.
+    return null;
   }
 }

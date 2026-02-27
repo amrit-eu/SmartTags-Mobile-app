@@ -73,11 +73,10 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
           as _i4.Future<_i2.UserProfile>);
 
   @override
-  _i4.Future<void> logout() =>
+  _i4.Future<Null> logout() =>
       (super.noSuchMethod(
             Invocation.method(#logout, []),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i4.Future<Null>.value(),
           )
-          as _i4.Future<void>);
+          as _i4.Future<Null>);
 }

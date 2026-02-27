@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -83,6 +84,7 @@ void main() {
 
   test('logout sets user to null', () async {
     when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
+    when(mockService.logout()).thenAnswer((_) async => null);
     when(mockService.login(email: 'test@test.com', password: 'password')).thenAnswer((_) async => testUser);
 
     final notifier = container.read(authProvider.notifier);
@@ -95,9 +97,34 @@ void main() {
 
   test('logout calls AuthService logout', () async {
     final notifier = container.read(authProvider.notifier);
+    when(mockService.logout()).thenAnswer((_) async => null);
 
     await notifier.logout();
 
     verify(mockService.logout()).called(1);
+  });
+
+  test('logout failure emits error, then returns to logged in user value', () async {
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) async => testUser);
+    when(mockService.logout()).thenThrow(PlatformException(message: "Couldn't delete token", code: '1'));
+    final notifier = container.read(authProvider.notifier)
+    ..state = const AsyncData<UserProfile?>(testUser);
+
+    final states = <AsyncValue<UserProfile?>>[];
+    final sub = container.listen(
+      authProvider,
+          (prev, next) => states.add(next),
+    );
+
+    await notifier.logout();
+
+    // Cleanup subscription
+    sub.close();
+
+    expect(states.length, 3);
+    expect(states[0], isA<AsyncLoading<UserProfile?>>());
+    expect(states[1], isA<AsyncError<UserProfile?>>());
+    expect(states[2], const AsyncData<UserProfile?>(testUser));
+
   });
 }
