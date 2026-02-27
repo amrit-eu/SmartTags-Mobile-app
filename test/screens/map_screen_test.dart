@@ -178,7 +178,7 @@ void main() {
 
       // Tap on the marker (location_on icon)
       await tester.tap(find.byIcon(Icons.location_on).first);
-      
+
       // Multiple pumps to allow for stream provider updates
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -373,6 +373,13 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       // Insert two test platforms
+      //
+      // Note that now we have clustering, this test relies on the two
+      // platforms being sufficiently far apart to not cluster, and at
+      // the same time be close enough together to be rendered on the
+      // viewport at the same time. The longitudes of -3 and -30 seem to
+      // satisfy this requirement. But if this test fails unexpectedly in the
+      // future, check to see whether unintentional clustering is the cause.
       await db
           .into(db.platforms)
           .insert(
@@ -397,7 +404,7 @@ void main() {
               model: 'Second Platform',
               network: 'Test Network',
               lat: 42,
-              lon: -6,
+              lon: -30,
               operationLat: 43,
               operationLon: -7,
               status: 'Active',
