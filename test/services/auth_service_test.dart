@@ -190,7 +190,7 @@ void main() {
     });
   });
 
-  test('access token is deleted from storage if expired', () async {
+  test('JWT is deleted from storage if expired', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
 
     final authService = AuthService(storage: mockFlutterSecureStorage);
@@ -202,7 +202,7 @@ void main() {
     });
   });
 
-  test('user information is retrieved from stored token', () async {
+  test('user information is retrieved from stored JWT', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
 
     final authService = AuthService(storage: mockFlutterSecureStorage);
@@ -215,7 +215,7 @@ void main() {
     });
   });
 
-  test('token is deleted and null is returned if JWT has no expiry', () async {
+  test('JWT is deleted and null is returned if expiry time is missing', () async {
     // Missing exp
     final invalidJwt = buildJwt(payload: {
       'name': 'Alice Example',
@@ -231,7 +231,7 @@ void main() {
     verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
   });
 
-  test('token is deleted and no user is returned if JWT is invalid', () async {
+  test('JWT is deleted and no user is returned if claims are invalid', () async {
     // Missing contactId
     final invalidJwt = buildJwt(payload: {
       'name': 'Alice Example',
@@ -244,18 +244,6 @@ void main() {
     await withClock(Clock.fixed(DateTime(2025, 12, 31)), () async {
       final user = await authService.getAuthenticatedUser();
       expect(user, null);
-      verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
-    });
-  });
-
-  test('access token is deleted from storage if user claims are invalid', () async {
-    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
-
-    final authService = AuthService(storage: mockFlutterSecureStorage);
-
-    await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
-      final token = await authService.getAccessToken();
-      expect(token, null);
       verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
     });
   });
