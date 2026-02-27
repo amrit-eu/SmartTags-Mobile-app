@@ -336,10 +336,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             children: [
               FlutterMap(
                 mapController: _mapController,
-                options: const MapOptions(
-                  initialCenter: _defaultCenter,
-                  initialZoom: _defaultZoom,
-                ),
+                options: const MapOptions(initialCenter: _defaultCenter, initialZoom: _defaultZoom),
                 children: [
                   // GestureDetector for tiles to handle clear platform selection on tap.
                   GestureDetector(
