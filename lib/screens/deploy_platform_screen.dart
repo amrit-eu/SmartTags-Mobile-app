@@ -14,7 +14,6 @@ import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
-import 'package:smart_tags/helpers/connection/connection_checking.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// enum representing the type of operation being performed on the platform.
