@@ -62,6 +62,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
+  late ConnectivityResult _connectivityState;
 
   StreamSubscription<Position>? _liveLocationSubscription;
   StreamSubscription<ServiceStatus>? _serviceStatusSubscription;
@@ -186,9 +187,13 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       return;
     }
     // If successful, show a success message.
+    var message = '$_eventType successful! Changes have been saved.';
     if (mounted) {
+      if (_connectivityState == ConnectivityResult.none) {
+        message = '$_eventType successful! Changes have been saved locally.';
+      } 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$_eventType successful!. Changes have been saved locally.')),
+        SnackBar(content: Text(message)),
       );
       Navigator.pop(context);
     }
@@ -196,13 +201,16 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for connectivity changes to update the UI accordingly.
+    _connectivityState = ref.watch(checkConnectionProvider).value ?? ConnectivityResult.none;
+
     return Scaffold(
       appBar: TopNavigation(title: Text('${widget.action.name.capitalize()} Platform'), leading: const BackButton()),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            if (ref.watch(checkConnectionProvider).value == ConnectivityResult.none)
+            if (_connectivityState == ConnectivityResult.none)
               const OfflineStatus(), // Show offline status if the device is offline.
             SectionContainer(
               child: Form(
