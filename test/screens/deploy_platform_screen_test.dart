@@ -233,7 +233,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that a success SnackBar is shown
-    expect(find.text('Recovery successful!'), findsOneWidget);
+    expect(find.text('Recovery successful!. Changes have been saved locally.'), findsOneWidget);
 
     // Verify that the platform record in the database has been updated with the new values
     final updatedPlatform = await (db.select(

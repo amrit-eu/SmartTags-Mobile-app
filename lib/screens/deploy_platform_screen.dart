@@ -188,7 +188,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     // If successful, show a success message.
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$_eventType successful!')),
+        SnackBar(content: Text('$_eventType successful!. Changes have been saved locally.')),
       );
       Navigator.pop(context);
     }
