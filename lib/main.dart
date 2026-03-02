@@ -79,6 +79,13 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
             );
           });
         }
+      }, onError: (error, stackTrace) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to check connectivity')),
+          );
+        });
+        debugPrint('Error in connectivity provider: $error');
       },
     );
     return Scaffold(
