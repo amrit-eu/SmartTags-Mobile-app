@@ -4,7 +4,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
-import 'package:smart_tags/helpers/scaffold_messenger.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
@@ -26,23 +25,8 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref
-      ..watch(initialSyncProvider)
-      // Listen for initial and subsequent connectivity changes
-      ..listen<ConnectivityResult?>(
-        checkConnectionProvider.select((state) => state.value),
-        (previous, next) {
-          if (previous != next) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              rootScaffoldMessengerKey.currentState?.showSnackBar(
-                SnackBar(content: Text(getConnectionMessage(next))),
-              );
-            });
-          }
-        },
-      );
+    ref.watch(initialSyncProvider);
     return MaterialApp(
-      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -53,15 +37,15 @@ class MyApp extends ConsumerWidget {
 }
 
 /// Main navigation shell with bottom navigation bar.
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends ConsumerStatefulWidget {
   /// Creates a [MainNavigation] widget.
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  ConsumerState<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class _MainNavigationState extends ConsumerState<MainNavigation> {
   int _selectedIndex = 0;
 
   late final List<Widget> _pages;
@@ -84,6 +68,19 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for initial and subsequent connectivity changes
+    ref.listen<ConnectivityResult?>(
+      checkConnectionProvider.select((state) => state.value),
+      (previous, next) {
+        if (previous != next) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(getConnectionMessage(next))),
+            );
+          });
+        }
+      },
+    );
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
