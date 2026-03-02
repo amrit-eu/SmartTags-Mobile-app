@@ -20,33 +20,27 @@ Future<void> main() async {
 }
 
 /// The root widget of the application.
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends ConsumerWidget {
   /// Creates a [MyApp] widget.
   const MyApp({super.key});
 
-@override
-  ConsumerState<ConsumerStatefulWidget> createState() => _MyAppState();
-}
-
-class _MyAppState extends ConsumerState<MyApp> {
-
-
   @override
-  Widget build(BuildContext context) {
-    ref..watch(initialSyncProvider)
-    // Listen for initial and subsequent connectivity changes
-    ..listen<ConnectivityResult?>(
-      checkConnectionProvider.select((state) => state.value),
-      (previous, next) {
-        if (previous != next) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            rootScaffoldMessengerKey.currentState?.showSnackBar(
-              SnackBar(content: Text(getConnectionMessage(next))),
-            );
-          });
-        }
-      },
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref
+      ..watch(initialSyncProvider)
+      // Listen for initial and subsequent connectivity changes
+      ..listen<ConnectivityResult?>(
+        checkConnectionProvider.select((state) => state.value),
+        (previous, next) {
+          if (previous != next) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              rootScaffoldMessengerKey.currentState?.showSnackBar(
+                SnackBar(content: Text(getConnectionMessage(next))),
+              );
+            });
+          }
+        },
+      );
     return MaterialApp(
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'SmartTags',
@@ -55,16 +49,6 @@ class _MyAppState extends ConsumerState<MyApp> {
       home: const MainNavigation(),
       themeMode: ref.watch(themeProvider),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 
