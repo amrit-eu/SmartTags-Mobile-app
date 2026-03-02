@@ -17,7 +17,7 @@ class ConnectivityStatus extends AsyncNotifier<ConnectivityResult?> {
     final initialStatus = initialResults.isEmpty ? null : initialResults[0];
     state = AsyncValue.data(initialStatus);
     // Listen for connectivity changes and update state
-    _sub = connectivity.onConnectivityChanged.listen((List<ConnectivityResult> result) async {
+    _sub = connectivity.onConnectivityChanged.listen((List<ConnectivityResult> result) {
       final connectivityStatus = result.isEmpty ? null : result[0];
       state = AsyncValue.data(connectivityStatus);
     }, onError: (Object e, StackTrace st) => state = AsyncValue.error(e, st));
