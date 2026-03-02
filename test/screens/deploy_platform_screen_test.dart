@@ -25,6 +25,14 @@ class MockErrorDatabase extends AppDatabase {
   }
 }
 
+/// A test notifier that simulates Wifi connectivity.
+class _WifiConnectivityStatus extends ConnectivityStatus {
+  @override
+  FutureOr<ConnectivityResult?> build() async {
+    return ConnectivityResult.wifi;
+  }
+}
+
 /// A test notifier that simulates no connectivity.
 class _NoConnectivityStatus extends ConnectivityStatus {
   @override
@@ -568,5 +576,26 @@ void main() {
 
     // Verify that the expected offline widget is shown.
     expect(find.byType(OfflineStatus), findsOneWidget);
+  });
+    testWidgets('Offline status does not show when the device is online.', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            checkConnectionProvider.overrideWith(
+              _WifiConnectivityStatus.new,
+            )
+          ],
+          child: MaterialApp(
+            home: DeployPlatformScreen(
+              platform: testPlatform,
+              action: DeployAction.deploy,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+  
+      // Verify that the expected offline widget is not shown.
+      expect(find.byType(OfflineStatus), findsNothing);
   });
 }
