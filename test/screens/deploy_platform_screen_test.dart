@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,8 +9,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
+import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 class MockErrorDatabase extends AppDatabase {
@@ -19,6 +22,14 @@ class MockErrorDatabase extends AppDatabase {
   @override
   Future<void> updatePlatforms(List<PlatformsCompanion> platforms) async {
     throw Exception('Mocked database error');
+  }
+}
+
+/// A test notifier that simulates no connectivity.
+class _NoConnectivityStatus extends ConnectivityStatus {
+  @override
+  FutureOr<ConnectivityResult?> build() async {
+    return ConnectivityResult.none;
   }
 }
 
@@ -536,5 +547,26 @@ void main() {
     expect(find.text('Latitude is required'), findsOneWidget);
     expect(find.text('Longitude is required'), findsOneWidget);
     expect(find.text('Deployment Time is required'), findsOneWidget);
+  });
+  testWidgets('Offline status shows when the device is offline.', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          checkConnectionProvider.overrideWith(
+            _NoConnectivityStatus.new,
+          )
+        ],
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify that the expected offline widget is shown.
+    expect(find.byType(OfflineStatus), findsOneWidget);
   });
 }
