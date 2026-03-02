@@ -18,6 +18,29 @@ class UserProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<UserProfile?>>(authProvider, (prev, next) {
+      next.whenOrNull(
+        data: (user) {
+          if (user == null) {
+            // logout success
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Logout successful')),
+              );
+            }
+          }
+        },
+        error: (err, stack) {
+          // logout failed
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Logout failed: $err')),
+            );
+          }
+        },
+      );
+    });
+
     return Scaffold(
       appBar: TopNavigation(title: const Text('My Profile'), leading: const BackButton()),
       body: SingleChildScrollView(
@@ -58,17 +81,13 @@ class UserProfileScreen extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: ElevatedButton(
                 onPressed: () async {
-                  ref.read(authProvider.notifier).logout();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                      Text('Logout successful'),
-                    ),
-                  );
+                  await ref.read(authProvider.notifier).logout();
+                  if (!context.mounted) return;
+
                   await Navigator.of(context).push(
-                      MaterialPageRoute<MainNavigation>(
-                        builder: (BuildContext ctx) => const MainNavigation(),
-                      )
+                    MaterialPageRoute<MainNavigation>(
+                      builder: (BuildContext ctx) => const MainNavigation(),
+                    )
                   );
                 },
                 child: const Text('Log Out'),

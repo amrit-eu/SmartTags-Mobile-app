@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/services/auth_service.dart';
@@ -27,7 +28,7 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
   @override
   Future<UserProfile?> build() async {
     _authService = ref.read(authServiceProvider);
-    return null;
+    return _authService.getAuthenticatedUser();
   }
 
   /// Logs in a user using [email] and [password].
@@ -46,9 +47,18 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
   }
 
   /// Logs out the current user.
-  ///
-  /// Sets the state to `AsyncData(null)` to represent a logged-out state.
-  void logout() {
-    state = const AsyncData(null);
+  Future<void> logout() async {
+    final previous = state;
+    state = const AsyncLoading();
+
+    try {
+      await _authService.logout();
+      state = const AsyncData(null);
+    } on PlatformException catch (e, st) { // error deleting token from storage
+      // Emit error first so UI can read it
+      state = AsyncError<UserProfile?>(e, st);
+      // Then restore previous user so UI stays logged in
+      state = previous;
+    } // catch other exception thrown if remote logout fails if/when we logout server side
   }
 }
