@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
@@ -312,7 +313,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final platformsAsync = ref.watch(platformsStreamProvider);
-    
+
     // Listen for position updates of the selected platform and auto-center map
     if (_selectedPlatformRef != null) {
       ref.listen(platformByRefStreamProvider(_selectedPlatformRef!), (previous, next) {
@@ -324,7 +325,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         });
       });
     }
-    
+
     return Scaffold(
       appBar: TopNavigation(title: const Text('SmartTags')),
       body: platformsAsync.when(
@@ -335,10 +336,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             children: [
               FlutterMap(
                 mapController: _mapController,
-                options: const MapOptions(
-                  initialCenter: _defaultCenter,
-                  initialZoom: _defaultZoom,
-                ),
+                options: const MapOptions(initialCenter: _defaultCenter, initialZoom: _defaultZoom),
                 children: [
                   // GestureDetector for tiles to handle clear platform selection on tap.
                   GestureDetector(
@@ -363,9 +361,30 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                       ],
                     ),
                   ),
-                  // Markers
-                  MarkerLayer(
-                    markers: _buildMarkers(platforms),
+                  // Clustered markers
+                  MarkerClusterLayerWidget(
+                    options: MarkerClusterLayerOptions(
+                      maxClusterRadius: 120,
+                      size: const Size(40, 40),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(50),
+                      maxZoom: 15,
+                      markers: _buildMarkers(platforms),
+                      builder: (context, markers) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.blue,
+                          ),
+                          child: Center(
+                            child: Text(
+                              markers.length.toString(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
