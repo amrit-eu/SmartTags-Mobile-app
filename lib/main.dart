@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/helpers/connection/connection_checking.dart';
-import 'package:smart_tags/helpers/scaffold_messenger.dart';
+import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
@@ -19,25 +19,14 @@ Future<void> main() async {
 }
 
 /// The root widget of the application.
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends ConsumerWidget {
   /// Creates a [MyApp] widget.
   const MyApp({super.key});
 
-@override
-  ConsumerState<ConsumerStatefulWidget> createState() => _MyAppState();
-}
-
-class _MyAppState extends ConsumerState<MyApp> {
-
-  late CheckConnection checker;
-  late Connectivity connectivity;
-  late Stream<List<ConnectivityResult>> connectivityStream;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(initialSyncProvider);
     return MaterialApp(
-      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -45,37 +34,18 @@ class _MyAppState extends ConsumerState<MyApp> {
       themeMode: ref.watch(themeProvider),
     );
   }
-
-  @override
-  void initState() {
-    super.initState();
-    connectivity = Connectivity();
-    connectivityStream = connectivity.onConnectivityChanged;
-    checker = CheckConnection(
-      scaffoldMessengerKey: rootScaffoldMessengerKey,
-      connectivityStream: connectivityStream
-    );
-    unawaited(checker.check());
-    checker.init();
-  }
-
-  @override
-  void dispose() {
-    unawaited(checker.stop());
-    super.dispose();
-  }
 }
 
 /// Main navigation shell with bottom navigation bar.
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends ConsumerStatefulWidget {
   /// Creates a [MainNavigation] widget.
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => _MainNavigationState();
+  ConsumerState<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _MainNavigationState extends State<MainNavigation> {
+class _MainNavigationState extends ConsumerState<MainNavigation> {
   int _selectedIndex = 0;
 
   late final List<Widget> _pages;
@@ -98,6 +68,26 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for initial and subsequent connectivity changes
+    ref.listen<ConnectivityResult?>(
+      checkConnectionProvider.select((state) => state.value),
+      (previous, next) {
+        if (previous != next) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(getConnectionMessage(next))),
+            );
+          });
+        }
+      }, onError: (error, stackTrace) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to check connectivity')),
+          );
+        });
+        debugPrint('Error in connectivity provider: $error');
+      },
+    );
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(

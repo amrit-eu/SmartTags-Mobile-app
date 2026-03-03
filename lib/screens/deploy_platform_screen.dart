@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,10 @@ import 'package:intl/intl.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// enum representing the type of operation being performed on the platform.
@@ -59,6 +62,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
+  late ConnectivityResult _connectivityState;
 
   StreamSubscription<Position>? _liveLocationSubscription;
   StreamSubscription<ServiceStatus>? _serviceStatusSubscription;
@@ -183,9 +187,13 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       return;
     }
     // If successful, show a success message.
+    var message = '$_eventType successful! Changes have been saved.';
     if (mounted) {
+      if (_connectivityState == ConnectivityResult.none) {
+        message = '$_eventType successful! Changes have been saved locally.';
+      } 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$_eventType successful!')),
+        SnackBar(content: Text(message)),
       );
       Navigator.pop(context);
     }
@@ -193,12 +201,17 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for connectivity changes to update the UI accordingly.
+    _connectivityState = ref.watch(checkConnectionProvider).value ?? ConnectivityResult.none;
+
     return Scaffold(
       appBar: TopNavigation(title: Text('${widget.action.name.capitalize()} Platform'), leading: const BackButton()),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            if (_connectivityState == ConnectivityResult.none)
+              const OfflineStatus(), // Show offline status if the device is offline.
             SectionContainer(
               child: Form(
                 key: _formKey,

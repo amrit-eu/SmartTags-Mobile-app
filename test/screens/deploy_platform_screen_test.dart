@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,8 +9,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
+import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 class MockErrorDatabase extends AppDatabase {
@@ -19,6 +22,22 @@ class MockErrorDatabase extends AppDatabase {
   @override
   Future<void> updatePlatforms(List<PlatformsCompanion> platforms) async {
     throw Exception('Mocked database error');
+  }
+}
+
+/// A test notifier that simulates Wifi connectivity.
+class _WifiConnectivityStatus extends ConnectivityStatus {
+  @override
+  FutureOr<ConnectivityResult?> build() async {
+    return ConnectivityResult.wifi;
+  }
+}
+
+/// A test notifier that simulates no connectivity.
+class _NoConnectivityStatus extends ConnectivityStatus {
+  @override
+  FutureOr<ConnectivityResult?> build() async {
+    return ConnectivityResult.none;
   }
 }
 
@@ -152,7 +171,7 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
 
-  testWidgets('Submitting the form updates the corresponding platform record in the database', (tester) async {
+  testWidgets('Submitting the form updates the corresponding platform record in the database (online)', (tester) async {
     final platform = Platform(
       platformRef: 'TEST-001',
       model: 'Model 1',
@@ -187,6 +206,9 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(
+              _WifiConnectivityStatus.new,
+            )
         ],
         child: MaterialApp(
           home: Navigator(
@@ -233,7 +255,113 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that a success SnackBar is shown
-    expect(find.text('Recovery successful!'), findsOneWidget);
+    expect(find.text('Recovery successful! Changes have been saved.'), findsOneWidget);
+
+    // Verify that the platform record in the database has been updated with the new values
+    final updatedPlatform = await (db.select(
+      db.platforms,
+    )..where((tbl) => tbl.ref.equals(platform.platformRef))).getSingle();
+
+    // Unchanged
+    expect(updatedPlatform.ref, platform.platformRef);
+    expect(updatedPlatform.model, platform.model);
+    expect(updatedPlatform.network, platform.network);
+    expect(updatedPlatform.status, 'Active');
+
+    // Updated
+    expect(updatedPlatform.operationLat, 12.345);
+    expect(updatedPlatform.operationLon, 67.890);
+    expect(updatedPlatform.operationalStatus, 'Recovered');
+    expect(updatedPlatform.operationNotes, 'Recovered successfully');
+
+    // Clean up the database
+    await db.close();
+  });
+  testWidgets('Submitting the form updates the corresponding platform record in the database (offline)', (tester) async {
+    final platform = Platform(
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.active,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    // Set up platform-aware in-memory database
+    final db = AppDatabase.executor(conn.inMemoryConnection());
+    await db
+        .into(db.platforms)
+        .insert(
+          PlatformsCompanion.insert(
+            ref: platform.platformRef,
+            model: platform.model,
+            network: platform.network,
+            lat: platform.latestPosition.latitude,
+            lon: platform.latestPosition.longitude,
+            status: platform.status == PlatformStatus.active ? 'Active' : 'Inactive',
+            operationalStatus: platform.operationalStatus == OperationalStatus.deployed ? 'Deployed' : 'Recovered',
+            lastUpdated: platform.lastUpdated,
+            operationLat: platform.operationLocation.latitude,
+            operationLon: platform.operationLocation.longitude,
+          ),
+        );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(
+              _NoConnectivityStatus.new,
+            )
+        ],
+        child: MaterialApp(
+          home: Navigator(
+            pages: [
+              MaterialPage(child: Scaffold(body: Container())),
+              MaterialPage(
+                child: DeployPlatformScreen(
+                  platform: platform,
+                  action: DeployAction.recover,
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Fill in the form fields
+    await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
+
+    // Use datepicker for Recovery Time
+    await tester.tap(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
+    await tester.pumpAndSettle();
+    // Select date
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    // Confirm date picker (OK button)
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    // use .last to get the time picker's input field
+    await tester.enterText(find.byType(TextField).last, '12:00');
+    await tester.pumpAndSettle();
+    // use .last to get the dialog's OK button
+    await tester.tap(find.text('OK').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'Notes'), 'Recovered successfully');
+
+    // Tap the submit button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Recover Platform'));
+    await tester.pumpAndSettle();
+
+    // Verify that a success SnackBar is shown
+    expect(find.text('Recovery successful! Changes have been saved locally.'), findsOneWidget);
 
     // Verify that the platform record in the database has been updated with the new values
     final updatedPlatform = await (db.select(
@@ -536,5 +664,47 @@ void main() {
     expect(find.text('Latitude is required'), findsOneWidget);
     expect(find.text('Longitude is required'), findsOneWidget);
     expect(find.text('Deployment Time is required'), findsOneWidget);
+  });
+  testWidgets('Offline status shows when the device is offline.', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          checkConnectionProvider.overrideWith(
+            _NoConnectivityStatus.new,
+          )
+        ],
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify that the expected offline widget is shown.
+    expect(find.byType(OfflineStatus), findsOneWidget);
+  });
+    testWidgets('Offline status does not show when the device is online.', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            checkConnectionProvider.overrideWith(
+              _WifiConnectivityStatus.new,
+            )
+          ],
+          child: MaterialApp(
+            home: DeployPlatformScreen(
+              platform: testPlatform,
+              action: DeployAction.deploy,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+  
+      // Verify that the expected offline widget is not shown.
+      expect(find.byType(OfflineStatus), findsNothing);
   });
 }
