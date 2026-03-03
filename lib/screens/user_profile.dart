@@ -73,7 +73,7 @@ class UserProfileScreen extends ConsumerWidget {
                   ContainerRow(
                     label: 'Full Name',
                     value: user.fullName,
-                  ),
+                  )
                 ],
               ),
             ),
@@ -93,6 +93,14 @@ class UserProfileScreen extends ConsumerWidget {
                 child: const Text('Log Out'),
               ),
             ),
+            ElevatedButton(
+                    onPressed: () async { await ref.read(authProvider.notifier).getMe(); },
+                    child: const Text('Get Me'),),
+            ElevatedButton(
+                    onPressed: () async { 
+                      await ref.read(authProvider.notifier).getMeForcedRefresh(); 
+                      },
+                    child: const Text('Get Me (forced refresh)'),)
           ],
         ),
       ),

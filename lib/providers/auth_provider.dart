@@ -61,4 +61,15 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
       state = previous;
     } // catch other exception thrown if remote logout fails if/when we logout server side
   }
+
+  /// Gets the current authenticated user. Used for testing.
+  Future<void> getMe() async {
+    await _authService.getMe();
+  }
+
+  /// Forces token expiry and gets the current authenticated user. Used for testing token refresh.
+  Future<void> getMeForcedRefresh() async {
+    await _authService.forceTokenExpiry();
+    await _authService.getMe();
+  }
 }

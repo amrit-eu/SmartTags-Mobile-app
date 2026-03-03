@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:clock/clock.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/helpers/jwt_decode.dart';
@@ -66,10 +67,40 @@ class AuthService {
     }
   }
 
+  /// Attempts to refresh the access token using the stored refresh token.
+  /// If successful, saves the new access token and returns it.
   Future<String?> _refreshToken() async {
-    // stub to implement in issue #23
     // update storage and _cachedToken
-    return null;
+    final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/refresh');
+    try {
+      debugPrint('Attempting token refresh with refresh token');
+      final response = await _client.post(
+        uri,
+        headers: const {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'refresh_token': await _storage.read(key: 'refresh_token'),
+        }),
+      );
+      final successCodes = <int>[200, 201];
+      if (successCodes.contains(response.statusCode)) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final authResponse = AuthResponse.fromJson(json);
+        await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
+        debugPrint('Token refresh successful');
+        // Return the new access token so the caller can retry the original request.
+        return authResponse.accessTokenRs256;
+      } else if (response.statusCode == 401) {
+        throw const AuthException('Invalid credentials');
+      } else {
+        throw const AuthException('Unable to refresh token');
+      }
+    } on http.ClientException catch (e) {
+      throw AuthException('Network error: ${e.message}');
+    } on FormatException {
+      throw const AuthException('Invalid server response');
+    }
   }
 
   UserProfile? _decodeUserFromToken(String token) {
@@ -91,18 +122,20 @@ class AuthService {
   /// Returns JWT from memory cache or secure storage if expiry time has not passed
   /// If stored token is expired, attempts to refresh
   Future<String?> getAccessToken() async {
-    // check token cached in memory first
-    if (_cachedToken != null) {
-      if (!_isExpired(_cachedToken!)) return _cachedToken;
+    // Check in-memory cache first for performance, then fallback to secure storage.
+    final token = _cachedToken ?? await _storage.read(key: 'token');
+
+    // Return null if no token is found.
+    if (token == null) return null;
+
+    // Refresh if expired.
+    if (_isExpired(token)) {
       await _deleteAccessToken();
       return _refreshToken();
     }
-    // else return token from storage
-    final token = await _storage.read(key: 'token');
-    if (token == null) return null;
-    if (!_isExpired(token)) return _cachedToken = token;
-    await _deleteAccessToken();
-    return _refreshToken();
+
+    _cachedToken = token;
+    return token;
   }
 
   /// Decode user information from stored JWT
@@ -175,5 +208,46 @@ class AuthService {
     await _storage.delete(key: 'refresh_token');
     // Should send a logout request to Gateway API, but no logout URL is currently documented.
     return null;
+  }
+
+
+  /// Helper method to call the "me" endpoint which prints the authenticated user's profile.
+  /// This is just used for testing and demonstration purposes.
+  Future<void> getMe() async {
+    final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/me');
+    try {
+      final response = await _client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${await getAccessToken()}',
+        },
+      );
+      final successCodes = <int>[200, 201];
+      if (successCodes.contains(response.statusCode)) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        debugPrint('Me response: $json');
+      } else if (response.statusCode == 401) {
+        throw const AuthException('Invalid credentials');
+      } else {
+        throw const AuthException('Unable to authenticate');
+      }
+    } on http.ClientException catch (e) {
+      throw AuthException('Network error: ${e.message}');
+    } on FormatException {
+      throw const AuthException('Invalid server response');
+    }
+  }
+
+  /// Force the access token to expire by clearing the cache.
+  /// The next call to [getAccessToken] will detect expiry and trigger a refresh.
+  /// This is useful for testing the token refresh flow.
+  Future<void> forceTokenExpiry() async {
+    _cachedToken = null;
+    // Overwrite the token with a JWT that's already expired (epoch time 0)
+    // This forces _isExpired() to return true on next getAccessToken() call
+    const expiredToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjAsImNvbnRhY3RJZCI6MSwibmFtZSI6IlRlc3QiLCJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIn0.test';
+    await _storage.write(key: 'token', value: expiredToken);
   }
 }
