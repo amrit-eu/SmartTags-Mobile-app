@@ -150,10 +150,14 @@ void main() {
     });
 
     final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
-    await authService.login(email: 'joe.bloggs@test.com', password: 'password');
-    await authService.getAccessToken();
+    
+    // Use a fixed clock to ensure token is not expired during the test.
+    await withClock(Clock.fixed(DateTime(2025, 12, 31)), () async {
+      await authService.login(email: 'joe.bloggs@test.com', password: 'password');
+      await authService.getAccessToken();
 
-    verifyNever(mockFlutterSecureStorage.read(key: 'token'));
+      verifyNever(mockFlutterSecureStorage.read(key: 'token'));
+    });
   });
 
   test('access token is retrieved from storage if not cached', () async {
@@ -161,6 +165,7 @@ void main() {
 
     final authService = AuthService(storage: mockFlutterSecureStorage);
 
+    // Use a fixed clock to ensure token is not expired during the test.
     await withClock(Clock.fixed(DateTime(2025, 12, 31)), () async {
       final token = await authService.getAccessToken();
       expect(token, mockJwt);
@@ -180,6 +185,7 @@ void main() {
 
   test('access token from storage is not returned if expired', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+    when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
 
     final authService = AuthService(storage: mockFlutterSecureStorage);
 
@@ -192,6 +198,7 @@ void main() {
 
   test('JWT is deleted from storage if expired', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+    when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
 
     final authService = AuthService(storage: mockFlutterSecureStorage);
 
@@ -223,6 +230,8 @@ void main() {
       'contactId': 123456
     });
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => invalidJwt);
+    when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
+    
     final authService = AuthService(storage: mockFlutterSecureStorage);
 
     final token = await authService.getAccessToken();

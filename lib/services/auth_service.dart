@@ -53,16 +53,16 @@ class AuthService {
     try {
       final claims = decodeJwtClaims(token);
       if (claims['exp'] is! int) {
-        throw const AuthException('Invalid JWT expiry');
+        debugPrint('JWT is missing exp claim or it is not a valid integer');
+        return true;
       }
       // API returns expiry as seconds since epoch, convert to match available Dart function
       final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
-      return !clock.now().isBefore(tokenExpiry);
-    }  on JwtDecodingException {
-      // Token malformed, treat as expired
-      return true;
-    } on AuthException {
-      // Token malformed, treat as expired
+      // Consider the token expired if it's within 30 seconds of expiry to avoid edge cases where token expires during a request.
+      final expiryBuffer = tokenExpiry.subtract(const Duration(seconds: 30));
+      return !clock.now().isBefore(expiryBuffer);
+    } on JwtDecodingException catch (exc) {
+      debugPrint('Failed to decode JWT claims: ${exc.message}');
       return true;
     }
   }
@@ -72,8 +72,8 @@ class AuthService {
   Future<String?> _refreshToken() async {
     // update storage and _cachedToken
     final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/refresh');
+    debugPrint('Attempting token refresh');
     try {
-      debugPrint('Attempting token refresh with refresh token');
       final response = await _client.post(
         uri,
         headers: const {
@@ -96,9 +96,7 @@ class AuthService {
       } else {
         throw const AuthException('Unable to refresh token');
       }
-    } on http.ClientException catch (e) {
-      throw AuthException('Network error: ${e.message}');
-    } on FormatException {
+    } on FormatException  {
       throw const AuthException('Invalid server response');
     }
   }
@@ -130,8 +128,17 @@ class AuthService {
 
     // Refresh if expired.
     if (_isExpired(token)) {
-      await _deleteAccessToken();
-      return _refreshToken();
+      try {
+        final newToken = await _refreshToken();
+        return newToken;
+      } on AuthException {
+        // Auth error (401, invalid response, etc) - force logout
+        await logout();
+        return null;
+      } on http.ClientException {
+        // Return null as this is a recoverable error
+        return null;
+      }
     }
 
     _cachedToken = token;
