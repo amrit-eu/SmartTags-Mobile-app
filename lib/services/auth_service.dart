@@ -18,6 +18,13 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
+/// Exception thrown when the refresh token is invalid or credentials have expired.
+/// This is a critical error that requires logout.
+class AuthenticationException extends AuthException {
+  /// Creates an [AuthenticationException] with the given [message].
+  const AuthenticationException(String message) : super(message);
+}
+
 /// A service responsible for handling authentication-related API calls.
 ///
 /// This service communicates with the backend API to log in a user
@@ -70,7 +77,15 @@ class AuthService {
   /// Attempts to refresh the access token using the stored refresh token.
   /// If successful, saves the new access token and returns it.
   Future<String?> _refreshToken() async {
-    // update storage and _cachedToken
+
+    // Get the refresh token from secure storage. If it's not available, we can't refresh.
+    // Log the user out in this case since they need to log in again to get a new refresh token.
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    if (refreshToken == null) {
+      debugPrint('No refresh token found in storage');
+      throw const AuthenticationException('No refresh token available');
+    }
+
     final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/refresh');
     debugPrint('Attempting token refresh');
     try {
@@ -80,7 +95,7 @@ class AuthService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'refresh_token': await _storage.read(key: 'refresh_token'),
+          'refresh_token': refreshToken,
         }),
       );
       final successCodes = <int>[200, 201];
@@ -92,7 +107,7 @@ class AuthService {
         // Return the new access token so the caller can retry the original request.
         return authResponse.accessTokenRs256;
       } else if (response.statusCode == 401) {
-        throw const AuthException('Invalid credentials');
+        throw const AuthenticationException('Invalid credentials');
       } else {
         throw const AuthException('Unable to refresh token');
       }
@@ -131,13 +146,16 @@ class AuthService {
       try {
         final newToken = await _refreshToken();
         return newToken;
-      } on AuthException {
-        // Auth error (401, invalid response, etc) - force logout
+      } on AuthenticationException {
+        // auth error (401 or no refresh token found) - force logout
         await logout();
         return null;
+      } on AuthException {
+        // Temporary server error - return same token and retry next time
+        return token;
       } on http.ClientException {
-        // Return null as this is a recoverable error
-        return null;
+        // Temporary network error during refresh - return same token and retry next time
+        return token;
       }
     }
 
