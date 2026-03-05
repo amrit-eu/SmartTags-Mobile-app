@@ -100,7 +100,12 @@ class UserProfileScreen extends ConsumerWidget {
                     onPressed: () async { 
                       await ref.read(authProvider.notifier).getMeForcedRefresh(); 
                       },
-                    child: const Text('Get Me (forced refresh)'),)
+                    child: const Text('Get Me (forced refresh)'),),
+            ElevatedButton(
+                    onPressed: () async { 
+                      await ref.read(authProvider.notifier).getMeFailedRefresh(); 
+                      },
+                    child: const Text('Get Me (forced refresh fail)'),)
           ],
         ),
       ),

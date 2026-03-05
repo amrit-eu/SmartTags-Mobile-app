@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
 
 /// Riverpod provider exposing an [AuthService] instance.
@@ -28,7 +29,13 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
   @override
   Future<UserProfile?> build() async {
     _authService = ref.read(authServiceProvider);
-    return _authService.getAuthenticatedUser();
+    try {
+      return await _callWithRefreshHandling(
+        () => _authService.getAuthenticatedUser(),
+      );
+    } on RefreshException {
+      return null;
+    }
   }
 
   /// Logs in a user using [email] and [password].
@@ -63,13 +70,38 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
   }
 
   /// Gets the current authenticated user. Used for testing.
-  Future<void> getMe() async {
-    await _authService.getMe();
-  }
+  Future<void> getMe() => _callWithRefreshHandling(() => _authService.getMe());
 
   /// Forces token expiry and gets the current authenticated user. Used for testing token refresh.
-  Future<void> getMeForcedRefresh() async {
+  Future<void> getMeForcedRefresh() => _callWithRefreshHandling(() async {
     await _authService.forceTokenExpiry();
     await _authService.getMe();
+  });
+
+  /// Forces token expiry with a failed refresh. This should log the user out.
+  Future<void> getMeFailedRefresh() => _callWithRefreshHandling(() async {
+    await _authService.forceTokenExpiry();
+    await _authService.forceInvalidRefreshToken();
+    await _authService.getMe();
+  });
+
+  /// Helper to handle refresh exceptions consistently across all methods.
+  void _handleRefreshException(RefreshException e) {
+    ref.read(errorNotificationProvider.notifier).setError(
+      '${e.message}: Please log in again.',
+      type: 'session_expired',
+    );
+    state = const AsyncData(null);
+  }
+
+  /// Wraps any async operation that might trigger a token refresh error.
+  /// Automatically handles RefreshException and updates state.
+  Future<T> _callWithRefreshHandling<T>(Future<T> Function() fn) async {
+    try {
+      return await fn();
+    } on RefreshException catch (e) {
+      _handleRefreshException(e);
+      rethrow;
+    }
   }
 }

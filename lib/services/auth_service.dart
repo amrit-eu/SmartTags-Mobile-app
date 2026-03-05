@@ -107,7 +107,7 @@ class AuthService {
         // Return the new access token so the caller can retry the original request.
         return authResponse.accessTokenRs256;
       } else if (response.statusCode == 401) {
-        throw const RefreshException('Invalid credentials');
+        throw const RefreshException('Invalid refresh token');
       } else {
         throw const AuthException('Unable to refresh token');
       }
@@ -149,7 +149,8 @@ class AuthService {
       } on RefreshException {
         // refresh error (401 or no refresh token found) - force logout
         await logout();
-        return null;
+        // Rethrow to notify caller of the logout event so it can update UI accordingly.
+        rethrow;
       } on AuthException {
         // Temporary server error - return same token and retry next time
         return token;
@@ -275,4 +276,10 @@ class AuthService {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjAsImNvbnRhY3RJZCI6MSwibmFtZSI6IlRlc3QiLCJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIn0.test';
     await _storage.write(key: 'token', value: expiredToken);
   }
+  
+  /// Force invalid refresh token by altering it.
+  Future<void> forceInvalidRefreshToken() async {
+    await _storage.write(key: 'refresh_token', value: 'invalid_refresh_token');
+  }
+
 }
