@@ -20,9 +20,9 @@ class AuthException implements Exception {
 
 /// Exception thrown when the refresh token is invalid or credentials have expired.
 /// This is a critical error that requires logout.
-class AuthenticationException extends AuthException {
-  /// Creates an [AuthenticationException] with the given [message].
-  const AuthenticationException(String message) : super(message);
+class RefreshException extends AuthException {
+  /// Creates a [RefreshException] with the given [message].
+  const RefreshException(super.message);
 }
 
 /// A service responsible for handling authentication-related API calls.
@@ -83,7 +83,7 @@ class AuthService {
     final refreshToken = await _storage.read(key: 'refresh_token');
     if (refreshToken == null) {
       debugPrint('No refresh token found in storage');
-      throw const AuthenticationException('No refresh token available');
+      throw const RefreshException('No refresh token available');
     }
 
     final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/refresh');
@@ -107,7 +107,7 @@ class AuthService {
         // Return the new access token so the caller can retry the original request.
         return authResponse.accessTokenRs256;
       } else if (response.statusCode == 401) {
-        throw const AuthenticationException('Invalid credentials');
+        throw const RefreshException('Invalid credentials');
       } else {
         throw const AuthException('Unable to refresh token');
       }
@@ -146,8 +146,8 @@ class AuthService {
       try {
         final newToken = await _refreshToken();
         return newToken;
-      } on AuthenticationException {
-        // auth error (401 or no refresh token found) - force logout
+      } on RefreshException {
+        // refresh error (401 or no refresh token found) - force logout
         await logout();
         return null;
       } on AuthException {
