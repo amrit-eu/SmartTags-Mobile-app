@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/screens/user_login.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -18,27 +21,18 @@ class UserProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<AsyncValue<UserProfile?>>(authProvider, (prev, next) {
-      next.whenOrNull(
-        data: (user) {
-          if (user == null) {
-            // logout success
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logout successful')),
-              );
-            }
-          }
-        },
-        error: (err, stack) {
-          // logout failed
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Logout failed: $err')),
+     ref.listen<AsyncValue<UserProfile?>>(authProvider, (prev, next) async {
+      unawaited(next.whenOrNull(
+        data: (user) async {
+          // If the user becomes null, it means they have logged out, so navigate back to the login screen.
+          if (!context.mounted) return;
+            await Navigator.of(context).pushReplacement(
+              MaterialPageRoute<MainNavigation>(
+                builder: (BuildContext ctx) => const UserLoginScreen(),
+              )
             );
-          }
         },
-      );
+      ));
     });
 
     return Scaffold(
@@ -81,14 +75,25 @@ class UserProfileScreen extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: ElevatedButton(
                 onPressed: () async {
-                  await ref.read(authProvider.notifier).logout();
-                  if (!context.mounted) return;
-
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<MainNavigation>(
-                      builder: (BuildContext ctx) => const MainNavigation(),
-                    )
-                  );
+                  await ref
+                      .read(authProvider.notifier)
+                      .logout()
+                      .then(
+                        (_) async {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Logout successful')),
+                            );
+                          }
+                        },
+                        onError: (Object err) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Logout failed: $err')),
+                            );
+                          }
+                        },
+                      );
                 },
                 child: const Text('Log Out'),
               ),

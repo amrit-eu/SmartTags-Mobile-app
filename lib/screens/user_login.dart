@@ -34,12 +34,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
       await next.whenOrNull(
         data: (user) async {
           if (user != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                Text('Login successful'),
-              ),
-            );
+            // If user is not null, navigate to the user profile screen.
             await Navigator.of(context).pushReplacement(
                 MaterialPageRoute<UserProfileScreen>(
                   builder: (BuildContext ctx) => UserProfileScreen(
@@ -155,8 +150,26 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                       }
                       final email = _emailController.text.trim();
                       final password = _passwordController.text;
-                      await ref.read(authProvider.notifier).login(email, password);
-                    },
+                            await ref
+                                .read(authProvider.notifier)
+                                .login(email, password)
+                                .then(
+                                  (_) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Login successful'),
+                                      ),
+                                    );
+                                  },
+                                  onError: (Object err) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Login failed: $err')),
+                                    );
+                                  },
+                                );
+                          },
                     child: isLoading
                         ? const SizedBox(
                       height: 20,
