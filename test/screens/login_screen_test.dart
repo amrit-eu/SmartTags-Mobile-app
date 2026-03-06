@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/screens/user_login.dart';
 import 'package:smart_tags/services/auth_service.dart';
 
@@ -73,7 +74,18 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               appBar: AppBar(),
-              body: const Center(child: UserLoginScreen()),
+              body: Consumer(
+                builder: (context, ref, _) {
+                  ref.listen(errorNotificationProvider, (_, next) {
+                    if (next != null && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(next.message)),
+                      );
+                    }
+                  });
+                  return const Center(child: UserLoginScreen());
+                },
+              ),
             ),
           ),
         )

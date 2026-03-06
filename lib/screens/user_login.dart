@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/screens/user_profile.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -48,12 +49,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
           }
         },
         error: (error, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-              Text(error.toString()),
-            ),
-          );
+          ref.read(errorNotificationProvider.notifier).setError(error.toString());
         },
       );
     });
@@ -169,10 +165,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                               }
                             },
                             onError: (Object err) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Login failed: $err')),
-                              );
+                              ref.read(errorNotificationProvider.notifier).setError('Login failed: $err');
                             },
                           );
                     },
