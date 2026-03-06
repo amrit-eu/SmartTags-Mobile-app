@@ -255,7 +255,7 @@ void main() {
       verify(mockFlutterSecureStorage.delete(key: 'refresh_token')).called(1);
     });
   });
-  test('Cached token is returned when refresh request returns server error', () async {
+  test('Stored access token is returned when refresh request returns server error', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
 
@@ -270,7 +270,7 @@ void main() {
       expect(token, mockJwt);
     });
   });
-  test('Cached token is returned when refresh response is malformed JSON', () async {
+  test('Stored access token is returned when refresh response is malformed JSON', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
 
@@ -285,7 +285,7 @@ void main() {
       expect(token, mockJwt);
     });
   });
-  test('The same access token is returned when refresh token request fails', () async {
+  test('Stored access token is returned when refresh token request fails', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
     final client = MockClient((request) async {
@@ -298,7 +298,7 @@ void main() {
       expect(token, mockJwt);
     });
   });
-  test('Token is refreshed successfully when expired', () async {
+  test('Access token is refreshed successfully when expired', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
     final newMockJwt = buildJwt(payload: {'sub': ''});
@@ -329,7 +329,7 @@ void main() {
       verify(mockFlutterSecureStorage.write(key: 'refresh_token', value: 'newMockRefreshToken')).called(1);
     });
   });
-  test('Token is refreshed successfully when expiry time is missing.', () async {
+  test('Access token is refreshed successfully when expiry time is missing.', () async {
     // Missing exp
     final invalidJwt = buildJwt(payload: {'name': 'Alice Example', 'sub': 'alice@example.com', 'contactId': 123456});
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => invalidJwt);
