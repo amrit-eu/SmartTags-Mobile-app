@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
@@ -94,13 +95,29 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
     state = const AsyncData(null);
   }
 
+  void _handleTemporaryError(Object e) {
+    ref.read(errorNotificationProvider.notifier).setError(
+      'A temporary error occurred. Please try again later.',
+      type: 'temporary_error',
+    );
+  }
+
   /// Wraps any async operation that might trigger a token refresh error.
   /// Automatically handles RefreshException and updates state.
   Future<T> _callWithRefreshHandling<T>(Future<T> Function() fn) async {
     try {
       return await fn();
     } on RefreshException catch (e) {
+      // Token refresh failed - Notify user to login again.
       _handleRefreshException(e);
+      rethrow;
+    } on AuthException catch (e) {
+      // This could be a temporary server error during refresh - notify user but keep them logged in with old token.
+      _handleTemporaryError(e);
+      rethrow;
+    } on http.ClientException catch (e) {
+      // This could be a temporary network error during refresh - notify user but keep them logged in with old token.
+      _handleTemporaryError(e);
       rethrow;
     }
   }

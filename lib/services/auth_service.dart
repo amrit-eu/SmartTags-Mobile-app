@@ -136,7 +136,7 @@ class AuthService {
   /// If stored token is expired, attempts to refresh
   Future<String?> getAccessToken() async {
     // Check in-memory cache first for performance, then fallback to secure storage.
-    final token = _cachedToken ?? await _storage.read(key: 'token');
+    var token = _cachedToken ?? await _storage.read(key: 'token');
 
     // Return null if no token is found.
     if (token == null) return null;
@@ -144,22 +144,18 @@ class AuthService {
     // Refresh if expired.
     if (_isExpired(token)) {
       try {
-        final newToken = await _refreshToken();
-        return newToken;
+        token = await _refreshToken();
       } on RefreshException {
         // refresh error (401 or no refresh token found) - force logout
         await logout();
         // Rethrow to notify caller of the logout event so it can update UI accordingly.
         rethrow;
-      } on AuthException {
-        // Temporary server error - return same token and retry next time
-        return token;
-      } on http.ClientException {
-        // Temporary network error during refresh - return same token and retry next time
-        return token;
+      } on (AuthException, http.ClientException) catch (exc) {
+        // Network error or server error during refresh - keep user logged in with old token and let them retry.
+        debugPrint('Token refresh failed: $exc');
+        rethrow;
       }
     }
-
     _cachedToken = token;
     return token;
   }

@@ -255,7 +255,7 @@ void main() {
       verify(mockFlutterSecureStorage.delete(key: 'refresh_token')).called(1);
     });
   });
-  test('Stored access token is returned when refresh request returns server error', () async {
+  test('AuthException is thrown when refresh request returns server error', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
 
@@ -266,11 +266,10 @@ void main() {
     final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
-      final token = await authService.getAccessToken();
-      expect(token, mockJwt);
+      await expectLater(authService.getAccessToken(), throwsA(isA<AuthException>()));
     });
   });
-  test('Stored access token is returned when refresh response is malformed JSON', () async {
+  test('AuthException is thrown when refresh response is malformed JSON', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
 
@@ -281,11 +280,10 @@ void main() {
     final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
-      final token = await authService.getAccessToken();
-      expect(token, mockJwt);
+      await expectLater(authService.getAccessToken(), throwsA(isA<AuthException>()));
     });
   });
-  test('Stored access token is returned when refresh token request fails', () async {
+  test('ClientException is thrown when a network error occurs during token refresh', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
     final client = MockClient((request) async {
@@ -294,8 +292,7 @@ void main() {
     final authService = AuthService(client: client, storage: mockFlutterSecureStorage);
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
-      final token = await authService.getAccessToken();
-      expect(token, mockJwt);
+      await expectLater(authService.getAccessToken(), throwsA(isA<http.ClientException>()));
     });
   });
   test('Access token is refreshed successfully when expired', () async {
