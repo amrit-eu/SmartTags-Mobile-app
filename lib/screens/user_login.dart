@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/screens/user_profile.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -14,6 +15,7 @@ class UserLoginScreen extends ConsumerStatefulWidget {
 }
 
 class _UserLoginState extends ConsumerState<UserLoginScreen> {
+  AsyncValue<UserProfile?>? _authState;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -31,6 +33,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
     ref.listen(authProvider, (previous, next) async {
+      _authState = next;
       await next.whenOrNull(
         data: (user) async {
           if (user != null) {
@@ -155,12 +158,15 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                                 .login(email, password)
                                 .then(
                                   (_) {
+                                    final authState = _authState;
                                     if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Login successful'),
-                                      ),
-                                    );
+                                    if (authState is AsyncData<UserProfile?> && authState.value != null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Login successful'),
+                                        ),
+                                      );
+                                    }
                                   },
                                   onError: (Object err) {
                                     if (!context.mounted) return;

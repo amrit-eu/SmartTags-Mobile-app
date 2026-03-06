@@ -12,7 +12,7 @@ import 'package:smart_tags/widgets/top_navigation.dart';
 /// A screen that displays information about a [UserProfile].
 ///
 /// Shows the user's avatar, ID, email, and full name.
-class UserProfileScreen extends ConsumerWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   /// Creates a [UserProfileScreen] for the given [user].
   const UserProfileScreen({required this.user, super.key});
 
@@ -20,8 +20,16 @@ class UserProfileScreen extends ConsumerWidget {
   final UserProfile user;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-     ref.listen<AsyncValue<UserProfile?>>(authProvider, (prev, next) async {
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+  AsyncValue<UserProfile?>? _authState;
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<UserProfile?>>(authProvider, (prev, next) async {
+      _authState = next;
       unawaited(next.whenOrNull(
         data: (user) async {
           // If the user becomes null, it means they have logged out, so navigate back to the login screen.
@@ -56,17 +64,17 @@ class UserProfileScreen extends ConsumerWidget {
                 children: [
                   ContainerRow(
                     label: 'User ID',
-                    value: user.id.toString(),
+                    value: widget.user.id.toString(),
                   ),
                   const Divider(height: 16),
                   ContainerRow(
                     label: 'Email',
-                    value: user.email,
+                    value: widget.user.email,
                   ),
                   const Divider(height: 16),
                   ContainerRow(
                     label: 'Full Name',
-                    value: user.fullName,
+                    value: widget.user.fullName,
                   )
                 ],
               ),
@@ -80,7 +88,8 @@ class UserProfileScreen extends ConsumerWidget {
                       .logout()
                       .then(
                         (_) async {
-                          if (context.mounted) {
+                          final authState = _authState;
+                          if (context.mounted && authState is AsyncData<UserProfile?> && authState.value == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Logout successful')),
                             );
