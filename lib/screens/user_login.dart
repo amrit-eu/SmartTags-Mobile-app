@@ -153,29 +153,29 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                       }
                       final email = _emailController.text.trim();
                       final password = _passwordController.text;
-                            await ref
-                                .read(authProvider.notifier)
-                                .login(email, password)
-                                .then(
-                                  (_) {
-                                    final authState = _authState;
-                                    if (!context.mounted) return;
-                                    if (authState is AsyncData<UserProfile?> && authState.value != null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Login successful'),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  onError: (Object err) {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Login failed: $err')),
-                                    );
-                                  },
+                      await ref
+                          .read(authProvider.notifier)
+                          .login(email, password)
+                          .then(
+                            (_) {
+                              final authState = _authState;
+                              if (!context.mounted) return;
+                              if (authState is AsyncData<UserProfile?> && authState.value != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Login successful'),
+                                  ),
                                 );
-                          },
+                              }
+                            },
+                            onError: (Object err) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Login failed: $err')),
+                              );
+                            },
+                          );
+                    },
                     child: isLoading
                         ? const SizedBox(
                       height: 20,
