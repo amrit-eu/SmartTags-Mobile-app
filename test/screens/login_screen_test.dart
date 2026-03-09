@@ -30,7 +30,7 @@ class FakeAuthFailureNotifier extends AuthNotifier {
   @override
   Future<void> login(String email, String password) async {
     state = AsyncError(
-      const AuthException('Login failed: Invalid Credentials'),
+      const AuthException('Invalid Credentials'),
       StackTrace.current,
     );
   }
