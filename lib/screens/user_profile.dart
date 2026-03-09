@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/screens/user_login.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -93,11 +94,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       }
                     },
                     onError: (Object err) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Logout failed: $err')),
-                        );
-                      }
+                      ref.read(errorNotificationProvider.notifier).setError('Logout failed: $err');
                     },
                   );
                 },
