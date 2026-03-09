@@ -31,9 +31,10 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
   Future<UserProfile?> build() async {
     _authService = ref.read(authServiceProvider);
     try {
-      return await _callWithRefreshHandling(
+      final result = await _callWithRefreshHandling<UserProfile?>(
         () => _authService.getAuthenticatedUser(),
       );
+      return result;
     } on RefreshException {
       return null;
     }
@@ -104,21 +105,21 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
 
   /// Wraps any async operation that might trigger a token refresh error.
   /// Automatically handles RefreshException and updates state.
-  Future<T> _callWithRefreshHandling<T>(Future<T> Function() fn) async {
+  Future<T?> _callWithRefreshHandling<T>(Future<T> Function() fn) async {
     try {
       return await fn();
     } on RefreshException catch (e) {
       // Token refresh failed - Notify user to login again.
       _handleRefreshException(e);
-      rethrow;
+      return null;
     } on AuthException catch (e) {
       // This could be a temporary server error during refresh - notify user but keep them logged in with old token.
       _handleTemporaryError(e);
-      rethrow;
+      return null;
     } on http.ClientException catch (e) {
       // This could be a temporary network error during refresh - notify user but keep them logged in with old token.
       _handleTemporaryError(e);
-      rethrow;
+      return null;
     }
   }
 }
