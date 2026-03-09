@@ -49,7 +49,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
           }
         },
         error: (error, _) {
-          ref.read(errorNotificationProvider.notifier).setError(error.toString());
+          ref.read(errorNotificationProvider.notifier).setError('Login failed: $error');
         },
       );
     });
@@ -152,8 +152,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                       await ref
                           .read(authProvider.notifier)
                           .login(email, password)
-                          .then(
-                            (_) {
+                          .then((_) {
                               final authState = _authState;
                               if (!context.mounted) return;
                               if (authState is AsyncData<UserProfile?> && authState.value != null) {
@@ -163,11 +162,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                                   ),
                                 );
                               }
-                            },
-                            onError: (Object err) {
-                              ref.read(errorNotificationProvider.notifier).setError('Login failed: $err');
-                            },
-                          );
+                            });
                     },
                     child: isLoading
                         ? const SizedBox(

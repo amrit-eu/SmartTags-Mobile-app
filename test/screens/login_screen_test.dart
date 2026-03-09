@@ -30,7 +30,7 @@ class FakeAuthFailureNotifier extends AuthNotifier {
   @override
   Future<void> login(String email, String password) async {
     state = AsyncError(
-      const AuthException('Invalid Credentials'),
+      const AuthException('Login failed: Invalid Credentials'),
       StackTrace.current,
     );
   }
@@ -97,7 +97,7 @@ void main() {
     await tester.tap(find.byKey(const Key('logInButton')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Invalid Credentials'), findsOneWidget);
+    expect(find.text('Login failed: Invalid Credentials'), findsOneWidget);
 
     // Verify no profile screen
     expect(find.text('Joe Bloggs'), findsNothing);

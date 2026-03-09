@@ -97,7 +97,7 @@ void main() {
         allOf(
           isA<AuthException>(),
           predicate<AuthException>(
-            (e) => e.message == 'Network error: Failed to fetch',
+            (e) => e.message == 'Network error',
           ),
         ),
       ),

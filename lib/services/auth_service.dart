@@ -218,7 +218,8 @@ class AuthService {
         throw const AuthException('Unable to authenticate');
       }
     } on http.ClientException catch (e) {
-      throw AuthException('Network error: ${e.message}');
+      debugPrint('Network error during login: ${e.message}');
+      throw const AuthException('Network error');
     } on FormatException {
       throw const AuthException('Invalid server response');
     }
