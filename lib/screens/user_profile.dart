@@ -41,6 +41,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               )
             );
         },
+        error: (err, _) {
+          ref.read(errorNotificationProvider.notifier).setError('Logout failed: $err');
+          return null;
+        },
       ));
     });
 
@@ -84,19 +88,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               alignment: Alignment.centerLeft,
               child: ElevatedButton(
                 onPressed: () async {
-                  await ref.read(authProvider.notifier).logout().then(
-                    (_) async {
-                      final authState = _authState;
-                      if (context.mounted && authState is AsyncData<UserProfile?> && authState.value == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Logout successful')),
-                        );
-                      }
-                    },
-                    onError: (Object err) {
-                      ref.read(errorNotificationProvider.notifier).setError('Logout failed: $err');
-                    },
-                  );
+                  await ref.read(authProvider.notifier).logout();
+                  final authState = _authState;
+                  if (context.mounted && authState is AsyncData<UserProfile?> && authState.value == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Logout successful')),
+                    );
+                  }
                 },
                 child: const Text('Log Out'),
               ),
