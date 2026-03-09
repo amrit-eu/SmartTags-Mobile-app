@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
@@ -69,7 +70,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     // Listen for initial and subsequent connectivity changes
-    ref.listen<ConnectivityResult?>(
+    ref..listen<ConnectivityResult?>(
       checkConnectionProvider.select((state) => state.value),
       (previous, next) {
         if (previous != next) {
@@ -87,7 +88,29 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
         });
         debugPrint('Error in connectivity provider: $error');
       },
+    )
+
+    // Listen for global error notifications
+    // i.e. refresh token failures.
+    ..listen<ErrorNotification?>(
+      errorNotificationProvider,
+      (previous, next) {
+        if (next != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(next.message),
+              ),
+            );
+            // Auto-clear error after showing
+            Future.delayed(const Duration(seconds: 4), () {
+              ref.read(errorNotificationProvider.notifier).clearError();
+            });
+          });
+        }
+      },
     );
+
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(

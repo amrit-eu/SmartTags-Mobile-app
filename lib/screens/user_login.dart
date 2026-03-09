@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/screens/user_profile.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -14,6 +16,7 @@ class UserLoginScreen extends ConsumerStatefulWidget {
 }
 
 class _UserLoginState extends ConsumerState<UserLoginScreen> {
+  AsyncValue<UserProfile?>? _authState;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -31,15 +34,11 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
     ref.listen(authProvider, (previous, next) async {
+      _authState = next;
       await next.whenOrNull(
         data: (user) async {
           if (user != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                Text('Login successful'),
-              ),
-            );
+            // If user is not null, navigate to the user profile screen.
             await Navigator.of(context).pushReplacement(
                 MaterialPageRoute<UserProfileScreen>(
                   builder: (BuildContext ctx) => UserProfileScreen(
@@ -50,12 +49,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
           }
         },
         error: (error, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-              Text(error.toString()),
-            ),
-          );
+          ref.read(errorNotificationProvider.notifier).setError('Login failed: $error');
         },
       );
     });
@@ -155,7 +149,20 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                       }
                       final email = _emailController.text.trim();
                       final password = _passwordController.text;
-                      await ref.read(authProvider.notifier).login(email, password);
+                      await ref
+                          .read(authProvider.notifier)
+                          .login(email, password)
+                          .then((_) {
+                              final authState = _authState;
+                              if (!context.mounted) return;
+                              if (authState is AsyncData<UserProfile?> && authState.value != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Login successful'),
+                                  ),
+                                );
+                              }
+                            });
                     },
                     child: isLoading
                         ? const SizedBox(

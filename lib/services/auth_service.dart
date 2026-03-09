@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:clock/clock.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/helpers/jwt_decode.dart';
@@ -15,6 +16,13 @@ class AuthException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Exception thrown when the refresh token is invalid or credentials have expired.
+/// This is a critical error that requires logout.
+class RefreshException extends AuthException {
+  /// Creates a [RefreshException] with the given [message].
+  const RefreshException(super.message);
 }
 
 /// A service responsible for handling authentication-related API calls.
@@ -52,24 +60,60 @@ class AuthService {
     try {
       final claims = decodeJwtClaims(token);
       if (claims['exp'] is! int) {
-        throw const AuthException('Invalid JWT expiry');
+        debugPrint('JWT is missing exp claim or it is not a valid integer');
+        return true;
       }
       // API returns expiry as seconds since epoch, convert to match available Dart function
       final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
-      return !clock.now().isBefore(tokenExpiry);
-    }  on JwtDecodingException {
-      // Token malformed, treat as expired
-      return true;
-    } on AuthException {
-      // Token malformed, treat as expired
+      // Consider the token expired if it's within 30 seconds of expiry to avoid edge cases where token expires during a request.
+      final expiryBuffer = tokenExpiry.subtract(const Duration(seconds: 30));
+      return !clock.now().isBefore(expiryBuffer);
+    } on JwtDecodingException catch (exc) {
+      debugPrint('Failed to decode JWT claims: ${exc.message}');
       return true;
     }
   }
 
+  /// Attempts to refresh the access token using the stored refresh token.
+  /// If successful, saves the new access token and returns it.
   Future<String?> _refreshToken() async {
-    // stub to implement in issue #23
-    // update storage and _cachedToken
-    return null;
+
+    // Get the refresh token from secure storage. If it's not available, we can't refresh.
+    // Log the user out in this case since they need to log in again to get a new refresh token.
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    if (refreshToken == null) {
+      debugPrint('No refresh token found in storage');
+      throw const RefreshException('No refresh token available');
+    }
+
+    final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/refresh');
+    debugPrint('Attempting token refresh');
+    try {
+      final response = await _client.post(
+        uri,
+        headers: const {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'refresh_token': refreshToken,
+        }),
+      );
+      final successCodes = <int>[200, 201];
+      if (successCodes.contains(response.statusCode)) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final authResponse = AuthResponse.fromJson(json);
+        await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
+        debugPrint('Token refresh successful');
+        // Return the new access token so the caller can retry the original request.
+        return authResponse.accessTokenRs256;
+      } else if (response.statusCode == 401) {
+        throw const RefreshException('Invalid refresh token');
+      } else {
+        throw const AuthException('Unable to refresh token');
+      }
+    } on FormatException  {
+      throw const AuthException('Invalid server response');
+    }
   }
 
   UserProfile? _decodeUserFromToken(String token) {
@@ -91,18 +135,29 @@ class AuthService {
   /// Returns JWT from memory cache or secure storage if expiry time has not passed
   /// If stored token is expired, attempts to refresh
   Future<String?> getAccessToken() async {
-    // check token cached in memory first
-    if (_cachedToken != null) {
-      if (!_isExpired(_cachedToken!)) return _cachedToken;
-      await _deleteAccessToken();
-      return _refreshToken();
-    }
-    // else return token from storage
-    final token = await _storage.read(key: 'token');
+    // Check in-memory cache first for performance, then fallback to secure storage.
+    var token = _cachedToken ?? await _storage.read(key: 'token');
+
+    // Return null if no token is found.
     if (token == null) return null;
-    if (!_isExpired(token)) return _cachedToken = token;
-    await _deleteAccessToken();
-    return _refreshToken();
+
+    // Refresh if expired.
+    if (_isExpired(token)) {
+      try {
+        token = await _refreshToken();
+      } on RefreshException {
+        // refresh error (401 or no refresh token found) - force logout
+        await logout();
+        // Rethrow to notify caller of the logout event so it can update UI accordingly.
+        rethrow;
+      } on (AuthException, http.ClientException) catch (exc) {
+        // Network error or server error during refresh - keep user logged in with old token and let them retry.
+        debugPrint('Token refresh failed: $exc');
+        rethrow;
+      }
+    }
+    _cachedToken = token;
+    return token;
   }
 
   /// Decode user information from stored JWT
@@ -163,7 +218,8 @@ class AuthService {
         throw const AuthException('Unable to authenticate');
       }
     } on http.ClientException catch (e) {
-      throw AuthException('Network error: ${e.message}');
+      debugPrint('Network error during login: ${e.message}');
+      throw const AuthException('Network error');
     } on FormatException {
       throw const AuthException('Invalid server response');
     }
@@ -176,4 +232,5 @@ class AuthService {
     // Should send a logout request to Gateway API, but no logout URL is currently documented.
     return null;
   }
+
 }
