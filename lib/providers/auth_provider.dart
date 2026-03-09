@@ -71,22 +71,6 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
     } // catch other exception thrown if remote logout fails if/when we logout server side
   }
 
-  /// Gets the current authenticated user. Used for testing.
-  Future<void> getMe() => _callWithRefreshHandling(() => _authService.getMe());
-
-  /// Forces token expiry and gets the current authenticated user. Used for testing token refresh.
-  Future<void> getMeForcedRefresh() => _callWithRefreshHandling(() async {
-    await _authService.forceTokenExpiry();
-    await _authService.getMe();
-  });
-
-  /// Forces token expiry with a failed refresh. This should log the user out.
-  Future<void> getMeFailedRefresh() => _callWithRefreshHandling(() async {
-    await _authService.forceTokenExpiry();
-    await _authService.forceInvalidRefreshToken();
-    await _authService.getMe();
-  });
-
   /// Helper to handle refresh exceptions consistently across all methods.
   void _handleRefreshException(RefreshException e) {
     ref.read(errorNotificationProvider.notifier).setError(
@@ -105,6 +89,7 @@ class AuthNotifier extends AsyncNotifier<UserProfile?> {
 
   /// Wraps any async operation that might trigger a token refresh error.
   /// Automatically handles RefreshException and updates state.
+  /// Called with following syntax: `await _callWithRefreshHandling(() => _authService.someMethod())`
   Future<T?> _callWithRefreshHandling<T>(Future<T> Function() fn) async {
     try {
       return await fn();

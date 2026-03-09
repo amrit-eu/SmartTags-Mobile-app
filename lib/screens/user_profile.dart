@@ -101,19 +101,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 child: const Text('Log Out'),
               ),
             ),
-            ElevatedButton(
-                    onPressed: () async { await ref.read(authProvider.notifier).getMe(); },
-                    child: const Text('Get Me'),),
-            ElevatedButton(
-                    onPressed: () async { 
-                      await ref.read(authProvider.notifier).getMeForcedRefresh(); 
-                      },
-                    child: const Text('Get Me (forced refresh)'),),
-            ElevatedButton(
-                    onPressed: () async { 
-                      await ref.read(authProvider.notifier).getMeFailedRefresh(); 
-                      },
-                    child: const Text('Get Me (forced refresh fail)'),)
           ],
         ),
       ),
