@@ -11,7 +11,7 @@ extension PlatformMapper on Platform {
       model: model,
       network: network,
       latestPosition: LatLng(lat, lon),
-      status: domain.PlatformStatus.platformStatusFromDb(status),
+      status: domain.PlatformStatus.fromDb(status),
       operationalStatus: domain.OperationalStatus.operationalStatusFromDb(operationalStatus),
       lastUpdated: lastUpdated,
       operationLocation: LatLng(operationLat, operationLon),

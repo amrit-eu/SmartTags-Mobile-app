@@ -16,7 +16,7 @@ final testDbPlatform = Platform(
   network: 'Network 1',
   lat: 0,
   lon: 0,
-  status: 'Active',
+  status: 'OPERATIONAL',
   operationalStatus: 'Deployed',
   lastUpdated: DateTime(2025),
   operationLat: 0,
