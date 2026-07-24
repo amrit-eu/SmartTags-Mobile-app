@@ -24,8 +24,8 @@ import 'package:smart_tags/services/auth_service.dart' as _i3;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeUserProfile_0 extends _i1.SmartFake implements _i2.UserProfile {
-  _FakeUserProfile_0(Object parent, Invocation parentInvocation)
+class _FakeUser_0 extends _i1.SmartFake implements _i2.User {
+  _FakeUser_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -38,6 +38,14 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
   }
 
   @override
+  _i4.Future<String?> getUserId() =>
+      (super.noSuchMethod(
+            Invocation.method(#getUserId, []),
+            returnValue: _i4.Future<String?>.value(),
+          )
+          as _i4.Future<String?>);
+
+  @override
   _i4.Future<String?> getAccessToken() =>
       (super.noSuchMethod(
             Invocation.method(#getAccessToken, []),
@@ -46,22 +54,22 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
           as _i4.Future<String?>);
 
   @override
-  _i4.Future<_i2.UserProfile?> getAuthenticatedUser() =>
+  _i4.Future<_i2.User?> getAuthenticatedUser() =>
       (super.noSuchMethod(
             Invocation.method(#getAuthenticatedUser, []),
-            returnValue: _i4.Future<_i2.UserProfile?>.value(),
+            returnValue: _i4.Future<_i2.User?>.value(),
           )
-          as _i4.Future<_i2.UserProfile?>);
+          as _i4.Future<_i2.User?>);
 
   @override
-  _i4.Future<_i2.UserProfile> login({
+  _i4.Future<_i2.User> login({
     required String? email,
     required String? password,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#login, [], {#email: email, #password: password}),
-            returnValue: _i4.Future<_i2.UserProfile>.value(
-              _FakeUserProfile_0(
+            returnValue: _i4.Future<_i2.User>.value(
+              _FakeUser_0(
                 this,
                 Invocation.method(#login, [], {
                   #email: email,
@@ -70,7 +78,7 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
               ),
             ),
           )
-          as _i4.Future<_i2.UserProfile>);
+          as _i4.Future<_i2.User>);
 
   @override
   _i4.Future<Null> logout() =>

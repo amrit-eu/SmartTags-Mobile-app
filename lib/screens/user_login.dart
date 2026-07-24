@@ -16,7 +16,7 @@ class UserLoginScreen extends ConsumerStatefulWidget {
 }
 
 class _UserLoginState extends ConsumerState<UserLoginScreen> {
-  AsyncValue<UserProfile?>? _authState;
+  AsyncValue<User?>? _authState;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -155,7 +155,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                           .then((_) {
                               final authState = _authState;
                               if (!context.mounted) return;
-                              if (authState is AsyncData<UserProfile?> && authState.value != null) {
+                              if (authState is AsyncData<User?> && authState.value != null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Login successful'),

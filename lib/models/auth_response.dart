@@ -32,7 +32,7 @@ class AuthResponse {
         refreshToken: refreshToken,
         refreshExpiresIn: refreshExpiresIn,
         expiresIn: expiresIn,
-        contact: UserProfile.fromJson(contact),
+        contact: User.fromJson(contact),
       ),
       _ => throw const FormatException('Failed to read auth response.'),
     };
@@ -53,6 +53,6 @@ class AuthResponse {
   /// Seconds until expiry of session token (default: 3600 = 1 hour)
   final int expiresIn;
 
-  /// [UserProfile] object containing information about the contact user
-  final UserProfile contact;
+  /// [User] object containing information about the contact user
+  final User contact;
 }
