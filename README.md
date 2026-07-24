@@ -54,6 +54,48 @@ lib/
     flutter run
     ```
 
+### Local database (DBeaver)
+
+The app stores SQLite in the platform app sandbox. For development, scripts copy or link it to a stable path:
+
+**DBeaver path (all platforms):** `<repo>/.dev/db.sqlite` (gitignored)
+
+#### macOS — iOS Simulator
+
+```bash
+./scripts/link-simulator-db.sh          # link only
+./scripts/smartrun.sh                   # link + flutter run
+./scripts/smartrun.sh -d "iPhone 17"    # specific simulator
+```
+
+Re-run after deleting/reinstalling the app. Optional: `SIMULATOR_NAME` or `SIMULATOR_DEVICE_ID`.
+
+#### Linux / Windows WSL / Android emulator
+
+Requires [adb](https://developer.android.com/tools/adb) and a connected emulator or device (debug build):
+
+```bash
+./scripts/link-android-db.sh            # pull only
+./scripts/smartrun-android.sh         # pull + flutter run
+./scripts/smartrun-android.sh -d emulator-5554
+```
+
+**WSL + emulator on Windows:** if `adb devices` is empty from WSL, connect to the host emulator:
+
+```bash
+adb connect 127.0.0.1:5555
+```
+
+Optional: `ANDROID_PACKAGE` (default `com.example.flutter_amrit`).
+
+#### Cursor / VS Code tasks
+
+Command Palette → **Tasks: Run Task**:
+
+- **flutter: run iOS (with db link)** — macOS iOS Simulator
+- **flutter: run Android (with db link)** — Linux, WSL, macOS Android emulator
+- **link-simulator-db** / **link-android-db** — refresh DBeaver path only
+
 ---
 
 *Note: For Android testing, ensure location permissions are enabled in the app settings or via the system prompt.*
