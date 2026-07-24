@@ -61,7 +61,7 @@ void main() {
         network: 'Net A',
         lat: 1,
         lon: 1,
-        status: 'Active',
+        status: 'OPERATIONAL',
         operationalStatus: 'Deployed',
         lastUpdated: now,
         operationLat: 1,

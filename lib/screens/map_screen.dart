@@ -6,6 +6,7 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
+import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
@@ -299,7 +300,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               // Color depends on status and selection.
               color: _selectedPlatformRef == dbPlatform.ref
                   ? const Color.fromARGB(255, 2, 0, 101)
-                  : (dbPlatform.status == 'Active' ? Colors.green : Colors.red),
+                  : PlatformStatusPalette.resolve(dbPlatform.status).backgroundColor,
               // Size increases if this marker is selected.
               size: _selectedPlatformRef == dbPlatform.ref ? 40 : 30,
             ),
