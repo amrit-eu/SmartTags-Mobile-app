@@ -3,11 +3,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
 import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/status_badge.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying detailed information about a specific platform.
@@ -99,9 +101,9 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                               point: platform.latestPosition,
                               width: 40,
                               height: 40,
-                              child: const Icon(
+                              child: Icon(
                                 Icons.location_on,
-                                color: Colors.red,
+                                color: PlatformStatusPalette.forStatus(platform.status).backgroundColor,
                                 size: 40,
                               ),
                             ),
@@ -163,10 +165,18 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                     value: platform.network,
                   ),
                   const Divider(height: 16),
-                  ContainerRow(
-                    label: 'Status',
-                    value: platform.status == PlatformStatus.active ? 'Active' : 'Inactive',
-                    valueColor: platform.status == PlatformStatus.active ? Colors.green : Colors.red,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Status',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      StatusBadge.fromStatus(status: platform.status),
+                    ],
                   ),
                 ],
               ),

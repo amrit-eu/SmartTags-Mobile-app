@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/platform.dart' as model_entity;
 import 'package:smart_tags/screens/platform_detail_screen.dart';
-import 'package:smart_tags/theme.dart';
+import 'package:smart_tags/widgets/status_badge.dart';
 
 /// A card widget that displays details for a specific platform.
 class PlatformCard extends StatelessWidget {
@@ -20,13 +21,9 @@ class PlatformCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColors = Theme.of(context).extension<StatusColors>();
     final colorScheme = Theme.of(context).colorScheme;
-    final isActive = platform.status == 'Active';
-
-    final borderColor = isActive
-        ? statusColors?.activeBorderColor ?? Colors.green
-        : statusColors?.inactiveBorderColor ?? Colors.red;
+    final statusStyle = PlatformStatusPalette.resolve(platform.status);
+    final platformStatus = model_entity.PlatformStatus.fromDb(platform.status);
 
     return GestureDetector(
       onTap: () {
@@ -35,7 +32,7 @@ class PlatformCard extends StatelessWidget {
           model: platform.model,
           network: platform.network,
           latestPosition: LatLng(platform.lat, platform.lon),
-          status: isActive ? model_entity.PlatformStatus.active : model_entity.PlatformStatus.inactive,
+          status: platformStatus,
           operationalStatus: platform.operationalStatus == 'Deployed'
               ? model_entity.OperationalStatus.deployed
               : model_entity.OperationalStatus.recovered,
@@ -57,7 +54,7 @@ class PlatformCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          border: Border.all(color: borderColor, width: 2),
+          border: Border.all(color: statusStyle.backgroundColor, width: 2),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -94,24 +91,7 @@ class PlatformCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Operation location',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      '${platform.operationLat.toStringAsFixed(2)}, ${platform.operationLon.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                StatusBadge(rawStatus: platform.status),
               ],
             ),
             const Spacer(),

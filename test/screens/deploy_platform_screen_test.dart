@@ -48,7 +48,7 @@ final testPlatform = Platform(
   network: 'Network 1',
   latestPosition: const LatLng(0, 0),
   operationLocation: const LatLng(0, 0),
-  status: PlatformStatus.active,
+  status: PlatformStatus.operational,
   operationalStatus: OperationalStatus.deployed,
   lastUpdated: DateTime(2025),
 );
@@ -178,7 +178,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -194,7 +194,7 @@ void main() {
             network: platform.network,
             lat: platform.latestPosition.latitude,
             lon: platform.latestPosition.longitude,
-            status: platform.status == PlatformStatus.active ? 'Active' : 'Inactive',
+            status: platform.status.apiName,
             operationalStatus: platform.operationalStatus == OperationalStatus.deployed ? 'Deployed' : 'Recovered',
             lastUpdated: platform.lastUpdated,
             operationLat: platform.operationLocation.latitude,
@@ -266,7 +266,7 @@ void main() {
     expect(updatedPlatform.ref, platform.platformRef);
     expect(updatedPlatform.model, platform.model);
     expect(updatedPlatform.network, platform.network);
-    expect(updatedPlatform.status, 'Active');
+    expect(updatedPlatform.status, 'OPERATIONAL');
 
     // Updated
     expect(updatedPlatform.operationLat, 12.345);
@@ -284,7 +284,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -300,7 +300,7 @@ void main() {
             network: platform.network,
             lat: platform.latestPosition.latitude,
             lon: platform.latestPosition.longitude,
-            status: platform.status == PlatformStatus.active ? 'Active' : 'Inactive',
+            status: platform.status.apiName,
             operationalStatus: platform.operationalStatus == OperationalStatus.deployed ? 'Deployed' : 'Recovered',
             lastUpdated: platform.lastUpdated,
             operationLat: platform.operationLocation.latitude,
@@ -372,7 +372,7 @@ void main() {
     expect(updatedPlatform.ref, platform.platformRef);
     expect(updatedPlatform.model, platform.model);
     expect(updatedPlatform.network, platform.network);
-    expect(updatedPlatform.status, 'Active');
+    expect(updatedPlatform.status, 'OPERATIONAL');
 
     // Updated
     expect(updatedPlatform.operationLat, 12.345);
@@ -390,7 +390,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -455,7 +455,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -520,7 +520,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -567,7 +567,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -603,7 +603,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
@@ -639,7 +639,7 @@ void main() {
       network: 'Network 1',
       latestPosition: const LatLng(0, 0),
       operationLocation: const LatLng(0, 0),
-      status: PlatformStatus.active,
+      status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
     );
