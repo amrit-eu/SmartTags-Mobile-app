@@ -87,3 +87,35 @@ abstract final class PlatformStatusPalette {
     };
   }
 }
+
+abstract final class OperationalStatusPalette {
+  /// Deployed
+  static const deployed = PlatformStatusStyle(
+    label: 'Deployed',
+    backgroundColor: Color(0xFF1976D2),
+    textColor: Colors.white,
+  );
+
+  /// Recovered
+  static const recovered = PlatformStatusStyle(
+    label: 'Recovered',
+    backgroundColor: Color(0xFFEF6C00),
+    textColor: Colors.white,
+  );
+
+  /// Unknown fallback
+  static const unknown = PlatformStatusStyle(
+    label: 'Unknown',
+    backgroundColor: Color(0xFF757575),
+    textColor: Colors.white,
+  );
+
+  /// Returns the palette entry for an [OperationalStatus] value.
+  static PlatformStatusStyle forStatus(OperationalStatus status) {
+    return switch (status) {
+      OperationalStatus.deployed => deployed,
+      OperationalStatus.recovered => recovered,
+      OperationalStatus.unknown => unknown,
+    };
+  }
+}

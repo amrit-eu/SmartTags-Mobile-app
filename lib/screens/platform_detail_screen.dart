@@ -166,16 +166,16 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                     value: platform.network,
                   ),
                   const Divider(height: 16),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          'Status',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        'Status',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      const SizedBox(height: 4),
                       StatusBadge.fromStatus(status: platform.status),
                     ],
                   ),
@@ -196,10 +196,20 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                     ),
                   ),
                   const Divider(height: 24),
-                  ContainerRow(
-                    label: 'Operational Status',
-                    value: platform.operationalStatus == OperationalStatus.deployed ? 'Deployed' : 'Recovered',
-                    valueColor: platform.operationalStatus == OperationalStatus.deployed ? Colors.blue : Colors.orange,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Operational Status',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      StatusBadge.fromOperationalStatus(
+                        operationalStatus: platform.operationalStatus,
+                      ),
+                    ],
                   ),
                   const Divider(height: 16),
                   ContainerRow(
