@@ -3,6 +3,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/helpers/jwt_decode.dart';
 import 'package:smart_tags/models/auth_response.dart';
 import 'package:smart_tags/models/user.dart';
@@ -189,8 +190,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    // TODO(eawetchy): Change to https://amrit-gateway.isival.ifremer.fr/api/oceanops/auth/login once code on Isival is up to date)
-    final uri = Uri.parse('https://amrit-gateway.isival.ifremer.fr/api/oceanops/data/auth/login');
+    final uri = GatewayConfig.loginUri;
 
     try {
       final response = await _client.post(

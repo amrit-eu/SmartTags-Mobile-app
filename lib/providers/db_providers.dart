@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
-import 'package:smart_tags/services/oceanops_repository.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
 
 /// Provides a singleton instance of [AppDatabase] for the lifetime of the
 /// provider scope.
@@ -12,23 +12,27 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-/// Provides an instance of [OceanOpsRepository], which is responsible for
-/// fetching platform data from the remote API.
-///
-/// This provider does not manage any internal state and acts as a simple
-/// dependency-injection wrapper for the repository.
-final oceanOpsRepositoryProvider = Provider<OceanOpsRepository>((ref) {
-  return OceanOpsRepository();
+/// Provides an instance of [GatewayRepository] for Gateway passport sync.
+final gatewayRepositoryProvider = Provider<GatewayRepository>((ref) {
+  return GatewayRepository();
 });
 
-/// Performs the initial synchronization of platform data from the remote API
-/// into the local database.
+/// Loads unclosed missions from the Gateway into the local database on startup
+/// when the database is empty.
 final initialSyncProvider = FutureProvider<void>((ref) async {
   final db = ref.watch(databaseProvider);
-  final repository = ref.watch(oceanOpsRepositoryProvider);
+
+  if (!await db.isEmpty()) {
+    return;
+  }
+
+  final repository = ref.watch(gatewayRepositoryProvider);
 
   try {
-    final platforms = await repository.fetchPlatforms();
+    final platforms = await repository.fetchUnclosedMissions();
+    if (platforms.isEmpty) {
+      return;
+    }
     await db.syncPlatforms(platforms);
   } catch (e, st) {
     debugPrint('Failed to sync data: $e');

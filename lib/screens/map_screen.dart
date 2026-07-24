@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
@@ -346,17 +347,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                       children: [
                         // Ocean Base Tiles
                         TileLayer(
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/'
-                              'Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
-                          userAgentPackageName: 'com.example.flutter_amrit',
+                          urlTemplate: MapConfig.oceanBaseTileUrl,
+                          userAgentPackageName: MapConfig.userAgentPackageName,
                         ),
                         // Ocean Reference Tiles (labels)
                         TileLayer(
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/'
-                              'Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
-                          userAgentPackageName: 'com.example.flutter_amrit',
+                          urlTemplate: MapConfig.oceanReferenceTileUrl,
+                          userAgentPackageName: MapConfig.userAgentPackageName,
                         ),
                       ],
                     ),

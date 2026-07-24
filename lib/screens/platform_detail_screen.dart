@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
@@ -86,12 +87,12 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+                          urlTemplate: MapConfig.oceanBaseTileUrl,
+                          userAgentPackageName: MapConfig.userAgentPackageName,
                         ),
                         TileLayer(
-                          urlTemplate:
-                              'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
+                          urlTemplate: MapConfig.oceanReferenceTileUrl,
+                          userAgentPackageName: MapConfig.userAgentPackageName,
                         ),
                         MarkerLayer(
                           markers: [

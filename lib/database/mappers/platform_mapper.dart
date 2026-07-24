@@ -16,6 +16,12 @@ extension PlatformMapper on Platform {
       lastUpdated: lastUpdated,
       operationLocation: LatLng(operationLat, operationLon),
       operationNotes: operationNotes,
+      platformCategory: platformCategory,
+      reportingStatus: reportingStatus,
+      observingNetwork: observingNetwork,
+      latestOperationType: latestOperationType,
+      latestOperationDate: latestOperationDate,
+      wigosId: wigosId,
     );
   }
 }

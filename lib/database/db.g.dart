@@ -169,6 +169,61 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _platformCategoryMeta = const VerificationMeta(
+    'platformCategory',
+  );
+  @override
+  late final GeneratedColumn<String> platformCategory = GeneratedColumn<String>(
+    'platform_category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reportingStatusMeta = const VerificationMeta(
+    'reportingStatus',
+  );
+  @override
+  late final GeneratedColumn<String> reportingStatus = GeneratedColumn<String>(
+    'reporting_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _observingNetworkMeta = const VerificationMeta(
+    'observingNetwork',
+  );
+  @override
+  late final GeneratedColumn<String> observingNetwork = GeneratedColumn<String>(
+    'observing_network',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _latestOperationTypeMeta =
+      const VerificationMeta('latestOperationType');
+  @override
+  late final GeneratedColumn<String> latestOperationType =
+      GeneratedColumn<String>(
+        'latest_operation_type',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _latestOperationDateMeta =
+      const VerificationMeta('latestOperationDate');
+  @override
+  late final GeneratedColumn<DateTime> latestOperationDate =
+      GeneratedColumn<DateTime>(
+        'latest_operation_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -186,6 +241,11 @@ class $PlatformsTable extends Platforms
     gtsId,
     batchRef,
     operationNotes,
+    platformCategory,
+    reportingStatus,
+    observingNetwork,
+    latestOperationType,
+    latestOperationDate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -321,6 +381,51 @@ class $PlatformsTable extends Platforms
         ),
       );
     }
+    if (data.containsKey('platform_category')) {
+      context.handle(
+        _platformCategoryMeta,
+        platformCategory.isAcceptableOrUnknown(
+          data['platform_category']!,
+          _platformCategoryMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reporting_status')) {
+      context.handle(
+        _reportingStatusMeta,
+        reportingStatus.isAcceptableOrUnknown(
+          data['reporting_status']!,
+          _reportingStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('observing_network')) {
+      context.handle(
+        _observingNetworkMeta,
+        observingNetwork.isAcceptableOrUnknown(
+          data['observing_network']!,
+          _observingNetworkMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latest_operation_type')) {
+      context.handle(
+        _latestOperationTypeMeta,
+        latestOperationType.isAcceptableOrUnknown(
+          data['latest_operation_type']!,
+          _latestOperationTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latest_operation_date')) {
+      context.handle(
+        _latestOperationDateMeta,
+        latestOperationDate.isAcceptableOrUnknown(
+          data['latest_operation_date']!,
+          _latestOperationDateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -390,6 +495,26 @@ class $PlatformsTable extends Platforms
         DriftSqlType.string,
         data['${effectivePrefix}operation_notes'],
       ),
+      platformCategory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform_category'],
+      ),
+      reportingStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reporting_status'],
+      ),
+      observingNetwork: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}observing_network'],
+      ),
+      latestOperationType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}latest_operation_type'],
+      ),
+      latestOperationDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}latest_operation_date'],
+      ),
     );
   }
 
@@ -418,7 +543,7 @@ class Platform extends DataClass implements Insertable<Platform> {
   /// Latest reported longitude.
   final double lon;
 
-  /// Status string (Active/Inactive).
+  /// CT-RST platform status (e.g. OPERATIONAL, INACTIVE).
   final String status;
 
   /// Operational status (Deployed/Recovered).
@@ -444,6 +569,21 @@ class Platform extends DataClass implements Insertable<Platform> {
 
   /// Additional notes about the latest operation (optional).
   final String? operationNotes;
+
+  /// Platform category from passport (e.g. Float, Drifting buoy).
+  final String? platformCategory;
+
+  /// Passport reporting status for display chips (#97).
+  final String? reportingStatus;
+
+  /// Observing network names from passport affiliation (#97).
+  final String? observingNetwork;
+
+  /// Latest operation type: Deployment or Recovery (#99).
+  final String? latestOperationType;
+
+  /// Latest operation date from passport (#99).
+  final DateTime? latestOperationDate;
   const Platform({
     required this.id,
     required this.ref,
@@ -460,6 +600,11 @@ class Platform extends DataClass implements Insertable<Platform> {
     this.gtsId,
     this.batchRef,
     this.operationNotes,
+    this.platformCategory,
+    this.reportingStatus,
+    this.observingNetwork,
+    this.latestOperationType,
+    this.latestOperationDate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -486,6 +631,21 @@ class Platform extends DataClass implements Insertable<Platform> {
     }
     if (!nullToAbsent || operationNotes != null) {
       map['operation_notes'] = Variable<String>(operationNotes);
+    }
+    if (!nullToAbsent || platformCategory != null) {
+      map['platform_category'] = Variable<String>(platformCategory);
+    }
+    if (!nullToAbsent || reportingStatus != null) {
+      map['reporting_status'] = Variable<String>(reportingStatus);
+    }
+    if (!nullToAbsent || observingNetwork != null) {
+      map['observing_network'] = Variable<String>(observingNetwork);
+    }
+    if (!nullToAbsent || latestOperationType != null) {
+      map['latest_operation_type'] = Variable<String>(latestOperationType);
+    }
+    if (!nullToAbsent || latestOperationDate != null) {
+      map['latest_operation_date'] = Variable<DateTime>(latestOperationDate);
     }
     return map;
   }
@@ -515,6 +675,21 @@ class Platform extends DataClass implements Insertable<Platform> {
       operationNotes: operationNotes == null && nullToAbsent
           ? const Value.absent()
           : Value(operationNotes),
+      platformCategory: platformCategory == null && nullToAbsent
+          ? const Value.absent()
+          : Value(platformCategory),
+      reportingStatus: reportingStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reportingStatus),
+      observingNetwork: observingNetwork == null && nullToAbsent
+          ? const Value.absent()
+          : Value(observingNetwork),
+      latestOperationType: latestOperationType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latestOperationType),
+      latestOperationDate: latestOperationDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latestOperationDate),
     );
   }
 
@@ -539,6 +714,15 @@ class Platform extends DataClass implements Insertable<Platform> {
       gtsId: serializer.fromJson<String?>(json['gtsId']),
       batchRef: serializer.fromJson<String?>(json['batchRef']),
       operationNotes: serializer.fromJson<String?>(json['operationNotes']),
+      platformCategory: serializer.fromJson<String?>(json['platformCategory']),
+      reportingStatus: serializer.fromJson<String?>(json['reportingStatus']),
+      observingNetwork: serializer.fromJson<String?>(json['observingNetwork']),
+      latestOperationType: serializer.fromJson<String?>(
+        json['latestOperationType'],
+      ),
+      latestOperationDate: serializer.fromJson<DateTime?>(
+        json['latestOperationDate'],
+      ),
     );
   }
   @override
@@ -560,6 +744,11 @@ class Platform extends DataClass implements Insertable<Platform> {
       'gtsId': serializer.toJson<String?>(gtsId),
       'batchRef': serializer.toJson<String?>(batchRef),
       'operationNotes': serializer.toJson<String?>(operationNotes),
+      'platformCategory': serializer.toJson<String?>(platformCategory),
+      'reportingStatus': serializer.toJson<String?>(reportingStatus),
+      'observingNetwork': serializer.toJson<String?>(observingNetwork),
+      'latestOperationType': serializer.toJson<String?>(latestOperationType),
+      'latestOperationDate': serializer.toJson<DateTime?>(latestOperationDate),
     };
   }
 
@@ -579,6 +768,11 @@ class Platform extends DataClass implements Insertable<Platform> {
     Value<String?> gtsId = const Value.absent(),
     Value<String?> batchRef = const Value.absent(),
     Value<String?> operationNotes = const Value.absent(),
+    Value<String?> platformCategory = const Value.absent(),
+    Value<String?> reportingStatus = const Value.absent(),
+    Value<String?> observingNetwork = const Value.absent(),
+    Value<String?> latestOperationType = const Value.absent(),
+    Value<DateTime?> latestOperationDate = const Value.absent(),
   }) => Platform(
     id: id ?? this.id,
     ref: ref ?? this.ref,
@@ -597,6 +791,21 @@ class Platform extends DataClass implements Insertable<Platform> {
     operationNotes: operationNotes.present
         ? operationNotes.value
         : this.operationNotes,
+    platformCategory: platformCategory.present
+        ? platformCategory.value
+        : this.platformCategory,
+    reportingStatus: reportingStatus.present
+        ? reportingStatus.value
+        : this.reportingStatus,
+    observingNetwork: observingNetwork.present
+        ? observingNetwork.value
+        : this.observingNetwork,
+    latestOperationType: latestOperationType.present
+        ? latestOperationType.value
+        : this.latestOperationType,
+    latestOperationDate: latestOperationDate.present
+        ? latestOperationDate.value
+        : this.latestOperationDate,
   );
   Platform copyWithCompanion(PlatformsCompanion data) {
     return Platform(
@@ -625,6 +834,21 @@ class Platform extends DataClass implements Insertable<Platform> {
       operationNotes: data.operationNotes.present
           ? data.operationNotes.value
           : this.operationNotes,
+      platformCategory: data.platformCategory.present
+          ? data.platformCategory.value
+          : this.platformCategory,
+      reportingStatus: data.reportingStatus.present
+          ? data.reportingStatus.value
+          : this.reportingStatus,
+      observingNetwork: data.observingNetwork.present
+          ? data.observingNetwork.value
+          : this.observingNetwork,
+      latestOperationType: data.latestOperationType.present
+          ? data.latestOperationType.value
+          : this.latestOperationType,
+      latestOperationDate: data.latestOperationDate.present
+          ? data.latestOperationDate.value
+          : this.latestOperationDate,
     );
   }
 
@@ -645,7 +869,12 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
-          ..write('operationNotes: $operationNotes')
+          ..write('operationNotes: $operationNotes, ')
+          ..write('platformCategory: $platformCategory, ')
+          ..write('reportingStatus: $reportingStatus, ')
+          ..write('observingNetwork: $observingNetwork, ')
+          ..write('latestOperationType: $latestOperationType, ')
+          ..write('latestOperationDate: $latestOperationDate')
           ..write(')'))
         .toString();
   }
@@ -667,6 +896,11 @@ class Platform extends DataClass implements Insertable<Platform> {
     gtsId,
     batchRef,
     operationNotes,
+    platformCategory,
+    reportingStatus,
+    observingNetwork,
+    latestOperationType,
+    latestOperationDate,
   );
   @override
   bool operator ==(Object other) =>
@@ -686,7 +920,12 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.wigosId == this.wigosId &&
           other.gtsId == this.gtsId &&
           other.batchRef == this.batchRef &&
-          other.operationNotes == this.operationNotes);
+          other.operationNotes == this.operationNotes &&
+          other.platformCategory == this.platformCategory &&
+          other.reportingStatus == this.reportingStatus &&
+          other.observingNetwork == this.observingNetwork &&
+          other.latestOperationType == this.latestOperationType &&
+          other.latestOperationDate == this.latestOperationDate);
 }
 
 class PlatformsCompanion extends UpdateCompanion<Platform> {
@@ -705,6 +944,11 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<String?> gtsId;
   final Value<String?> batchRef;
   final Value<String?> operationNotes;
+  final Value<String?> platformCategory;
+  final Value<String?> reportingStatus;
+  final Value<String?> observingNetwork;
+  final Value<String?> latestOperationType;
+  final Value<DateTime?> latestOperationDate;
   const PlatformsCompanion({
     this.id = const Value.absent(),
     this.ref = const Value.absent(),
@@ -721,6 +965,11 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
     this.operationNotes = const Value.absent(),
+    this.platformCategory = const Value.absent(),
+    this.reportingStatus = const Value.absent(),
+    this.observingNetwork = const Value.absent(),
+    this.latestOperationType = const Value.absent(),
+    this.latestOperationDate = const Value.absent(),
   });
   PlatformsCompanion.insert({
     this.id = const Value.absent(),
@@ -738,6 +987,11 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
     this.operationNotes = const Value.absent(),
+    this.platformCategory = const Value.absent(),
+    this.reportingStatus = const Value.absent(),
+    this.observingNetwork = const Value.absent(),
+    this.latestOperationType = const Value.absent(),
+    this.latestOperationDate = const Value.absent(),
   }) : ref = Value(ref),
        model = Value(model),
        network = Value(network),
@@ -764,6 +1018,11 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<String>? gtsId,
     Expression<String>? batchRef,
     Expression<String>? operationNotes,
+    Expression<String>? platformCategory,
+    Expression<String>? reportingStatus,
+    Expression<String>? observingNetwork,
+    Expression<String>? latestOperationType,
+    Expression<DateTime>? latestOperationDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -781,6 +1040,13 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (gtsId != null) 'gts_id': gtsId,
       if (batchRef != null) 'batch_ref': batchRef,
       if (operationNotes != null) 'operation_notes': operationNotes,
+      if (platformCategory != null) 'platform_category': platformCategory,
+      if (reportingStatus != null) 'reporting_status': reportingStatus,
+      if (observingNetwork != null) 'observing_network': observingNetwork,
+      if (latestOperationType != null)
+        'latest_operation_type': latestOperationType,
+      if (latestOperationDate != null)
+        'latest_operation_date': latestOperationDate,
     });
   }
 
@@ -800,6 +1066,11 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<String?>? gtsId,
     Value<String?>? batchRef,
     Value<String?>? operationNotes,
+    Value<String?>? platformCategory,
+    Value<String?>? reportingStatus,
+    Value<String?>? observingNetwork,
+    Value<String?>? latestOperationType,
+    Value<DateTime?>? latestOperationDate,
   }) {
     return PlatformsCompanion(
       id: id ?? this.id,
@@ -817,6 +1088,11 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       gtsId: gtsId ?? this.gtsId,
       batchRef: batchRef ?? this.batchRef,
       operationNotes: operationNotes ?? this.operationNotes,
+      platformCategory: platformCategory ?? this.platformCategory,
+      reportingStatus: reportingStatus ?? this.reportingStatus,
+      observingNetwork: observingNetwork ?? this.observingNetwork,
+      latestOperationType: latestOperationType ?? this.latestOperationType,
+      latestOperationDate: latestOperationDate ?? this.latestOperationDate,
     );
   }
 
@@ -868,6 +1144,25 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     if (operationNotes.present) {
       map['operation_notes'] = Variable<String>(operationNotes.value);
     }
+    if (platformCategory.present) {
+      map['platform_category'] = Variable<String>(platformCategory.value);
+    }
+    if (reportingStatus.present) {
+      map['reporting_status'] = Variable<String>(reportingStatus.value);
+    }
+    if (observingNetwork.present) {
+      map['observing_network'] = Variable<String>(observingNetwork.value);
+    }
+    if (latestOperationType.present) {
+      map['latest_operation_type'] = Variable<String>(
+        latestOperationType.value,
+      );
+    }
+    if (latestOperationDate.present) {
+      map['latest_operation_date'] = Variable<DateTime>(
+        latestOperationDate.value,
+      );
+    }
     return map;
   }
 
@@ -888,7 +1183,12 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
-          ..write('operationNotes: $operationNotes')
+          ..write('operationNotes: $operationNotes, ')
+          ..write('platformCategory: $platformCategory, ')
+          ..write('reportingStatus: $reportingStatus, ')
+          ..write('observingNetwork: $observingNetwork, ')
+          ..write('latestOperationType: $latestOperationType, ')
+          ..write('latestOperationDate: $latestOperationDate')
           ..write(')'))
         .toString();
   }
@@ -922,6 +1222,11 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       Value<String?> gtsId,
       Value<String?> batchRef,
       Value<String?> operationNotes,
+      Value<String?> platformCategory,
+      Value<String?> reportingStatus,
+      Value<String?> observingNetwork,
+      Value<String?> latestOperationType,
+      Value<DateTime?> latestOperationDate,
     });
 typedef $$PlatformsTableUpdateCompanionBuilder =
     PlatformsCompanion Function({
@@ -940,6 +1245,11 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> gtsId,
       Value<String?> batchRef,
       Value<String?> operationNotes,
+      Value<String?> platformCategory,
+      Value<String?> reportingStatus,
+      Value<String?> observingNetwork,
+      Value<String?> latestOperationType,
+      Value<DateTime?> latestOperationDate,
     });
 
 class $$PlatformsTableFilterComposer
@@ -1023,6 +1333,31 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<String> get operationNotes => $composableBuilder(
     column: $table.operationNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platformCategory => $composableBuilder(
+    column: $table.platformCategory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reportingStatus => $composableBuilder(
+    column: $table.reportingStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get observingNetwork => $composableBuilder(
+    column: $table.observingNetwork,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get latestOperationType => $composableBuilder(
+    column: $table.latestOperationType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get latestOperationDate => $composableBuilder(
+    column: $table.latestOperationDate,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1110,6 +1445,31 @@ class $$PlatformsTableOrderingComposer
     column: $table.operationNotes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get platformCategory => $composableBuilder(
+    column: $table.platformCategory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reportingStatus => $composableBuilder(
+    column: $table.reportingStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get observingNetwork => $composableBuilder(
+    column: $table.observingNetwork,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get latestOperationType => $composableBuilder(
+    column: $table.latestOperationType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get latestOperationDate => $composableBuilder(
+    column: $table.latestOperationDate,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlatformsTableAnnotationComposer
@@ -1175,6 +1535,31 @@ class $$PlatformsTableAnnotationComposer
     column: $table.operationNotes,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get platformCategory => $composableBuilder(
+    column: $table.platformCategory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reportingStatus => $composableBuilder(
+    column: $table.reportingStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get observingNetwork => $composableBuilder(
+    column: $table.observingNetwork,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get latestOperationType => $composableBuilder(
+    column: $table.latestOperationType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get latestOperationDate => $composableBuilder(
+    column: $table.latestOperationDate,
+    builder: (column) => column,
+  );
 }
 
 class $$PlatformsTableTableManager
@@ -1220,6 +1605,11 @@ class $$PlatformsTableTableManager
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
                 Value<String?> operationNotes = const Value.absent(),
+                Value<String?> platformCategory = const Value.absent(),
+                Value<String?> reportingStatus = const Value.absent(),
+                Value<String?> observingNetwork = const Value.absent(),
+                Value<String?> latestOperationType = const Value.absent(),
+                Value<DateTime?> latestOperationDate = const Value.absent(),
               }) => PlatformsCompanion(
                 id: id,
                 ref: ref,
@@ -1236,6 +1626,11 @@ class $$PlatformsTableTableManager
                 gtsId: gtsId,
                 batchRef: batchRef,
                 operationNotes: operationNotes,
+                platformCategory: platformCategory,
+                reportingStatus: reportingStatus,
+                observingNetwork: observingNetwork,
+                latestOperationType: latestOperationType,
+                latestOperationDate: latestOperationDate,
               ),
           createCompanionCallback:
               ({
@@ -1254,6 +1649,11 @@ class $$PlatformsTableTableManager
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
                 Value<String?> operationNotes = const Value.absent(),
+                Value<String?> platformCategory = const Value.absent(),
+                Value<String?> reportingStatus = const Value.absent(),
+                Value<String?> observingNetwork = const Value.absent(),
+                Value<String?> latestOperationType = const Value.absent(),
+                Value<DateTime?> latestOperationDate = const Value.absent(),
               }) => PlatformsCompanion.insert(
                 id: id,
                 ref: ref,
@@ -1270,6 +1670,11 @@ class $$PlatformsTableTableManager
                 gtsId: gtsId,
                 batchRef: batchRef,
                 operationNotes: operationNotes,
+                platformCategory: platformCategory,
+                reportingStatus: reportingStatus,
+                observingNetwork: observingNetwork,
+                latestOperationType: latestOperationType,
+                latestOperationDate: latestOperationDate,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

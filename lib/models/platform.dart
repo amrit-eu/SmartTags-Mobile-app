@@ -59,6 +59,12 @@ class Platform {
     required this.lastUpdated,
     required this.operationLocation,
     this.operationNotes,
+    this.platformCategory,
+    this.reportingStatus,
+    this.observingNetwork,
+    this.latestOperationType,
+    this.latestOperationDate,
+    this.wigosId,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -87,4 +93,22 @@ class Platform {
 
   /// Additional notes about the latest operation (optional).
   final String? operationNotes;
+
+  /// Platform category from passport metadata (e.g. Float).
+  final String? platformCategory;
+
+  /// Passport reporting status label.
+  final String? reportingStatus;
+
+  /// Observing network names from passport affiliation.
+  final String? observingNetwork;
+
+  /// Latest operation type (Deployment/Recovery).
+  final String? latestOperationType;
+
+  /// Latest operation date from passport.
+  final DateTime? latestOperationDate;
+
+  /// WIGOS identifier when available.
+  final String? wigosId;
 }
