@@ -328,90 +328,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       });
     }
 
+    final platforms = platformsAsync.value ?? [];
+
     return Scaffold(
       appBar: TopNavigation(title: const Text('SmartTags')),
       body: platformsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => _buildMapBody(platforms),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (platforms) {
-          return Stack(
-            children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: const MapOptions(initialCenter: _defaultCenter, initialZoom: _defaultZoom),
-                children: [
-                  // GestureDetector for tiles to handle clear platform selection on tap.
-                  GestureDetector(
-                    onTap: _selectedPlatformRef != null ? _clearSelection : null,
-                    behavior: HitTestBehavior.opaque,
-                    child: Stack(
-                      children: [
-                        // Ocean Base Tiles
-                        TileLayer(
-                          urlTemplate: MapConfig.oceanBaseTileUrl,
-                          userAgentPackageName: MapConfig.userAgentPackageName,
-                        ),
-                        // Ocean Reference Tiles (labels)
-                        TileLayer(
-                          urlTemplate: MapConfig.oceanReferenceTileUrl,
-                          userAgentPackageName: MapConfig.userAgentPackageName,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Clustered markers
-                  MarkerClusterLayerWidget(
-                    options: MarkerClusterLayerOptions(
-                      maxClusterRadius: 120,
-                      size: const Size(40, 40),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(50),
-                      maxZoom: 15,
-                      markers: _buildMarkers(platforms),
-                      builder: (context, markers) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: Colors.blue,
-                          ),
-                          child: Center(
-                            child: Text(
-                              markers.length.toString(),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              if (_selectedPlatformRef != null) ...[
-                Builder(
-                  builder: (context) {
-                    final platformAsync = ref.watch(platformByRefStreamProvider(_selectedPlatformRef!));
-                    final selectedPlatform = platformAsync.value?.toDomain();
-                    if (selectedPlatform == null) return const SizedBox.shrink();
-                    return Positioned(
-                      top: 20,
-                      left: 16,
-                      child: ScaleTransition(
-                        scale: Tween<double>(begin: 0.5, end: 1).animate(
-                          CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
-                        ),
-                        alignment: Alignment.topLeft,
-                        child: GestureDetector(
-                          onTap: () {},
-                          child: _buildPopup(context, selectedPlatform),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ],
-          );
-        },
+        data: _buildMapBody,
       ),
       floatingActionButton: FloatingActionButton.small(
         onPressed: () async {
@@ -419,6 +343,82 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         },
         child: const Icon(Icons.my_location),
       ),
+    );
+  }
+
+  Widget _buildMapBody(List<Platform> platforms) {
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: const MapOptions(initialCenter: _defaultCenter, initialZoom: _defaultZoom),
+          children: [
+            GestureDetector(
+              onTap: _selectedPlatformRef != null ? _clearSelection : null,
+              behavior: HitTestBehavior.opaque,
+              child: Stack(
+                children: [
+                  TileLayer(
+                    urlTemplate: MapConfig.oceanBaseTileUrl,
+                    userAgentPackageName: MapConfig.userAgentPackageName,
+                  ),
+                  TileLayer(
+                    urlTemplate: MapConfig.oceanReferenceTileUrl,
+                    userAgentPackageName: MapConfig.userAgentPackageName,
+                  ),
+                ],
+              ),
+            ),
+            MarkerClusterLayerWidget(
+              options: MarkerClusterLayerOptions(
+                maxClusterRadius: 120,
+                size: const Size(40, 40),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(50),
+                maxZoom: 15,
+                markers: _buildMarkers(platforms),
+                builder: (context, markers) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.blue,
+                    ),
+                    child: Center(
+                      child: Text(
+                        markers.length.toString(),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        if (_selectedPlatformRef != null) ...[
+          Builder(
+            builder: (context) {
+              final platformAsync = ref.watch(platformByRefStreamProvider(_selectedPlatformRef!));
+              final selectedPlatform = platformAsync.value?.toDomain();
+              if (selectedPlatform == null) return const SizedBox.shrink();
+              return Positioned(
+                top: 20,
+                left: 16,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.5, end: 1).animate(
+                    CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
+                  ),
+                  alignment: Alignment.topLeft,
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: _buildPopup(context, selectedPlatform),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 

@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/helpers/connection_message.dart';
-import 'package:smart_tags/providers/connection_provider.dart';
-import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/theme.dart';
+import 'package:smart_tags/widgets/connectivity_banner.dart';
+import 'package:smart_tags/widgets/initial_sync_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,9 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(initialSyncProvider);
+    ref
+      ..watch(initialSyncProvider)
+      ..watch(initialSyncLifecycleProvider);
     return MaterialApp(
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
@@ -69,30 +71,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for initial and subsequent connectivity changes
-    ref..listen<ConnectivityResult?>(
-      checkConnectionProvider.select((state) => state.value),
-      (previous, next) {
-        if (previous != next) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(getConnectionMessage(next))),
-            );
-          });
-        }
-      }, onError: (error, stackTrace) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to check connectivity')),
-          );
-        });
-        debugPrint('Error in connectivity provider: $error');
-      },
-    )
-
-    // Listen for global error notifications
-    // i.e. refresh token failures.
-    ..listen<ErrorNotification?>(
+    ref.listen<ErrorNotification?>(
       errorNotificationProvider,
       (previous, next) {
         if (next != null) {
@@ -102,7 +81,6 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
                 content: Text(next.message),
               ),
             );
-            // Auto-clear error after showing
             Future.delayed(const Duration(seconds: 4), () {
               ref.read(errorNotificationProvider.notifier).clearError();
             });
@@ -112,7 +90,16 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     );
 
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const InitialSyncShell(),
+            const ConnectivityBanner(),
+            Expanded(child: _pages[_selectedIndex]),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
