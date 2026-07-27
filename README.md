@@ -64,11 +64,11 @@ The app stores SQLite in the platform app sandbox. For development, scripts copy
 
 ```bash
 ./scripts/link-simulator-db.sh          # link only
-./scripts/smartrun.sh                   # link + flutter run
+./scripts/smartrun.sh                   # boot sim if needed + link + flutter run
 ./scripts/smartrun.sh -d "iPhone 17"    # specific simulator
 ```
 
-Re-run after deleting/reinstalling the app. Optional: `SIMULATOR_NAME` or `SIMULATOR_DEVICE_ID`.
+`smartrun.sh` opens and boots the iOS Simulator when it is shutdown. Re-run after deleting/reinstalling the app. Optional: `SIMULATOR_NAME` or `SIMULATOR_DEVICE_ID`.
 
 #### Linux / Windows WSL / Android emulator
 
