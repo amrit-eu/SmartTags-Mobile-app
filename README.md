@@ -76,17 +76,21 @@ Requires [adb](https://developer.android.com/tools/adb) and a connected emulator
 
 ```bash
 ./scripts/link-android-db.sh            # pull only
-./scripts/smartrun-android.sh         # pull + flutter run
+./scripts/smartrun-android.sh         # boot/connect emulator + pull + flutter run
 ./scripts/smartrun-android.sh -d emulator-5554
 ```
 
-**WSL + emulator on Windows:** if `adb devices` is empty from WSL, connect to the host emulator:
+**Linux (native):** `smartrun-android.sh` launches the first available AVD (or `ANDROID_AVD`) if no device is connected.
+
+**WSL + emulator on Windows:** the script tries `adb connect` to the Windows host. Start the emulator in **Android Studio on Windows** first if it is not running. Manual fallback:
 
 ```bash
 adb connect 127.0.0.1:5555
+# or use the Windows host IP from /etc/resolv.conf
+adb connect $(awk '/nameserver/ { print $2; exit }' /etc/resolv.conf):5555
 ```
 
-Optional: `ANDROID_PACKAGE` (default `com.example.flutter_amrit`).
+Optional: `ANDROID_AVD`, `ANDROID_PACKAGE` (default `com.example.flutter_amrit`), `WSL_ADB_HOST`.
 
 #### Cursor / VS Code tasks
 
