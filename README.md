@@ -82,7 +82,20 @@ Requires [adb](https://developer.android.com/tools/adb) and a connected emulator
 
 **Linux (native):** `smartrun-android.sh` launches the first available AVD (or `ANDROID_AVD`) if no device is connected.
 
-**WSL + emulator on Windows:** the script tries `adb connect` to the Windows host. Start the emulator in **Android Studio on Windows** first if it is not running. Manual fallback:
+**WSL + emulator on Windows:** by default the script tries `adb connect` to the Windows host — start the emulator in Android Studio first, or leave it running.
+
+**WSL experimental (one-command cold start):** devs can try launching the emulator on Windows from WSL:
+
+```bash
+WSL_LAUNCH_EMULATOR=1 \
+ANDROID_AVD=Pixel_7_API_34 \
+WINDOWS_ANDROID_SDK=/mnt/c/Users/you/AppData/Local/Android/Sdk \
+./scripts/smartrun-android.sh
+```
+
+Or uncomment the block marked `WSL experimental` in `scripts/boot-android-emulator.sh`. Paths and AVD names vary — feedback welcome.
+
+Manual fallback:
 
 ```bash
 adb connect 127.0.0.1:5555
@@ -90,7 +103,7 @@ adb connect 127.0.0.1:5555
 adb connect $(awk '/nameserver/ { print $2; exit }' /etc/resolv.conf):5555
 ```
 
-Optional: `ANDROID_AVD`, `ANDROID_PACKAGE` (default `com.example.flutter_amrit`), `WSL_ADB_HOST`.
+Optional: `ANDROID_AVD`, `ANDROID_PACKAGE` (default `com.example.flutter_amrit`), `WSL_ADB_HOST`, `WSL_LAUNCH_EMULATOR`, `WINDOWS_ANDROID_SDK`.
 
 #### Cursor / VS Code tasks
 

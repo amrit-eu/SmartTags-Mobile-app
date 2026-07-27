@@ -6,9 +6,16 @@
 #   ANDROID_AVD=Pixel_7_API_34 ./scripts/boot-android-emulator.sh
 #
 # Optional env:
-#   ANDROID_AVD   — AVD name to launch if no device is connected (Linux / native macOS)
-#   ADB           — default: adb
-#   WSL_ADB_HOST  — Windows host IP for WSL adb connect (auto-detected if unset)
+#   ANDROID_AVD            — AVD name to launch if no device is connected (Linux / native macOS)
+#   ADB                      — default: adb
+#   WSL_ADB_HOST             — Windows host IP for WSL adb connect (auto-detected if unset)
+#
+# Experimental WSL cold-start (launch emulator on Windows from WSL):
+#   WSL_LAUNCH_EMULATOR=1    — try Windows-side emulator launch before adb connect
+#   WINDOWS_ANDROID_SDK      — e.g. /mnt/c/Users/you/AppData/Local/Android/Sdk
+#   ANDROID_AVD              — e.g. Pixel_7_API_34
+#
+# Or uncomment the block marked "WSL experimental" in this script.
 
 set -euo pipefail
 
@@ -49,6 +56,45 @@ connect_wsl_adb() {
   done
   "$ADB" connect "127.0.0.1:5555" >/dev/null 2>&1 || true
 }
+
+# Experimental — launch the Android emulator on Windows from WSL.
+# Set WSL_LAUNCH_EMULATOR=1 to enable, or uncomment the WSL block below.
+launch_wsl_windows_emulator() {
+  local avd="${ANDROID_AVD:-}"
+  local sdk="${WINDOWS_ANDROID_SDK:-}"
+
+  if [[ -z "$avd" ]]; then
+    echo "WSL experimental: set ANDROID_AVD to your AVD name (Android Studio > Device Manager)." >&2
+    return 1
+  fi
+
+  if [[ -z "$sdk" ]]; then
+    local user="${USER:-$(whoami)}"
+    for candidate in \
+      "/mnt/c/Users/${user}/AppData/Local/Android/Sdk" \
+      "/mnt/c/Android/Sdk"; do
+      if [[ -x "${candidate}/emulator/emulator.exe" ]]; then
+        sdk="$candidate"
+        break
+      fi
+    done
+  fi
+
+  if [[ -z "$sdk" || ! -x "${sdk}/emulator/emulator.exe" ]]; then
+    echo "WSL experimental: set WINDOWS_ANDROID_SDK (e.g. /mnt/c/Users/you/AppData/Local/Android/Sdk)." >&2
+    return 1
+  fi
+
+  local win_sdk
+  win_sdk="$(wslpath -w "$sdk")"
+  local win_emulator="${win_sdk}\\emulator\\emulator.exe"
+
+  echo "WSL experimental: launching $avd on Windows…"
+  cmd.exe /c "start \"\" \"$win_emulator\" -avd \"$avd\"" >/dev/null 2>&1
+}
+
+# Alternative one-liner (comment only — paste in shell to try manually):
+#   cmd.exe /c "start \"\" \"$(wslpath -w \"$WINDOWS_ANDROID_SDK/emulator/emulator.exe\")\" -avd \"Pixel_7_API_34\""
 
 launch_avd() {
   local avd="$1"
@@ -95,6 +141,17 @@ fi
 
 if is_wsl; then
   host="$(wsl_host_ip)"
+
+  # --- WSL experimental: uncomment to always try Windows emulator launch ---
+  # if launch_wsl_windows_emulator; then
+  #   sleep 5
+  # fi
+
+  if [[ "${WSL_LAUNCH_EMULATOR:-0}" == "1" ]]; then
+    launch_wsl_windows_emulator || true
+    sleep 5
+  fi
+
   if [[ -n "$host" ]]; then
     echo "WSL: connecting adb to Windows host ($host)…"
     connect_wsl_adb "$host"
@@ -107,8 +164,15 @@ if is_wsl; then
     exit 0
   fi
 
+  # Give a cold-started emulator more time when WSL_LAUNCH_EMULATOR was used.
+  if [[ "${WSL_LAUNCH_EMULATOR:-0}" == "1" ]] && wait_for_device 30; then
+    echo "Android device ready via adb connect (after emulator boot)"
+    exit 0
+  fi
+
   echo "WSL: no emulator found via adb." >&2
   echo "Start the emulator in Android Studio on Windows, then retry." >&2
+  echo "Or try: WSL_LAUNCH_EMULATOR=1 ANDROID_AVD=Your_AVD WINDOWS_ANDROID_SDK=/mnt/c/Users/you/AppData/Local/Android/Sdk ./scripts/smartrun-android.sh" >&2
   echo "Or run: adb connect 127.0.0.1:5555" >&2
   exit 1
 fi
