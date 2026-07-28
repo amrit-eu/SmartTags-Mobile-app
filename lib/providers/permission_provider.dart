@@ -65,7 +65,7 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
 
     final requiredRole = _policy[resource]?[action];
     if (requiredRole == null) return false; // permission not defined (log?)
-    if (requiredRole == Role.loggedIn) return true;
+    if (requiredRole == Role.loggedIn || requiredRole == Role.anonymous) return true; // grant anonymous actions to logged in users
 
     if (programId == null) return false;
 
