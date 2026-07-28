@@ -5,20 +5,18 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 
+import '../../utils/test_user.dart';
+
 class FakeLoggedInAuthNotifier extends AuthNotifier {
   @override
-  Future<UserProfile?> build() async {
-    return const UserProfile(
-      fullName: 'Joe Bloggs',
-      id: 123456,
-      email: 'test@test.com',
-    );
+  Future<User?> build() async {
+    return createTestUser();
   }
 }
 
 class FakeLoggedOutAuthNotifier extends AuthNotifier {
   @override
-  Future<UserProfile?> build() async {
+  Future<User?> build() async {
     return null;
   }
 }

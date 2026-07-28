@@ -6,6 +6,8 @@ import 'package:mockito/mockito.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
+
+import '../utils/test_user.dart';
 import 'auth_provider_test.mocks.dart';
 
 @GenerateMocks([AuthService])
@@ -13,11 +15,7 @@ void main() {
   final mockService = MockAuthService();
   late ProviderContainer container;
 
-  const testUser = UserProfile(
-    fullName: 'Joe Bloggs',
-    id: 123456,
-    email: 'test@test.com',
-  );
+  final testUser = createTestUser();
 
   setUp(() {
     reset(mockService);
@@ -52,7 +50,7 @@ void main() {
     final notifier = container.read(authProvider.notifier);
 
     final future = notifier.login('test@test.com', 'password');
-    expect(container.read(authProvider), isA<AsyncLoading<UserProfile?>>());
+    expect(container.read(authProvider), isA<AsyncLoading<User?>>());
     await future;
 
     expect(container.read(authProvider).value, testUser);
@@ -79,7 +77,7 @@ void main() {
     await notifier.login('test@test.com', 'password');
 
     final state = container.read(authProvider);
-    expect(state, isA<AsyncError<UserProfile?>>());
+    expect(state, isA<AsyncError<User?>>());
   });
 
   test('logout sets user to null', () async {
@@ -108,9 +106,9 @@ void main() {
     when(mockService.getAuthenticatedUser()).thenAnswer((_) async => testUser);
     when(mockService.logout()).thenThrow(PlatformException(message: "Couldn't delete token", code: '1'));
     final notifier = container.read(authProvider.notifier)
-    ..state = const AsyncData<UserProfile?>(testUser);
+    ..state = AsyncData<User?>(testUser);
 
-    final states = <AsyncValue<UserProfile?>>[];
+    final states = <AsyncValue<User?>>[];
     final sub = container.listen(
       authProvider,
           (prev, next) => states.add(next),
@@ -122,9 +120,9 @@ void main() {
     sub.close();
 
     expect(states.length, 3);
-    expect(states[0], isA<AsyncLoading<UserProfile?>>());
-    expect(states[1], isA<AsyncError<UserProfile?>>());
-    expect(states[2], const AsyncData<UserProfile?>(testUser));
+    expect(states[0], isA<AsyncLoading<User?>>());
+    expect(states[1], isA<AsyncError<User?>>());
+    expect(states[2], AsyncData<User?>(testUser));
 
   });
 }

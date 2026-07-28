@@ -14,4 +14,6 @@ class Role extends ApiObject {
     final r = ApiObject.parseJson(json);
     return Role(id: r.id, name: r.name, code: r.code);
   }
+
+  Map<String, dynamic> toJson() => toJsonFields();
 }

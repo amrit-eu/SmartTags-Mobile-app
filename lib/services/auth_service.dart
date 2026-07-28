@@ -52,6 +52,13 @@ class AuthService {
   String? _cachedUserId;
 
   Future<void> _saveToken(String token, String refreshToken) async {
+    try {
+      _decodeToken(token);
+    } catch (e) {
+      // Malformed token from the server
+      throw AuthException('Received malformed access token: $e');
+    }
+
     _cachedToken = token;
     await _storage.write(key: 'token', value: token);
     await _storage.write(key: 'refresh_token', value: refreshToken);
@@ -125,49 +132,25 @@ class AuthService {
     }
   }
 
-  // /// Attempts to retrieve user information from the API.
-  // /// If successful, saves the new roles information and returns it.
-  // Future<User?> _refreshUserInfo(String token) async {
-  //
-  //   final uri = Uri.parse('https://amrit.isival.ifremer.fr/amrit-gateway/api/oceanops/data/auth/me');
-  //   debugPrint('Attempting to retrieve user information');
-  //   try {
-  //     final response = await _client.get(
-  //       uri,
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': 'Bearer $token'
-  //       },
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       final json = jsonDecode(response.body) as Map<String, dynamic>;
-  //       final authResponse = User.fromJson(json);
-  //       // await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
-  //       debugPrint('Token refresh successful');
-  //       // Return the new access token so the caller can retry the original request.
-  //       // return authResponse.accessTokenRs256;
-  //     } else if (response.statusCode == 401) {
-  //       // throw const RefreshException('Invalid refresh token');
-  //     } else {
-  //       // throw const AuthException('Unable to refresh token');
-  //     }
-  //   } on FormatException  {
-  //     // throw const AuthException('Invalid server response');
-  //   }
-  // }
-
-  UserClaims? _decodeUserFromToken(String token) {
+  TokenClaims _decodeToken(String token) {
     final claims = decodeJwtClaims(token);
+    final roles = claims['roles'];
 
-    if (claims['contactId'] is! int || claims['name'] is! String || claims['sub'] is! String) {
+    if (claims['contactId'] is! int ||
+        claims['name'] is! String ||
+        claims['sub'] is! String ||
+        claims['exp'] is! int ||
+        roles is! List ||
+        roles.any((e) => e is! String)) {
       throw const AuthException('Invalid JWT user claims');
     }
 
-    return UserClaims(
-      id: claims['contactId'] as int,
-      fullName: claims['name'] as String,
-      email: claims['sub'] as String,
+    return TokenClaims(
+      contactId: claims['contactId'] as int,
+      name: claims['name'] as String,
+      sub: claims['sub'] as String,
+      roles: roles.cast<String>(),
+      exp: claims['exp'] as int,
     );
   }
 
@@ -208,26 +191,10 @@ class AuthService {
 
   /// Decode user information from stored JWT
   Future<User?> getAuthenticatedUser() async {
-    final token = await getAccessToken();
     final userId = await getUserId();
     if (userId == null) return null;
     final user = _authDao.loadProfile(int.parse(userId));
-
-    /// TODO(eawetchy) Define what happens if no user
     return user;
-
-    // TODO(eawetchy): Check and set token status here (authenticated, authenticatedOffline (valid token we can't check against server), unauthenticated, token valid or expiredNeedsReauth (try to refresh at next opportunity)
-    // try {
-    //   return _decodeUserFromToken(token);
-    // } on JwtDecodingException {
-    //   // token corrupted, treat as logged out
-    //   await _deleteAccessToken();
-    //   return null;
-    // } on AuthException {
-    //   // Missing required claims, treat as logged out
-    //   await _deleteAccessToken();
-    //   return null;
-    // }
   }
 
   /// Authenticates a user with the given [email] and [password].

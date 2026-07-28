@@ -132,7 +132,7 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
     final flatRoles = roleRows.map((r) => r.roleCode).toList();
 
     return User(
-        id: profileRow.id,
+        id: profileRow.ref,
         email: profileRow.email,
         email2: profileRow.email2,
         fullName: profileRow.fullName,
@@ -150,21 +150,31 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
     );
   }
 
-  /// Remove the cached profile for [userId] and its associated program-role and role rows.
-  Future<void> clearProfile(int userId) async {
+  /// Remove the cached profile for [userRef] and its associated program-role and role rows.
+  Future<void> clearProfile(int userRef) async {
     await transaction(() async {
+      final userProfile = await (select(userProfiles)
+        ..where((t) => t.ref.equals(userRef)))
+          .getSingleOrNull();
+
+      if (userProfile == null) {
+        // Nothing to clear.
+        return;
+      }
+      final userId = userProfile.id;
+
       // Capture which programs this user was linked to, before removing
       // the join rows, so we know what to check for orphaning.
       final programIds = await (selectOnly(userProgramRoles)
         ..addColumns([userProgramRoles.programId])
-        ..where(userProgramRoles.userId.equals(userId)))
+        ..where(userProgramRoles.userId.equals(userRef)))
           .map((row) => row.read(userProgramRoles.programId)!)
           .get();
 
       await (delete(userProgramRoles)
-        ..where((t) => t.userId.equals(userId)))
+        ..where((t) => t.userId.equals(userRef)))
           .go();
-      await (delete(userRoles)..where((t) => t.userId.equals(userId))).go();
+      await (delete(userRoles)..where((t) => t.userId.equals(userRef))).go();
       await (delete(userProfiles)..where((t) => t.id.equals(userId))).go();
       await (delete(programs)..where((t) => t.id.isIn(programIds))).go();
     });

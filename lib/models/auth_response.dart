@@ -38,21 +38,44 @@ class AuthResponse {
     };
   }
 
+  /// Serialise [AuthResponse] object to JSON  (used for testing)
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'access_token_rs256': accessTokenRs256,
+      'refresh_token': refreshToken,
+      'refresh_expires_in': refreshExpiresIn,
+      'expires_in': expiresIn,
+      'contact': {
+        'id': contact.id,
+        'email': contact.email,
+        'email2': contact.email2,
+        'fullName': contact.fullName,
+        'firstName': contact.firstName,
+        'lastName': contact.lastName,
+        'title': contact.title,
+        'orcid': contact.orcid,
+        'tel': contact.tel,
+        'tel2': contact.tel2,
+        'address': contact.address,
+        'hideContactInfoFromPublic': contact.hideContactInfoFromPublic,
+        'country': contact.country,
+        'roles': contact.roles,
+        'programRoles': contact.programRoles.map((pr) => pr.toJson()).toList(),
+      }
+    };
+  }
+
   /// Success status of authentication
   final bool success;
-
   /// JWT session token returned from API
   final String accessTokenRs256;
-
   /// Refresh token to renew session JWT
   final String refreshToken;
-
   /// Seconds until expiry of refresh token (default: 864000 = 7 days)
   final int refreshExpiresIn;
-
   /// Seconds until expiry of session token (default: 3600 = 1 hour)
   final int expiresIn;
-
   /// [User] object containing information about the contact user
   final User contact;
 }

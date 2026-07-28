@@ -97,36 +97,46 @@ class User {
   final List<ProgramRole> programRoles;
 }
 
-/// A dataclass representing a user's auth claims.
-class UserClaims {
-  /// Creates a [UserClaims] object.
-  const UserClaims({
-    required this.id,
-    required this.fullName,
-    required this.email,
+/// A dataclass representing a user JWT's claims.
+class TokenClaims {
+  /// Creates a [TokenClaims] object.
+  const TokenClaims({
+    required this.contactId,
+    required this.name,
+    required this.sub,
+    required this.roles,
+    required this.exp,
   });
 
-  /// Deserialises JSON response from API into a [UserClaims] object
-  factory UserClaims.fromJson(Map<String, dynamic> json) {
+  /// Deserialises JSON response from API into a [TokenClaims] object
+  factory TokenClaims.fromJson(Map<String, dynamic> json) {
     return switch (json) {
       {
-      'id': final int id,
-      'email': final String email,
-      'fullName': final String fullName,
+      'contactId': final int contactId,
+      'name': final String name,
+      'sub': final String sub,
+      'roles': final List<String> roles,
+      'exp': final int exp,
       } =>
-          UserClaims(
-            id: id,
-            fullName: fullName,
-            email: email,
+          TokenClaims(
+            contactId: contactId,
+            name: name,
+            sub: sub,
+            roles: roles,
+            exp: exp,
           ),
-      _ => throw const FormatException('Failed to create user claims.'),
+      _ => throw const FormatException('Failed to create JWT claims.'),
     };
   }
 
   /// The user's unique numeric identifier.
-  final int id;
+  final int contactId;
   /// The user's full display name.
-  final String fullName;
+  final String name;
   /// The user's primary email address.
-  final String email;
+  final String sub;
+  /// List of the user's general app roles
+  final List<String> roles;
+  /// Token expiry timestamp
+  final int exp;
 }

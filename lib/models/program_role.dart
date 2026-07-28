@@ -24,6 +24,12 @@ class ProgramRole {
     };
   }
 
+  /// Serialise [ProgramRole] object to JSON  (used for testing)
+  Map<String, dynamic> toJson() => {
+    'program': program.toJson(),
+    'role': role.toJson(),
+  };
+
   /// The program this role assignment applies to.
   final Program program;
   /// The role assigned to the user for [program].

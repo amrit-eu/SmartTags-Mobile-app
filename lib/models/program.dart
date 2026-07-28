@@ -14,4 +14,6 @@ class Program extends ApiObject {
     final r = ApiObject.parseJson(json);
     return Program(id: r.id, name: r.name, code: r.code);
   }
+
+  Map<String, dynamic> toJson() => toJsonFields();
 }

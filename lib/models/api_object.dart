@@ -28,4 +28,11 @@ abstract class ApiObject {
       _ => throw const FormatException('Failed to parse ApiObject.'),
     };
   }
+
+  /// Shared JSON encoding helper.
+  Map<String, dynamic> toJsonFields() => {
+    'id': id,
+    'name': name,
+    'code': code,
+  };
 }
