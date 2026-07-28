@@ -12,7 +12,9 @@ import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/map_skeleton_loader.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen displaying an interactive ocean map with markers.
@@ -26,6 +28,8 @@ class MapScreen extends ConsumerStatefulWidget {
     super.key,
     this.locationFetcher,
     this.onLocationCentered,
+    this.showMapSkeleton = true,
+    this.reportMarkersPainted = true,
   });
 
   /// Optional test / injection hook to provide a LocationFetcher
@@ -35,6 +39,14 @@ class MapScreen extends ConsumerStatefulWidget {
   /// Optional callback called after the map is centered on the user's location
   @visibleForTesting
   final ValueChanged<LatLng>? onLocationCentered;
+
+  /// Whether to show a skeleton overlay while basemap tiles load on first open.
+  @visibleForTesting
+  final bool showMapSkeleton;
+
+  /// Whether to notify [mapMarkersPaintedProvider] after markers are built.
+  @visibleForTesting
+  final bool reportMarkersPainted;
 
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
@@ -51,10 +63,31 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   static const LatLng _defaultCenter = LatLng(45, -5);
   static const double _defaultZoom = 4;
 
+  static const int _minBaseTilesBeforeHideSkeleton = 4;
+  static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
+
+  var _loadedBaseTileCount = 0;
+  var _mapSkeletonVisible = false;
+  var _mapSkeletonMounted = false;
+  var _mapSkeletonDismissScheduled = false;
+  final _countedBaseTiles = <String>{};
+  var _markersPaintedScheduled = false;
+  Timer? _mapSkeletonTimeoutTimer;
+
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _mapSkeletonVisible = widget.showMapSkeleton;
+    _mapSkeletonMounted = widget.showMapSkeleton;
+
+    if (_mapSkeletonVisible) {
+      _mapSkeletonTimeoutTimer = Timer(_mapSkeletonTimeout, () {
+        if (mounted) {
+          _scheduleDismissMapSkeleton();
+        }
+      });
+    }
 
     // Animation controller for pulsing effect
     _pulseController = AnimationController(
@@ -74,6 +107,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   @override
   void dispose() {
+    _mapSkeletonTimeoutTimer?.cancel();
     _pulseController.dispose();
     _popupAnimationController.dispose();
     _mapController.dispose();
@@ -159,6 +193,78 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
     }
+  }
+
+  void _onBaseTileLoaded(TileImage tile) {
+    if (!_mapSkeletonVisible || tile.loadError || !tile.readyToDisplay) {
+      return;
+    }
+
+    final tileKey =
+        '${tile.coordinates.z}_${tile.coordinates.x}_${tile.coordinates.y}';
+    if (!_countedBaseTiles.add(tileKey)) {
+      return;
+    }
+
+    _loadedBaseTileCount++;
+    if (_loadedBaseTileCount >= _minBaseTilesBeforeHideSkeleton) {
+      _scheduleDismissMapSkeleton();
+    }
+  }
+
+  void _scheduleDismissMapSkeleton() {
+    if (!_mapSkeletonVisible || _mapSkeletonDismissScheduled) {
+      return;
+    }
+    _mapSkeletonDismissScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _dismissMapSkeleton();
+    });
+  }
+
+  void _dismissMapSkeleton() {
+    if (!_mapSkeletonVisible) {
+      return;
+    }
+    setState(() {
+      _mapSkeletonVisible = false;
+    });
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 350), () {
+        if (mounted) {
+          setState(() {
+            _mapSkeletonMounted = false;
+          });
+        }
+      }),
+    );
+  }
+
+  Widget _baseTileBuilder(
+    BuildContext context,
+    Widget tileWidget,
+    TileImage tile,
+  ) {
+    _onBaseTileLoaded(tile);
+    return tileWidget;
+  }
+
+  void _scheduleMarkersPaintedNotification() {
+    if (_markersPaintedScheduled) {
+      return;
+    }
+    _markersPaintedScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        ref.read(mapMarkersPaintedProvider.notifier).markPainted();
+      });
+    });
   }
 
   /// Builds the popup widget for a selected platform marker.
@@ -347,6 +453,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   Widget _buildMapBody(List<Platform> platforms) {
+    if (widget.reportMarkersPainted && platforms.isNotEmpty) {
+      _scheduleMarkersPaintedNotification();
+    }
+
     return Stack(
       children: [
         FlutterMap(
@@ -361,6 +471,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   TileLayer(
                     urlTemplate: MapConfig.oceanBaseTileUrl,
                     userAgentPackageName: MapConfig.userAgentPackageName,
+                    tileBuilder: _baseTileBuilder,
                   ),
                   TileLayer(
                     urlTemplate: MapConfig.oceanReferenceTileUrl,
@@ -418,6 +529,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             },
           ),
         ],
+        if (_mapSkeletonMounted)
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !_mapSkeletonVisible,
+              child: AnimatedOpacity(
+                opacity: _mapSkeletonVisible ? 1 : 0,
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOut,
+                child: const MapSkeletonLoader(),
+              ),
+            ),
+          ),
       ],
     );
   }

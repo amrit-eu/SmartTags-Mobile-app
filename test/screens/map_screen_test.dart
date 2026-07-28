@@ -27,7 +27,7 @@ void main() {
           databaseProvider.overrideWith((ref) => db),
         ],
         child: const MaterialApp(
-          home: MapScreen(),
+          home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
         ),
       ),
     );
@@ -43,7 +43,7 @@ void main() {
           databaseProvider.overrideWith((ref) => db),
         ],
         child: const MaterialApp(
-          home: MapScreen(),
+          home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
         ),
       ),
     );
@@ -68,6 +68,8 @@ void main() {
           ],
           child: MaterialApp(
             home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
               // Use a fake LocationFetcher
               locationFetcher: FakeLocationFetcher(fakeLocation),
               // Check when the map is centered via the test callback
@@ -110,6 +112,8 @@ void main() {
           ],
           child: MaterialApp(
             home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
               // Use a fake LocationFetcher
               locationFetcher: FakeLocationFetcher(null),
             ),
@@ -168,7 +172,7 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(),
+            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
           ),
         ),
       );
@@ -226,7 +230,7 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(),
+            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
           ),
         ),
       );
@@ -277,7 +281,7 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(),
+            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
           ),
         ),
       );
@@ -334,7 +338,7 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(),
+            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
           ),
         ),
       );
@@ -419,7 +423,7 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(),
+            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
           ),
         ),
       );

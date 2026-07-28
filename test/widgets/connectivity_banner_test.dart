@@ -9,7 +9,9 @@ import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_providers.dart';
 import '../helpers/static_initial_sync_notifier.dart';
+import '../helpers/test_main_navigation_pages.dart';
 
 class _FixedConnectivity extends ConnectivityStatus {
   _FixedConnectivity(this.result);
@@ -36,6 +38,11 @@ Platform _samplePlatform() {
   );
 }
 
+class _PaintedMapMarkersNotifier extends MapMarkersPaintedNotifier {
+  @override
+  bool build() => true;
+}
+
 void main() {
   testWidgets('shows offline banner when offline and local data exists', (tester) async {
     await tester.pumpWidget(
@@ -46,8 +53,11 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
+          mapMarkersPaintedProvider.overrideWith(() => _PaintedMapMarkersNotifier()),
         ],
-        child: const MaterialApp(home: MainNavigation()),
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
       ),
     );
 
@@ -68,8 +78,11 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
+          mapMarkersPaintedProvider.overrideWith(() => _PaintedMapMarkersNotifier()),
         ],
-        child: const MaterialApp(home: MainNavigation()),
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
       ),
     );
 

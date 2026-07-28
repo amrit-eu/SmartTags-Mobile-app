@@ -5,7 +5,14 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_providers.dart';
 import '../helpers/static_initial_sync_notifier.dart';
+import '../helpers/test_main_navigation_pages.dart';
+
+class _PaintedMapMarkersNotifier extends MapMarkersPaintedNotifier {
+  @override
+  bool build() => true;
+}
 
 void main() {
   testWidgets('shows global loading banner during initial sync', (tester) async {
@@ -15,7 +22,9 @@ void main() {
           initialSyncProvider.overrideWith(StaticInitialSyncNotifier.loading),
           platformsStreamProvider.overrideWith((ref) => Stream.value([])),
         ],
-        child: const MaterialApp(home: MainNavigation()),
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
       ),
     );
 
@@ -33,7 +42,9 @@ void main() {
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([])),
         ],
-        child: const MaterialApp(home: MainNavigation()),
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
       ),
     );
 
@@ -64,14 +75,18 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          mapMarkersPaintedProvider.overrideWith(() => _PaintedMapMarkersNotifier()),
         ],
-        child: const MaterialApp(home: MainNavigation()),
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
       ),
     );
 
     await tester.pump();
 
     expect(find.text('Loading platforms…'), findsNothing);
+    expect(find.text('Displaying platforms…'), findsNothing);
     expect(find.text('No local data. Connect to the internet to download platforms.'), findsNothing);
   });
 
@@ -97,13 +112,40 @@ void main() {
             () => StaticInitialSyncNotifier.error(Exception('failed')),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          mapMarkersPaintedProvider.overrideWith(() => _PaintedMapMarkersNotifier()),
         ],
-        child: const MaterialApp(home: MainNavigation()),
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
       ),
     );
 
     await tester.pump();
 
     expect(find.text('Could not load platforms'), findsNothing);
+  });
+
+  testWidgets('shows displaying banner after sync until markers are painted', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.completed),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Displaying platforms…'), findsOneWidget);
+    expect(find.text('Loading platforms…'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 }

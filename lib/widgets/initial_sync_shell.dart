@@ -1,17 +1,51 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_providers.dart';
 
 /// Non-blocking first-load sync feedback shown above any tab in the main shell.
-class InitialSyncShell extends ConsumerWidget {
+class InitialSyncShell extends ConsumerStatefulWidget {
   /// Creates an [InitialSyncShell].
   const InitialSyncShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InitialSyncShell> createState() => _InitialSyncShellState();
+}
+
+class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
+  static const Duration _displayPhaseTimeout = Duration(seconds: 8);
+
+  Timer? _displayTimeout;
+
+  @override
+  void dispose() {
+    _displayTimeout?.cancel();
+    super.dispose();
+  }
+
+  void _startDisplayTimeoutIfNeeded({required bool showingDisplaying}) {
+    if (!showingDisplaying) {
+      _displayTimeout?.cancel();
+      _displayTimeout = null;
+      return;
+    }
+
+    _displayTimeout ??= Timer(_displayPhaseTimeout, () {
+      if (!mounted) {
+        return;
+      }
+      ref.read(mapMarkersPaintedProvider.notifier).markPainted();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final syncAsync = ref.watch(initialSyncProvider);
     final platformCount = ref.watch(platformsStreamProvider).value?.length ?? 0;
+    final markersPainted = ref.watch(mapMarkersPaintedProvider);
 
     ref.listen(platformsStreamProvider, (previous, next) {
       if ((next.value?.length ?? 0) > 0) {
@@ -19,29 +53,49 @@ class InitialSyncShell extends ConsumerWidget {
       }
     });
 
-    if (platformCount > 0) {
+    if (markersPainted && platformCount > 0) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return const SizedBox.shrink();
     }
 
-    return syncAsync.when(
-      loading: () => const _SyncLoadingBanner(),
-      error: (_, _) => _SyncFailedBanner(
+    if (syncAsync.hasError && platformCount > 0) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const SizedBox.shrink();
+    }
+
+    if (syncAsync.isLoading) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const _SyncProgressBanner(
+        message: 'Loading platforms…',
+      );
+    }
+
+    if (syncAsync.hasError) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return _SyncFailedBanner(
         onRetry: () {
           ref.read(initialSyncProvider.notifier).retry();
         },
-      ),
-      data: (status) {
-        if (status == InitialSyncStatus.skippedOffline) {
-          return const _OfflineEmptyBanner();
-        }
-        return const SizedBox.shrink();
-      },
+      );
+    }
+
+    final status = syncAsync.value;
+    if (status == InitialSyncStatus.skippedOffline) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const _OfflineEmptyBanner();
+    }
+
+    _startDisplayTimeoutIfNeeded(showingDisplaying: true);
+    return const _SyncProgressBanner(
+      message: 'Displaying platforms…',
     );
   }
 }
 
-class _SyncLoadingBanner extends StatelessWidget {
-  const _SyncLoadingBanner();
+class _SyncProgressBanner extends StatelessWidget {
+  const _SyncProgressBanner({required this.message});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +115,7 @@ class _SyncLoadingBanner extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Text(
-              'Loading platforms…',
+              message,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

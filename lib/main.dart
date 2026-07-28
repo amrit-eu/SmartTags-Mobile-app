@@ -42,7 +42,11 @@ class MyApp extends ConsumerWidget {
 /// Main navigation shell with bottom navigation bar.
 class MainNavigation extends ConsumerStatefulWidget {
   /// Creates a [MainNavigation] widget.
-  const MainNavigation({super.key});
+  const MainNavigation({super.key, this.pages});
+
+  /// Optional tab pages for tests.
+  @visibleForTesting
+  final List<Widget>? pages;
 
   @override
   ConsumerState<MainNavigation> createState() => _MainNavigationState();
@@ -56,11 +60,12 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   @override
   void initState() {
     super.initState();
-    _pages = <Widget>[
-      const MapScreen(),
-      const CatalogueScreen(),
-      const QrScanScreen(),
-    ];
+    _pages = widget.pages ??
+        <Widget>[
+          const MapScreen(),
+          const CatalogueScreen(),
+          const QrScanScreen(),
+        ];
   }
 
   void _onItemTapped(int index) {
