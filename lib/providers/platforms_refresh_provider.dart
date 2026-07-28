@@ -52,10 +52,12 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
     final phase = ref.read(platformsSyncPhaseProvider.notifier);
     state = const AsyncValue.loading();
     phase.setDownloading();
-    debugPrint(
-      'Platforms refresh: fetching ${GatewayConfig.unclosedPassportsUri} '
-      '(connectivity=${connectivity?.name})',
-    );
+    if (kDebugMode) {
+      debugPrint(
+        'Platforms refresh: fetching ${GatewayConfig.unclosedPassportsUri} '
+        '(connectivity=${connectivity?.name})',
+      );
+    }
 
     try {
       final repository = ref.read(gatewayRepositoryProvider);
@@ -64,8 +66,10 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         phase.setSaving();
         final db = ref.read(databaseProvider);
         await db.syncPlatforms(platforms);
-        debugPrint('Platforms refresh: synced ${platforms.length} platforms');
-      } else {
+        if (kDebugMode) {
+          debugPrint('Platforms refresh: synced ${platforms.length} platforms');
+        }
+      } else if (kDebugMode) {
         debugPrint(
           'Platforms refresh: gateway returned 0 platforms (local DB unchanged)',
         );
@@ -84,6 +88,9 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
     StackTrace stackTrace, {
     ConnectivityResult? connectivity,
   }) {
+    if (!kDebugMode) {
+      return;
+    }
     debugPrint(
       'Platforms refresh failed: $error '
       '(connectivity=${connectivity?.name ?? 'unknown'})\n$stackTrace',

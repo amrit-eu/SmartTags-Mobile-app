@@ -17,7 +17,9 @@ class GatewayRepository {
   Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
     final uri = GatewayConfig.unclosedPassportsUri;
     try {
-      debugPrint('Gateway GET $uri');
+      if (kDebugMode) {
+        debugPrint('Gateway GET $uri');
+      }
       final response = await _client.get(uri);
 
       if (response.statusCode != 200) {
@@ -33,10 +35,14 @@ class GatewayRepository {
           .map(GatewayPassportMapper.fromPassportItem)
           .toList();
 
-      debugPrint('Gateway returned ${items.length} unclosed missions');
+      if (kDebugMode) {
+        debugPrint('Gateway returned ${items.length} unclosed missions');
+      }
       return items;
     } catch (e, st) {
-      debugPrint('Gateway fetchUnclosedMissions error: $e\n$st');
+      if (kDebugMode) {
+        debugPrint('Gateway fetchUnclosedMissions error: $e\n$st');
+      }
       rethrow;
     }
   }
