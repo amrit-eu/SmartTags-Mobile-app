@@ -80,21 +80,20 @@ launch_wsl_windows_emulator() {
     done
   fi
 
-  if [[ -z "$sdk" || ! -x "${sdk}/emulator/emulator.exe" ]]; then
+  local emulator_exe="${sdk}/emulator/emulator.exe"
+  if [[ -z "$sdk" || ! -x "$emulator_exe" ]]; then
     echo "WSL experimental: set WINDOWS_ANDROID_SDK (e.g. /mnt/c/Users/you/AppData/Local/Android/Sdk)." >&2
     return 1
   fi
 
-  local win_sdk
-  win_sdk="$(wslpath -w "$sdk")"
-  local win_emulator="${win_sdk}\\emulator\\emulator.exe"
-
   echo "WSL experimental: launching $avd on Windows…"
-  cmd.exe /c "start \"\" \"$win_emulator\" -avd \"$avd\"" >/dev/null 2>&1
+  # Run the Windows .exe directly — avoids cmd.exe "start \"\" …" quoting bugs in WSL
+  # (Windows may show "Cannot find '\\'" if cmd.exe is used with an empty title).
+  "$emulator_exe" -avd "$avd" >/dev/null 2>&1 &
 }
 
 # Alternative one-liner (comment only — paste in shell to try manually):
-#   cmd.exe /c "start \"\" \"$(wslpath -w \"$WINDOWS_ANDROID_SDK/emulator/emulator.exe\")\" -avd \"Pixel_7_API_34\""
+#   /mnt/c/Users/you/AppData/Local/Android/Sdk/emulator/emulator.exe -avd Pixel_7_API_34 &
 
 launch_avd() {
   local avd="$1"
