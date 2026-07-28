@@ -13,7 +13,9 @@ import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/map_pull_to_refresh.dart';
 import 'package:smart_tags/widgets/map_skeleton_loader.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -437,17 +439,31 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     final platforms = platformsAsync.value ?? [];
 
     return Scaffold(
-      appBar: TopNavigation(title: const Text('SmartTags')),
-      body: platformsAsync.when(
-        loading: () => _buildMapBody(platforms),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: _buildMapBody,
-      ),
       floatingActionButton: FloatingActionButton.small(
         onPressed: () async {
           await _centerOnLocation(context);
         },
         child: const Icon(Icons.my_location),
+      ),
+      body: MapPullToRefresh(
+        enabled: !_mapSkeletonVisible,
+        onRefresh: _refreshPlatforms,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: kToolbarHeight,
+              child: TopNavigation(title: const Text('SmartTags')),
+            ),
+            Expanded(
+              child: platformsAsync.when(
+                loading: () => _buildMapBody(platforms),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: _buildMapBody,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -543,6 +559,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           ),
       ],
     );
+  }
+
+  Future<void> _refreshPlatforms() async {
+    await ref.read(platformsRefreshProvider.notifier).refresh();
+    if (!mounted) {
+      return;
+    }
+
+    final refresh = ref.read(platformsRefreshProvider);
+    if (refresh.hasError) {
+      final error = refresh.error!;
+      // Full details are already logged by PlatformsRefreshNotifier / GatewayRepository.
+      final message = error is StateError
+          ? error.message
+          : 'Could not refresh platforms';
+      _showToast(context, message, 'Close');
+    }
   }
 
   void _showToast(BuildContext context, String message, String label) {

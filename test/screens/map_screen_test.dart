@@ -358,9 +358,9 @@ void main() {
       final mapTapTarget = find.byWidgetPredicate(
         (widget) => widget is GestureDetector && widget.behavior == HitTestBehavior.opaque && widget.onTap != null,
       );
-      final mapGestureWidget = tester.widget<GestureDetector>(mapTapTarget.first);
-      // Call the onTap directly since tester.tap was being temperamental
-      mapGestureWidget.onTap?.call();
+      for (final element in mapTapTarget.evaluate()) {
+        tester.widget<GestureDetector>(find.byWidget(element.widget)).onTap?.call();
+      }
       await tester.pump(const Duration(milliseconds: 500));
 
       // Verify the popup is closed

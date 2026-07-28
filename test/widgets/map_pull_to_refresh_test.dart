@@ -1,0 +1,106 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
+import 'package:smart_tags/widgets/map_pull_to_refresh.dart';
+import 'package:smart_tags/widgets/platforms_loading_banner.dart';
+
+class _PhaseNotifier extends PlatformsSyncPhaseNotifier {
+  _PhaseNotifier(this.fixedPhase);
+
+  final PlatformsSyncPhase fixedPhase;
+
+  @override
+  PlatformsSyncPhase build() => fixedPhase;
+}
+
+void main() {
+  testWidgets('shows refresh arrow while pulling before fetch starts', (tester) async {
+    final refreshStarted = Completer<void>();
+    final refreshFinished = Completer<void>();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          platformsSyncPhaseProvider.overrideWith(
+            () => _PhaseNotifier(PlatformsSyncPhase.downloading),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPullToRefresh(
+              onRefresh: () async {
+                refreshStarted.complete();
+                await refreshFinished.future;
+              },
+              child: const ColoredBox(
+                color: Colors.blueGrey,
+                child: SizedBox.expand(
+                  child: Text('content'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(const Offset(200, 24));
+    await gesture.moveBy(const Offset(0, 180));
+    await tester.pump();
+
+    // Still pulling — arrow only, no loading banner yet.
+    expect(find.byIcon(Icons.refresh), findsOneWidget);
+    expect(find.text('Downloading platforms…'), findsNothing);
+    expect(find.byType(PlatformsLoadingBanner), findsNothing);
+
+    await gesture.up();
+    await tester.pump();
+    await refreshStarted.future;
+    await tester.pump();
+
+    // Fetch triggered — shared loader banner with download phase.
+    expect(find.text('Downloading platforms…'), findsOneWidget);
+    expect(find.byType(PlatformsLoadingBanner), findsOneWidget);
+    expect(find.byIcon(Icons.refresh), findsNothing);
+
+    refreshFinished.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Downloading platforms…'), findsNothing);
+  });
+
+  testWidgets('does not refresh when pull starts away from the top edge', (tester) async {
+    var refreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPullToRefresh(
+              onRefresh: () async {
+                refreshed = true;
+              },
+              child: const ColoredBox(
+                color: Colors.blueGrey,
+                child: SizedBox.expand(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(const Offset(200, 200));
+    await gesture.moveBy(const Offset(0, 180));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(refreshed, isFalse);
+    expect(find.byIcon(Icons.refresh), findsNothing);
+    expect(find.text('Downloading platforms…'), findsNothing);
+  });
+}

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
+import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 
 /// Non-blocking first-load sync feedback shown above any tab in the main shell.
 class InitialSyncShell extends ConsumerStatefulWidget {
@@ -65,8 +67,9 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
 
     if (syncAsync.isLoading) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
-      return const _SyncProgressBanner(
-        message: 'Loading platforms…',
+      final phase = ref.watch(platformsSyncPhaseProvider);
+      return PlatformsLoadingBanner(
+        message: phase.bannerMessage ?? 'Downloading platforms…',
       );
     }
 
@@ -86,48 +89,8 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     }
 
     _startDisplayTimeoutIfNeeded(showingDisplaying: true);
-    return const _SyncProgressBanner(
+    return const PlatformsLoadingBanner(
       message: 'Displaying platforms…',
-    );
-  }
-}
-
-class _SyncProgressBanner extends StatelessWidget {
-  const _SyncProgressBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LinearProgressIndicator(
-            minHeight: 3,
-            color: theme.colorScheme.primary,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text(
-              message,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ],
-      ),
     );
   }
 }

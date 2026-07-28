@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -34,6 +35,25 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     super.dispose();
   }
 
+  Future<void> _refreshPlatforms() async {
+    await ref.read(platformsRefreshProvider.notifier).refresh();
+    if (!mounted) {
+      return;
+    }
+
+    final refresh = ref.read(platformsRefreshProvider);
+    if (refresh.hasError) {
+      final error = refresh.error!;
+      // Full details are already logged by PlatformsRefreshNotifier / GatewayRepository.
+      final message = error is StateError
+          ? error.message
+          : 'Could not refresh platforms';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,21 +79,32 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
             ),
           ),
           Expanded(
-            child: _searchQuery.isEmpty
-                ? const Center(
-                    child: Text('Enter a platform ID or model to search'),
-                  )
-                : ref
-                      .watch(platformsWatchProvider(_searchQuery))
-                      .when(
+            child: RefreshIndicator(
+              onRefresh: _refreshPlatforms,
+              child: _searchQuery.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 120),
+                        Center(
+                          child: Text('Enter a platform ID or model to search'),
+                        ),
+                      ],
+                    )
+                  : ref.watch(platformsWatchProvider(_searchQuery)).when(
                         data: (platforms) {
                           if (platforms.isEmpty) {
-                            return const Center(
-                              child: Text('No results found'),
+                            return ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              children: const [
+                                SizedBox(height: 120),
+                                Center(child: Text('No results found')),
+                              ],
                             );
                           }
 
                           return GridView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                               maxCrossAxisExtent: 400,
@@ -92,9 +123,16 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
                           if (kDebugMode) {
                             debugPrint('Error: $error \n Stack: $stack');
                           }
-                          return const Center(child: Text('Failed to fetch platforms'));
+                          return ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 120),
+                              Center(child: Text('Failed to fetch platforms')),
+                            ],
+                          );
                         },
                       ),
+            ),
           ),
         ],
       ),

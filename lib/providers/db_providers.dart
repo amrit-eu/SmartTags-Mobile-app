@@ -5,6 +5,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
 /// Provides a singleton instance of [AppDatabase] for the lifetime of the
@@ -92,11 +93,18 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     }
 
     final repository = ref.read(gatewayRepositoryProvider);
-    final platforms = await repository.fetchUnclosedMissions();
-    if (platforms.isNotEmpty) {
-      await db.syncPlatforms(platforms);
+    final phase = ref.read(platformsSyncPhaseProvider.notifier);
+    phase.setDownloading();
+    try {
+      final platforms = await repository.fetchUnclosedMissions();
+      if (platforms.isNotEmpty) {
+        phase.setSaving();
+        await db.syncPlatforms(platforms);
+      }
+      return InitialSyncStatus.completed;
+    } finally {
+      phase.setIdle();
     }
-    return InitialSyncStatus.completed;
   }
 
   Future<ConnectivityResult?> _currentConnectivity() async {

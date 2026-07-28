@@ -30,7 +30,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Loading platforms…'), findsOneWidget);
+    expect(find.text('Downloading platforms…'), findsOneWidget);
   });
 
   testWidgets('shows offline banner when sync skipped and database is empty', (tester) async {
@@ -85,7 +85,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Loading platforms…'), findsNothing);
+    expect(find.text('Downloading platforms…'), findsNothing);
     expect(find.text('Displaying platforms…'), findsNothing);
     expect(find.text('No local data. Connect to the internet to download platforms.'), findsNothing);
   });
@@ -143,7 +143,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Displaying platforms…'), findsOneWidget);
-    expect(find.text('Loading platforms…'), findsNothing);
+    expect(find.text('Downloading platforms…'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
