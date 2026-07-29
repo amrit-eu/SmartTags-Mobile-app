@@ -20,6 +20,7 @@ class MapPullToRefresh extends ConsumerStatefulWidget {
     required this.child,
     super.key,
     this.enabled = true,
+    this.edgeStartMaxY = 120,
   });
 
   /// Called when the pull exceeds the trigger distance.
@@ -31,19 +32,23 @@ class MapPullToRefresh extends ConsumerStatefulWidget {
   /// When false, drag tracking is disabled.
   final bool enabled;
 
+  /// Pull may start when the pointer is within this Y range from the top
+  /// of this widget (covers the header, and optionally a search bar).
+  final double edgeStartMaxY;
+
   @override
   ConsumerState<MapPullToRefresh> createState() => _MapPullToRefreshState();
 }
 
 class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
-  /// Slot height while dragging (arrow only).
-  static const double _pullSlotHeight = 48;
+  /// Pull distance that triggers refresh (arrow fully revealed).
+  static const double _triggerDistance = 48;
+
   /// Full [PlatformsLoadingBanner] height once refresh starts.
   static const double _bannerHeight = 44;
-  static const double _triggerDistance = _pullSlotHeight;
-  static const double _maxDrag = 88;
-  /// Allow starting the pull from the header / top of the map.
-  static const double _edgeStartMaxY = 120;
+
+  /// How far content may rubber-band past the trigger for a satisfying overscroll.
+  static const double _maxDrag = 180;
 
   double _dragOffset = 0;
   var _refreshing = false;
@@ -62,6 +67,19 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
       _dragOffset = 0;
       _clearPointer();
     });
+  }
+
+  /// Finger travel → visual offset, with extra resistance past the trigger.
+  double _visualOffsetForFinger(double dy) {
+    const resistance = 0.55;
+    final raw = dy * resistance;
+    if (raw <= _triggerDistance) {
+      return raw;
+    }
+    // Past trigger: keep moving, but slow down (rubber band).
+    final overflow = raw - _triggerDistance;
+    final eased = _triggerDistance + overflow * 0.45;
+    return eased.clamp(0.0, _maxDrag);
   }
 
   Future<void> _triggerRefresh() async {
@@ -90,8 +108,8 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
     if (!widget.enabled || _refreshing) {
       return;
     }
-    // Start from the header / top map band so normal map pans stay smooth.
-    if (event.localPosition.dy > _edgeStartMaxY) {
+    // Start from the header / top band so normal scrolling stays smooth.
+    if (event.localPosition.dy > widget.edgeStartMaxY) {
       return;
     }
     _pointer = event.pointer;
@@ -116,9 +134,9 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
       return;
     }
 
-    final damped = (dy * 0.55).clamp(0.0, _maxDrag);
-    if (damped != _dragOffset) {
-      setState(() => _dragOffset = damped);
+    final next = _visualOffsetForFinger(dy);
+    if (next != _dragOffset) {
+      setState(() => _dragOffset = next);
     }
   }
 
@@ -144,16 +162,13 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
     final theme = Theme.of(context);
     final angle = progress * 2 * math.pi;
 
-    return SizedBox(
-      height: _pullSlotHeight,
-      child: Center(
-        child: Transform.rotate(
-          angle: angle,
-          child: Icon(
-            Icons.refresh,
-            size: 28,
-            color: theme.colorScheme.primary,
-          ),
+    return Center(
+      child: Transform.rotate(
+        angle: angle,
+        child: Icon(
+          Icons.refresh,
+          size: 28,
+          color: theme.colorScheme.primary,
         ),
       ),
     );
@@ -161,13 +176,7 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (_dragOffset / _triggerDistance).clamp(0.0, 1.5);
-    final revealHeight = _refreshing ? _bannerHeight : _dragOffset;
-    final showChrome = revealHeight > 0.5;
-
-    final slotHeight = _refreshing ? _bannerHeight : _pullSlotHeight;
-    final heightFactor = (revealHeight / slotHeight).clamp(0.0, 1.0);
-
+    final progress = (_dragOffset / _triggerDistance).clamp(0.0, 2.5);
     final phase = ref.watch(platformsSyncPhaseProvider);
     final loadingMessage = phase.bannerMessage ?? 'Downloading platforms…';
 
@@ -180,16 +189,13 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (showChrome)
-            ClipRect(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                heightFactor: heightFactor,
-                child: IgnorePointer(
-                  child: _refreshing
-                      ? PlatformsLoadingBanner(message: loadingMessage)
-                      : _buildPullArrow(context, progress),
-                ),
+          if (_refreshing)
+            PlatformsLoadingBanner(message: loadingMessage)
+          else if (_dragOffset > 0.5)
+            SizedBox(
+              height: _dragOffset,
+              child: IgnorePointer(
+                child: _buildPullArrow(context, progress),
               ),
             ),
           Expanded(child: widget.child),

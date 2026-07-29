@@ -562,6 +562,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   Future<void> _refreshPlatforms() async {
+    ScaffoldMessenger.of(context).clearSnackBars();
     await ref.read(platformsRefreshProvider.notifier).refresh();
     if (!mounted) {
       return;
