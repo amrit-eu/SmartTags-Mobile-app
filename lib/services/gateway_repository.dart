@@ -21,6 +21,15 @@ class GatewayException implements Exception {
   String toString() => message;
 }
 
+/// A [GatewayException] specifically caused by missing or rejected
+/// authentication (no access token, or the server returned 401). Callers can
+/// use this to distinguish "the user needs to log in" from a transient
+/// network/server failure, since reconnecting alone won't resolve it.
+class GatewayAuthException extends GatewayException {
+  /// Creates a [GatewayAuthException] with the given [message].
+  const GatewayAuthException(super.message);
+}
+
 /// Fetches platform passport data from, and submits passport events to, the
 /// Amrit Gateway API.
 class GatewayRepository {
@@ -83,7 +92,7 @@ class GatewayRepository {
   Future<void> submitPassportEventJson(String body) async {
     final token = await _authService.getAccessToken();
     if (token == null) {
-      throw const GatewayException('Not authenticated. Please log in again.');
+      throw const GatewayAuthException('Not authenticated. Please log in again.');
     }
     try {
       final response = await _client.put(
@@ -91,6 +100,9 @@ class GatewayRepository {
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
         body: body,
       );
+      if (response.statusCode == 401) {
+        throw const GatewayAuthException('Session expired. Please log in again.');
+      }
       if (response.statusCode != 200) {
         throw GatewayException('Failed to submit passport event (Status ${response.statusCode})');
       }
