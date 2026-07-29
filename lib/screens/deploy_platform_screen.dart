@@ -7,23 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_tags/constants/oceanops_codes.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
+import 'package:smart_tags/models/deploy_action.dart';
+import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/widgets/common/collapsible_section.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
-/// enum representing the type of operation being performed on the platform.
-enum DeployAction {
-  /// Deploying a platform.
-  deploy,
-
-  /// Recovering a platform.
-  recover,
-}
+export 'package:smart_tags/models/deploy_action.dart';
 
 /// A screen for deploying or recovering a platform, allowing users to input relevant details.
 class DeployPlatformScreen extends ConsumerStatefulWidget {
@@ -62,6 +60,13 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   final _longitudeController = TextEditingController();
   final _dateTimeController = TextEditingController();
   final _notesController = TextEditingController();
+  final _maxWaterDepthController = TextEditingController();
+  final _elevationController = TextEditingController();
+  final _shipImoNumberController = TextEditingController();
+  final _shipOvhIdController = TextEditingController();
+  final _shipNameController = TextEditingController();
+  String? _selectedMethodCode;
+  String? _selectedEndingCauseCode;
   late ConnectivityResult _connectivityState;
 
   StreamSubscription<Position>? _liveLocationSubscription;
@@ -150,9 +155,24 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _longitudeController.dispose();
     _dateTimeController.dispose();
     _notesController.dispose();
+    _maxWaterDepthController.dispose();
+    _elevationController.dispose();
+    _shipImoNumberController.dispose();
+    _shipOvhIdController.dispose();
+    _shipNameController.dispose();
     unawaited(_liveLocationSubscription?.cancel());
     unawaited(_serviceStatusSubscription?.cancel());
     super.dispose();
+  }
+
+  String? _validateOptionalNumber(String? value, String label) {
+    if (value == null || value.isEmpty) return null;
+    try {
+      double.parse(value);
+    } on FormatException {
+      return '$label must be a valid number';
+    }
+    return null;
   }
 
   Future<void> _submitForm() async {
@@ -162,41 +182,129 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     }
 
     // Attempt to update the record in the local sqlite database.
-    try {
-      await ref.read(databaseProvider).updatePlatforms([
-        PlatformsCompanion(
-          ref: Value(widget.platform.platformRef),
-          model: Value(widget.platform.model),
-          lat: Value(double.parse(_latitudeController.text)),
-          lon: Value(double.parse(_longitudeController.text)),
-          lastUpdated: Value(_selectedDateTime!),
-          operationLat: Value(double.parse(_latitudeController.text)),
-          operationLon: Value(double.parse(_longitudeController.text)),
-          operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
-          status: Value(widget.platform.status.apiName),
-          operationNotes: Value(_notesController.text),
-        ),
-      ]);
-    } on Exception catch (e) {
-      debugPrint('Error updating platform: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update platform.')),
-        );
-      }
-      return;
-    }
+    // TODO : update local dbwith new model
+    // try {
+    //   await ref.read(databaseProvider).updatePlatforms([
+    //     PlatformsCompanion(
+    //       ref: Value(widget.platform.platformRef),
+    //       model: Value(widget.platform.model),
+    //       lat: Value(double.parse(_latitudeController.text)),
+    //       lon: Value(double.parse(_longitudeController.text)),
+    //       lastUpdated: Value(_selectedDateTime!),
+    //       operationLat: Value(double.parse(_latitudeController.text)),
+    //       operationLon: Value(double.parse(_longitudeController.text)),
+    //       operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
+    //       status: Value(widget.platform.status.apiName),
+    //       operationNotes: Value(_notesController.text),
+    //     ),
+    //   ]);
+    // } on Exception catch (e) {
+    //   debugPrint('Error updating platform: $e');
+    //   if (mounted) {
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text('Failed to update platform.')),
+    //     );
+    //   }
+    //   return;
+    // }
+
+    final latitude = double.parse(_latitudeController.text);
+    final longitude = double.parse(_longitudeController.text);
+    final request = widget.action == DeployAction.deploy
+        ? PassportEventRequest.deployment(
+            ptfId: widget.platform.platformRef,
+            deployment: DeploymentEventPayload(
+              latitude: latitude,
+              longitude: longitude,
+              date: _selectedDateTime!,
+              methodCode: _selectedMethodCode,
+              maxWaterDepth: double.tryParse(_maxWaterDepthController.text),
+              elevation: double.tryParse(_elevationController.text),
+              shipImoNumber: _shipImoNumberController.text,
+              shipOvhId: _shipOvhIdController.text,
+              shipName: _shipNameController.text,
+            ),
+          )
+        : PassportEventRequest.retrieval(
+            ptfId: widget.platform.platformRef,
+            retrieval: RetrievalEventPayload(
+              latitude: latitude,
+              longitude: longitude,
+              startDate: _selectedDateTime!,
+              endingCauseCode: _selectedEndingCauseCode,
+              shipImoNumber: _shipImoNumberController.text,
+              shipOvhId: _shipOvhIdController.text,
+              shipName: _shipNameController.text,
+            ),
+          );
+
+    final sentImmediately = await ref
+        .read(passportEventQueueProvider.notifier)
+        .enqueueOrSend(platformRef: widget.platform.platformRef, action: widget.action, request: request);
+
     // If successful, show a success message.
-    var message = '$_eventType successful! Changes have been saved.';
     if (mounted) {
-      if (_connectivityState == ConnectivityResult.none) {
-        message = '$_eventType successful! Changes have been saved locally.';
-      } 
+      final message = sentImmediately
+          ? '$_eventType successful! Changes have been saved and synced.'
+          : '$_eventType successful! Changes have been saved locally and queued for sync.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
       Navigator.pop(context);
     }
+  }
+
+  List<Widget> _buildOtherFields() {
+    final shipFields = [
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Ship IMO Number'),
+        controller: _shipImoNumberController,
+      ),
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Ship OVH Id'),
+        controller: _shipOvhIdController,
+      ),
+      TextFormField(
+        decoration: const InputDecoration(labelText: 'Ship Name'),
+        controller: _shipNameController,
+      ),
+    ];
+
+    if (widget.action == DeployAction.deploy) {
+      return [
+        DropdownButtonFormField<String>(
+          initialValue: _selectedMethodCode,
+          decoration: const InputDecoration(labelText: 'Method'),
+          items: OceanopsCodes.deploymentMethodCodes
+              .map((code) => DropdownMenuItem(value: code, child: Text(code)))
+              .toList(),
+          onChanged: (value) => setState(() => _selectedMethodCode = value),
+        ),
+        TextFormField(
+          decoration: const InputDecoration(labelText: 'Max Water Depth (m)'),
+          controller: _maxWaterDepthController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (value) => _validateOptionalNumber(value, 'Max Water Depth'),
+        ),
+        TextFormField(
+          decoration: const InputDecoration(labelText: 'Elevation (m)'),
+          controller: _elevationController,
+          keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+          validator: (value) => _validateOptionalNumber(value, 'Elevation'),
+        ),
+        ...shipFields,
+      ];
+    }
+
+    return [
+      DropdownButtonFormField<String>(
+        initialValue: _selectedEndingCauseCode,
+        decoration: const InputDecoration(labelText: 'Ending Cause'),
+        items: OceanopsCodes.endingCauseCodes.map((code) => DropdownMenuItem(value: code, child: Text(code))).toList(),
+        onChanged: (value) => setState(() => _selectedEndingCauseCode = value),
+      ),
+      ...shipFields,
+    ];
   }
 
   @override
@@ -332,6 +440,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       controller: _notesController,
                       maxLines: 3,
                     ),
+                    CollapsibleSection(title: 'Other fields', children: _buildOtherFields()),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: 16,

@@ -46,10 +46,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final platformAsync = ref.watch(platformByRefStreamProvider(widget.platformRef));
-    final userPermissions = ref.watch(permissionProvider);
-    // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
-    final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
-    
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
       next.whenData((dbPlatform) {
@@ -59,7 +55,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
         }
       });
     });
-    
+
     final platform = platformAsync.value?.toDomain();
     if (platform == null) {
       return Scaffold(
@@ -89,9 +85,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                       options: MapOptions(
                         initialCenter: platform.latestPosition,
                         initialZoom: 10,
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.none
-                        )
+                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                       ),
                       children: [
                         TileLayer(
@@ -152,32 +146,26 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: 
-        FloatingActionButton.extended(
-          heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
-          onPressed: canEditExamplePlatform
-              ? () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute<DeployPlatformScreen>(
-                      builder: (context) => DeployPlatformScreen(
-                        action: platform.operationalStatus == OperationalStatus.deployed
-                        ? DeployAction.recover
-                        : DeployAction.deploy,
-                        platform: platform,
-                      ),
-                    ),
-                  );
-                }
-              : null,
-          backgroundColor: canEditExamplePlatform ? null : const Color.fromARGB(40, 40, 40, 40),
-          icon: platform.operationalStatus == OperationalStatus.deployed
-          ? const Icon(Icons.repeat)
-          : const Icon(Icons.arrow_circle_up_rounded),
-          label: platform.operationalStatus == OperationalStatus.deployed
-          ? const Text('Recover')
-          : const Text('Deploy'),
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute<DeployPlatformScreen>(
+              builder: (context) => DeployPlatformScreen(
+                action: platform.operationalStatus == OperationalStatus.deployed
+                    ? DeployAction.recover
+                    : DeployAction.deploy,
+                platform: platform,
+              ),
+            ),
+          );
+        },
+        icon: platform.operationalStatus == OperationalStatus.deployed
+            ? const Icon(Icons.repeat)
+            : const Icon(Icons.arrow_circle_up_rounded),
+        label: platform.operationalStatus == OperationalStatus.deployed ? const Text('Recover') : const Text('Deploy'),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
@@ -250,8 +238,7 @@ class _PlatformSummaryCard extends StatelessWidget {
           const Divider(height: 16),
           ContainerRow(
             label: 'Last updated',
-            value:
-                '${DateFormat('MMM dd, yyyy, hh:mm a').format(platform.lastUpdated)} UTC',
+            value: '${DateFormat('MMM dd, yyyy, hh:mm a').format(platform.lastUpdated)} UTC',
           ),
           const Divider(height: 16),
           ContainerRow(
@@ -282,9 +269,7 @@ class _LatestOperationCard extends StatelessWidget {
     if (type != null && type.isNotEmpty) {
       return type;
     }
-    return platform.operationalStatus == OperationalStatus.recovered
-        ? 'Recovery'
-        : 'Deployment';
+    return platform.operationalStatus == OperationalStatus.recovered ? 'Recovery' : 'Deployment';
   }
 
   @override
@@ -325,17 +310,14 @@ class _LatestOperationCard extends StatelessWidget {
           const Divider(height: 16),
           ContainerRow(
             label: 'Date',
-            value: operationDate == null
-                ? '-'
-                : '${DateFormat('MMM dd, yyyy, hh:mm a').format(operationDate)} UTC',
+            value: operationDate == null ? '-' : '${DateFormat('MMM dd, yyyy, hh:mm a').format(operationDate)} UTC',
           ),
           const Divider(height: 16),
           ContainerRow(
             label: 'Location',
             value: formatLatLng(platform.operationLocation),
           ),
-          if (platform.operationNotes != null &&
-              platform.operationNotes!.trim().isNotEmpty) ...[
+          if (platform.operationNotes != null && platform.operationNotes!.trim().isNotEmpty) ...[
             const Divider(height: 16),
             ContainerRow(
               label: 'Notes',

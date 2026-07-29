@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter --version)",
+      "Bash(flutter test *)",
+      "Bash(git stash *)",
+      "Bash(cd \"c:/Users/ylubac/Desktop/work/SmartTags-Mobile-app\" && git stash && flutter test 2>&1 | grep -E \"\\\\[E\\\\]\" > /tmp/baseline_failures.txt; git stash pop; cat /tmp/baseline_failures.txt)",
+      "Read(//tmp/**)",
+      "Bash(flutter analyze *)"
+    ]
+  }
+}
