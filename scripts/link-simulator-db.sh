@@ -51,16 +51,33 @@ if [[ ! -d "$search_root" ]]; then
   exit 1
 fi
 
-db_path="$(find "$search_root" -name db.sqlite 2>/dev/null | head -1)"
+# Prefer the newest db.sqlite (reinstall creates a new container).
+# Avoid `find | sort | head` under `pipefail` — head closes the pipe early and
+# aborts the script before any success logs are printed.
+db_path=""
+newest_mtime=0
+while IFS= read -r path; do
+  mtime="$(stat -f '%m' "$path" 2>/dev/null || echo 0)"
+  if [[ "$mtime" -ge "$newest_mtime" ]]; then
+    newest_mtime="$mtime"
+    db_path="$path"
+  fi
+done < <(find "$search_root" -name db.sqlite -type f 2>/dev/null)
 
-if [[ -z "$db_path" ]]; then
+if [[ -z "$db_path" || ! -f "$db_path" ]]; then
   echo "No db.sqlite found under $search_root" >&2
   echo "Run the app once so Drift creates the database." >&2
   exit 1
 fi
 
 mkdir -p "$ROOT_DIR/.dev"
-ln -sf "$db_path" "$LINK_PATH"
+ln -sfn "$db_path" "$LINK_PATH"
+
+# Fail loudly if the link is already broken (should not happen right after ln).
+if [[ ! -e "$LINK_PATH" ]]; then
+  echo "Linked path is not readable: $db_path" >&2
+  exit 1
+fi
 
 count="$(sqlite3 "$LINK_PATH" "SELECT COUNT(*) FROM platforms;" 2>/dev/null || echo "?")"
 

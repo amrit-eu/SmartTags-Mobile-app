@@ -21,6 +21,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LINK_PATH="$ROOT_DIR/.dev/db.sqlite"
+TMP_PATH="$LINK_PATH.tmp"
 PACKAGE="${ANDROID_PACKAGE:-com.example.flutter_amrit}"
 REMOTE_PATH="${ANDROID_DB_PATH:-app_flutter/db.sqlite}"
 ADB="${ADB:-adb}"
@@ -38,17 +39,21 @@ fi
 
 mkdir -p "$ROOT_DIR/.dev"
 
-if ! "$ADB" exec-out run-as "$PACKAGE" cat "$REMOTE_PATH" >"$LINK_PATH" 2>/dev/null; then
+# Pull to a temp file then replace atomically so DBeaver never opens a half-written DB.
+if ! "$ADB" exec-out run-as "$PACKAGE" cat "$REMOTE_PATH" >"$TMP_PATH" 2>/dev/null; then
+  rm -f "$TMP_PATH"
   echo "Could not read $REMOTE_PATH for $PACKAGE." >&2
   echo "Install a debug build, run the app once, then retry." >&2
   exit 1
 fi
 
-if [[ ! -s "$LINK_PATH" ]]; then
-  rm -f "$LINK_PATH"
+if [[ ! -s "$TMP_PATH" ]]; then
+  rm -f "$TMP_PATH"
   echo "Pulled file is empty — database may not exist yet." >&2
   exit 1
 fi
+
+mv -f "$TMP_PATH" "$LINK_PATH"
 
 count="$(sqlite3 "$LINK_PATH" "SELECT COUNT(*) FROM platforms;" 2>/dev/null || echo "?")"
 
@@ -58,5 +63,3 @@ echo "Platforms: $count"
 echo ""
 echo "DBeaver: New Connection → SQLite → Path:"
 echo "  $LINK_PATH"
-echo ""
-echo "Re-run after reinstalling the app or to refresh DBeaver."
