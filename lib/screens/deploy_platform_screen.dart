@@ -238,15 +238,19 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
             ),
           );
 
-    final sentImmediately = await ref
+    final outcome = await ref
         .read(passportEventQueueProvider.notifier)
         .enqueueOrSend(platformRef: widget.platform.platformRef, action: widget.action, request: request);
 
     // If successful, show a success message.
     if (mounted) {
-      final message = sentImmediately
-          ? '$_eventType successful! Changes have been saved and synced.'
-          : '$_eventType successful! Changes have been saved locally and queued for sync.';
+      final message = switch (outcome) {
+        PassportEventSubmitOutcome.sent => '$_eventType successful! Changes have been saved and synced.',
+        PassportEventSubmitOutcome.queuedAuthRequired =>
+          '$_eventType successful! Changes saved locally. Log in to sync this change.',
+        PassportEventSubmitOutcome.queued =>
+          '$_eventType successful! Changes have been saved locally and queued for sync.',
+      };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );

@@ -28,21 +28,22 @@ PassportEventRequest _sampleRequest() {
   );
 }
 
-/// Fake repository whose success/failure per call is scripted by [results].
+/// Fake repository whose outcome per call is scripted by [outcomes]:
+/// `null` succeeds, otherwise the given exception is thrown.
 class _ScriptedGatewayRepository extends GatewayRepository {
-  _ScriptedGatewayRepository(this.results);
+  _ScriptedGatewayRepository(this.outcomes);
 
-  final List<bool> results;
+  final List<Exception?> outcomes;
   final List<String> sentBodies = [];
   var _calls = 0;
 
   @override
   Future<void> submitPassportEventJson(String body) async {
     sentBodies.add(body);
-    final succeed = _calls < results.length ? results[_calls] : results.last;
+    final outcome = _calls < outcomes.length ? outcomes[_calls] : outcomes.last;
     _calls++;
-    if (!succeed) {
-      throw const GatewayException('Simulated failure');
+    if (outcome != null) {
+      throw outcome;
     }
   }
 }
@@ -60,7 +61,7 @@ void main() {
     });
 
     test('enqueueOrSend sends immediately when online and succeeds', () async {
-      final repository = _ScriptedGatewayRepository([true]);
+      final repository = _ScriptedGatewayRepository([null]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -70,17 +71,17 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final sent = await container
+      final outcome = await container
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
 
-      expect(sent, isTrue);
+      expect(outcome, PassportEventSubmitOutcome.sent);
       expect(await db.getPendingOperationsOrdered(), isEmpty);
       expect(repository.sentBodies, hasLength(1));
     });
 
-    test('enqueueOrSend queues when online but the request throws', () async {
-      final repository = _ScriptedGatewayRepository([false]);
+    test('enqueueOrSend queues when online but the request throws a non-auth error', () async {
+      final repository = _ScriptedGatewayRepository([const GatewayException('Simulated failure')]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -90,18 +91,37 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final sent = await container
+      final outcome = await container
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
 
-      expect(sent, isFalse);
+      expect(outcome, PassportEventSubmitOutcome.queued);
       final rows = await db.getPendingOperationsOrdered();
       expect(rows, hasLength(1));
       expect(rows.single.status, 'pending');
     });
 
+    test('enqueueOrSend queues with queuedAuthRequired when not authenticated', () async {
+      final repository = _ScriptedGatewayRepository([const GatewayAuthException('Not authenticated.')]);
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
+          gatewayRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final outcome = await container
+          .read(passportEventQueueProvider.notifier)
+          .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
+
+      expect(outcome, PassportEventSubmitOutcome.queuedAuthRequired);
+      expect(await db.getPendingOperationsOrdered(), hasLength(1));
+    });
+
     test('enqueueOrSend queues directly when offline, without calling the repository', () async {
-      final repository = _ScriptedGatewayRepository([true]);
+      final repository = _ScriptedGatewayRepository([null]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -111,11 +131,11 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final sent = await container
+      final outcome = await container
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.recover, request: _sampleRequest());
 
-      expect(sent, isFalse);
+      expect(outcome, PassportEventSubmitOutcome.queued);
       expect(repository.sentBodies, isEmpty);
       expect(await db.getPendingOperationsOrdered(), hasLength(1));
     });
@@ -132,7 +152,7 @@ void main() {
       );
 
       // Item 2 (index 1) fails, items 1 and 3 succeed.
-      final repository = _ScriptedGatewayRepository([true, false, true]);
+      final repository = _ScriptedGatewayRepository([null, const GatewayException('Simulated failure'), null]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -158,7 +178,7 @@ void main() {
       );
       await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
 
-      final repository = _ScriptedGatewayRepository([true]);
+      final repository = _ScriptedGatewayRepository([null]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -179,7 +199,7 @@ void main() {
       );
       await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
 
-      final repository = _ScriptedGatewayRepository([false]);
+      final repository = _ScriptedGatewayRepository([const GatewayException('Simulated failure')]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),

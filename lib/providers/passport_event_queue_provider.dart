@@ -10,9 +10,12 @@ import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/pending_operation.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/services/auth_service.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
 
 /// Streams all queued deploy/recover events (pending + failed), oldest first.
@@ -20,6 +23,21 @@ final pendingPassportEventsProvider = StreamProvider<List<PendingPassportEvent>>
   final db = ref.watch(databaseProvider);
   return db.watchPendingOperations().map((rows) => rows.map((row) => row.toDomain()).toList());
 });
+
+/// The result of attempting to submit a passport event via
+/// [PassportEventQueueNotifier.enqueueOrSend].
+enum PassportEventSubmitOutcome {
+  /// Sent to the Gateway immediately.
+  sent,
+
+  /// Queued locally because the user isn't authenticated (or their session
+  /// expired) — reconnecting alone won't resolve this; the user needs to log in.
+  queuedAuthRequired,
+
+  /// Queued locally because the device is offline or the request failed for
+  /// another reason (network/server error); will be retried automatically.
+  queued,
+}
 
 /// Coordinates submitting deploy/recover passport events to the Gateway,
 /// queueing them locally when offline or when a submission attempt fails.
@@ -37,9 +55,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
   /// Attempts to send [request] immediately when online; otherwise (or on
   /// failure) queues it locally for later replay. Never throws: every
   /// failure path degrades to "queued".
-  ///
-  /// Returns `true` if sent immediately, `false` if queued.
-  Future<bool> enqueueOrSend({
+  Future<PassportEventSubmitOutcome> enqueueOrSend({
     required String platformRef,
     required DeployAction action,
     required PassportEventRequest request,
@@ -48,11 +64,13 @@ class PassportEventQueueNotifier extends Notifier<void> {
     final bodyJson = jsonEncode(PassportEventMapper.toJson(request));
 
     final connectivity = await _currentConnectivity();
+    var authRequired = false;
     if (isDeviceOnline(connectivity)) {
       try {
         await ref.read(gatewayRepositoryProvider).submitPassportEventJson(bodyJson);
-        return true;
+        return PassportEventSubmitOutcome.sent;
       } on Object catch (e) {
+        authRequired = e is AuthException || e is GatewayAuthException;
         debugPrint('Immediate passport event submission failed, queuing: $e');
       }
     }
@@ -64,7 +82,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
         payloadJson: bodyJson,
       ),
     );
-    return false;
+    return authRequired ? PassportEventSubmitOutcome.queuedAuthRequired : PassportEventSubmitOutcome.queued;
   }
 
   /// Replays all `pending` rows in FIFO order. Skip-and-continue: a failed
@@ -130,9 +148,11 @@ class PassportEventQueueNotifier extends Notifier<void> {
   }
 }
 
-/// Triggers an automatic replay pass on app start (if already online) and
-/// whenever connectivity transitions from offline to online. Mirrors
-/// [initialSyncLifecycleProvider]; must be `ref.watch`'d at the app root.
+/// Triggers an automatic replay pass on app start (if already online), and
+/// whenever connectivity transitions from offline to online, or the user
+/// logs in (auth-required failures can't be fixed by reconnecting alone —
+/// they need a fresh login). Mirrors [initialSyncLifecycleProvider]; must be
+/// `ref.watch`'d at the app root.
 final passportEventQueueLifecycleProvider = Provider<void>((ref) {
   unawaited(
     Future.microtask(() async {
@@ -143,9 +163,15 @@ final passportEventQueueLifecycleProvider = Provider<void>((ref) {
     }),
   );
 
-  ref.listen(checkConnectionProvider.select((async) => async.value), (previous, next) {
-    if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
-      unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
-    }
-  });
+  ref
+    ..listen(checkConnectionProvider.select((async) => async.value), (previous, next) {
+      if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
+        unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
+      }
+    })
+    ..listen(authProvider.select((async) => async.value), (previous, next) {
+      if (previous == null && next != null) {
+        unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
+      }
+    });
 });
