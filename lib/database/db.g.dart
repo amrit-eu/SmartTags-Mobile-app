@@ -2994,6 +2994,526 @@ class UserRolesCompanion extends UpdateCompanion<UserRole> {
   }
 }
 
+class $PendingOperationsTable extends PendingOperations
+    with TableInfo<$PendingOperationsTable, PendingOperation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingOperationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _platformRefMeta = const VerificationMeta(
+    'platformRef',
+  );
+  @override
+  late final GeneratedColumn<String> platformRef = GeneratedColumn<String>(
+    'platform_ref',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actionMeta = const VerificationMeta('action');
+  @override
+  late final GeneratedColumn<String> action = GeneratedColumn<String>(
+    'action',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    platformRef,
+    action,
+    payloadJson,
+    createdAt,
+    status,
+    lastError,
+    attempts,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_operations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingOperation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('platform_ref')) {
+      context.handle(
+        _platformRefMeta,
+        platformRef.isAcceptableOrUnknown(
+          data['platform_ref']!,
+          _platformRefMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_platformRefMeta);
+    }
+    if (data.containsKey('action')) {
+      context.handle(
+        _actionMeta,
+        action.isAcceptableOrUnknown(data['action']!, _actionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actionMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PendingOperation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingOperation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      platformRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform_ref'],
+      )!,
+      action: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingOperationsTable createAlias(String alias) {
+    return $PendingOperationsTable(attachedDatabase, alias);
+  }
+}
+
+class PendingOperation extends DataClass
+    implements Insertable<PendingOperation> {
+  /// Primary key identifying the record; the natural FIFO ordering key.
+  final int id;
+
+  /// The platform this event is for (`Platform.platformRef`).
+  final String platformRef;
+
+  /// The type of operation: 'deploy' or 'recover'.
+  final String action;
+
+  /// The exact Gateway JSON request body, stored verbatim so replay never
+  /// needs to rebuild it from form state.
+  final String payloadJson;
+
+  /// When this event was queued.
+  final DateTime createdAt;
+
+  /// 'pending' (awaiting/replay-eligible) or 'failed' (needs manual retry).
+  final String status;
+
+  /// The error message from the most recent failed attempt, if any.
+  final String? lastError;
+
+  /// Number of submission attempts made so far.
+  final int attempts;
+  const PendingOperation({
+    required this.id,
+    required this.platformRef,
+    required this.action,
+    required this.payloadJson,
+    required this.createdAt,
+    required this.status,
+    this.lastError,
+    required this.attempts,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['platform_ref'] = Variable<String>(platformRef);
+    map['action'] = Variable<String>(action);
+    map['payload_json'] = Variable<String>(payloadJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    map['attempts'] = Variable<int>(attempts);
+    return map;
+  }
+
+  PendingOperationsCompanion toCompanion(bool nullToAbsent) {
+    return PendingOperationsCompanion(
+      id: Value(id),
+      platformRef: Value(platformRef),
+      action: Value(action),
+      payloadJson: Value(payloadJson),
+      createdAt: Value(createdAt),
+      status: Value(status),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      attempts: Value(attempts),
+    );
+  }
+
+  factory PendingOperation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingOperation(
+      id: serializer.fromJson<int>(json['id']),
+      platformRef: serializer.fromJson<String>(json['platformRef']),
+      action: serializer.fromJson<String>(json['action']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      status: serializer.fromJson<String>(json['status']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'platformRef': serializer.toJson<String>(platformRef),
+      'action': serializer.toJson<String>(action),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'status': serializer.toJson<String>(status),
+      'lastError': serializer.toJson<String?>(lastError),
+      'attempts': serializer.toJson<int>(attempts),
+    };
+  }
+
+  PendingOperation copyWith({
+    int? id,
+    String? platformRef,
+    String? action,
+    String? payloadJson,
+    DateTime? createdAt,
+    String? status,
+    Value<String?> lastError = const Value.absent(),
+    int? attempts,
+  }) => PendingOperation(
+    id: id ?? this.id,
+    platformRef: platformRef ?? this.platformRef,
+    action: action ?? this.action,
+    payloadJson: payloadJson ?? this.payloadJson,
+    createdAt: createdAt ?? this.createdAt,
+    status: status ?? this.status,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    attempts: attempts ?? this.attempts,
+  );
+  PendingOperation copyWithCompanion(PendingOperationsCompanion data) {
+    return PendingOperation(
+      id: data.id.present ? data.id.value : this.id,
+      platformRef: data.platformRef.present
+          ? data.platformRef.value
+          : this.platformRef,
+      action: data.action.present ? data.action.value : this.action,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      status: data.status.present ? data.status.value : this.status,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingOperation(')
+          ..write('id: $id, ')
+          ..write('platformRef: $platformRef, ')
+          ..write('action: $action, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('status: $status, ')
+          ..write('lastError: $lastError, ')
+          ..write('attempts: $attempts')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    platformRef,
+    action,
+    payloadJson,
+    createdAt,
+    status,
+    lastError,
+    attempts,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingOperation &&
+          other.id == this.id &&
+          other.platformRef == this.platformRef &&
+          other.action == this.action &&
+          other.payloadJson == this.payloadJson &&
+          other.createdAt == this.createdAt &&
+          other.status == this.status &&
+          other.lastError == this.lastError &&
+          other.attempts == this.attempts);
+}
+
+class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
+  final Value<int> id;
+  final Value<String> platformRef;
+  final Value<String> action;
+  final Value<String> payloadJson;
+  final Value<DateTime> createdAt;
+  final Value<String> status;
+  final Value<String?> lastError;
+  final Value<int> attempts;
+  const PendingOperationsCompanion({
+    this.id = const Value.absent(),
+    this.platformRef = const Value.absent(),
+    this.action = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.attempts = const Value.absent(),
+  });
+  PendingOperationsCompanion.insert({
+    this.id = const Value.absent(),
+    required String platformRef,
+    required String action,
+    required String payloadJson,
+    this.createdAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.attempts = const Value.absent(),
+  }) : platformRef = Value(platformRef),
+       action = Value(action),
+       payloadJson = Value(payloadJson);
+  static Insertable<PendingOperation> custom({
+    Expression<int>? id,
+    Expression<String>? platformRef,
+    Expression<String>? action,
+    Expression<String>? payloadJson,
+    Expression<DateTime>? createdAt,
+    Expression<String>? status,
+    Expression<String>? lastError,
+    Expression<int>? attempts,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (platformRef != null) 'platform_ref': platformRef,
+      if (action != null) 'action': action,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (status != null) 'status': status,
+      if (lastError != null) 'last_error': lastError,
+      if (attempts != null) 'attempts': attempts,
+    });
+  }
+
+  PendingOperationsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? platformRef,
+    Value<String>? action,
+    Value<String>? payloadJson,
+    Value<DateTime>? createdAt,
+    Value<String>? status,
+    Value<String?>? lastError,
+    Value<int>? attempts,
+  }) {
+    return PendingOperationsCompanion(
+      id: id ?? this.id,
+      platformRef: platformRef ?? this.platformRef,
+      action: action ?? this.action,
+      payloadJson: payloadJson ?? this.payloadJson,
+      createdAt: createdAt ?? this.createdAt,
+      status: status ?? this.status,
+      lastError: lastError ?? this.lastError,
+      attempts: attempts ?? this.attempts,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (platformRef.present) {
+      map['platform_ref'] = Variable<String>(platformRef.value);
+    }
+    if (action.present) {
+      map['action'] = Variable<String>(action.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingOperationsCompanion(')
+          ..write('id: $id, ')
+          ..write('platformRef: $platformRef, ')
+          ..write('action: $action, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('status: $status, ')
+          ..write('lastError: $lastError, ')
+          ..write('attempts: $attempts')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3005,6 +3525,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $UserRolesTable userRoles = $UserRolesTable(this);
+  late final $PendingOperationsTable pendingOperations =
+      $PendingOperationsTable(this);
   late final AuthDao authDao = AuthDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -3017,6 +3539,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     roles,
     userProgramRoles,
     userRoles,
+    pendingOperations,
   ];
 }
 
@@ -5320,6 +5843,274 @@ typedef $$UserRolesTableProcessedTableManager =
       UserRole,
       PrefetchHooks Function({bool userId})
     >;
+typedef $$PendingOperationsTableCreateCompanionBuilder =
+    PendingOperationsCompanion Function({
+      Value<int> id,
+      required String platformRef,
+      required String action,
+      required String payloadJson,
+      Value<DateTime> createdAt,
+      Value<String> status,
+      Value<String?> lastError,
+      Value<int> attempts,
+    });
+typedef $$PendingOperationsTableUpdateCompanionBuilder =
+    PendingOperationsCompanion Function({
+      Value<int> id,
+      Value<String> platformRef,
+      Value<String> action,
+      Value<String> payloadJson,
+      Value<DateTime> createdAt,
+      Value<String> status,
+      Value<String?> lastError,
+      Value<int> attempts,
+    });
+
+class $$PendingOperationsTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
+  $$PendingOperationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platformRef => $composableBuilder(
+    column: $table.platformRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get action => $composableBuilder(
+    column: $table.action,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingOperationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
+  $$PendingOperationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get platformRef => $composableBuilder(
+    column: $table.platformRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get action => $composableBuilder(
+    column: $table.action,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingOperationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
+  $$PendingOperationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get platformRef => $composableBuilder(
+    column: $table.platformRef,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get action =>
+      $composableBuilder(column: $table.action, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+}
+
+class $$PendingOperationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingOperationsTable,
+          PendingOperation,
+          $$PendingOperationsTableFilterComposer,
+          $$PendingOperationsTableOrderingComposer,
+          $$PendingOperationsTableAnnotationComposer,
+          $$PendingOperationsTableCreateCompanionBuilder,
+          $$PendingOperationsTableUpdateCompanionBuilder,
+          (
+            PendingOperation,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingOperationsTable,
+              PendingOperation
+            >,
+          ),
+          PendingOperation,
+          PrefetchHooks Function()
+        > {
+  $$PendingOperationsTableTableManager(
+    _$AppDatabase db,
+    $PendingOperationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingOperationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingOperationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingOperationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> platformRef = const Value.absent(),
+                Value<String> action = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+              }) => PendingOperationsCompanion(
+                id: id,
+                platformRef: platformRef,
+                action: action,
+                payloadJson: payloadJson,
+                createdAt: createdAt,
+                status: status,
+                lastError: lastError,
+                attempts: attempts,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String platformRef,
+                required String action,
+                required String payloadJson,
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+              }) => PendingOperationsCompanion.insert(
+                id: id,
+                platformRef: platformRef,
+                action: action,
+                payloadJson: payloadJson,
+                createdAt: createdAt,
+                status: status,
+                lastError: lastError,
+                attempts: attempts,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingOperationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingOperationsTable,
+      PendingOperation,
+      $$PendingOperationsTableFilterComposer,
+      $$PendingOperationsTableOrderingComposer,
+      $$PendingOperationsTableAnnotationComposer,
+      $$PendingOperationsTableCreateCompanionBuilder,
+      $$PendingOperationsTableUpdateCompanionBuilder,
+      (
+        PendingOperation,
+        BaseReferences<
+          _$AppDatabase,
+          $PendingOperationsTable,
+          PendingOperation
+        >,
+      ),
+      PendingOperation,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5336,4 +6127,6 @@ class $AppDatabaseManager {
       $$UserProgramRolesTableTableManager(_db, _db.userProgramRoles);
   $$UserRolesTableTableManager get userRoles =>
       $$UserRolesTableTableManager(_db, _db.userRoles);
+  $$PendingOperationsTableTableManager get pendingOperations =>
+      $$PendingOperationsTableTableManager(_db, _db.pendingOperations);
 }

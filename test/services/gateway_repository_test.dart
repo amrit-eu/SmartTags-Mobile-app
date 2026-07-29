@@ -4,8 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:smart_tags/config/gateway_config.dart';
+import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
+
+class _FakeAuthService extends AuthService {
+  _FakeAuthService(this._token);
+
+  final String? _token;
+
+  @override
+  Future<String?> getAccessToken() async => _token;
+}
 
 const Map<String, dynamic> _samplePassportItem = {
   'ptfId': 22,
@@ -120,6 +130,51 @@ void main() {
       final repository = GatewayRepository(client: client);
 
       expect(repository.fetchUnclosedMissions, throwsException);
+    });
+  });
+
+  group('submitPassportEventJson', () {
+    const body = '{"ptfId":"1155387","deployment":{"date":"2026-07-09T00:00:00Z"}}';
+
+    test('sends a PUT with the Bearer token and JSON body', () async {
+      final client = MockClient((request) async {
+        expect(request.method, 'PUT');
+        expect(request.url, GatewayConfig.goosPassportEventsUri);
+        expect(request.headers['Authorization'], 'Bearer test-token');
+        expect(request.headers['Content-Type'], 'application/json');
+        expect(request.body, body);
+        return http.Response('{"status":"ok"}', 200);
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      await repository.submitPassportEventJson(body);
+    });
+
+    test('throws GatewayException when there is no access token', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request without a token');
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+
+      expect(
+        () => repository.submitPassportEventJson(body),
+        throwsA(isA<GatewayException>()),
+      );
+    });
+
+    test('throws GatewayException on a non-200 response', () async {
+      final client = MockClient((request) async {
+        return http.Response('Bad request', 400);
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      expect(
+        () => repository.submitPassportEventJson(body),
+        throwsA(isA<GatewayException>()),
+      );
     });
   });
 }

@@ -72,30 +72,43 @@ class Platforms extends Table {
 class UserProfiles extends Table {
   /// Primary key identifying the record.
   IntColumn get id => integer()();
+
   /// External reference (ID) from server.
   IntColumn get ref => integer()();
+
   /// User's primary email.
   TextColumn get email => text()();
+
   /// User's secondary email.
   TextColumn get email2 => text().nullable()();
+
   /// User's full name.
   TextColumn get fullName => text()();
+
   /// User's first name.
   TextColumn get firstName => text()();
+
   /// User's last name.
   TextColumn get lastName => text()();
+
   /// User's title.
   TextColumn get title => text()();
+
   /// User's ORCID.
   TextColumn get orcid => text()();
+
   /// User's primary phone number.
   TextColumn get tel => text()();
+
   /// User's secondary phone number.
   TextColumn get tel2 => text()();
+
   /// User's postal address
   TextColumn get address => text()();
+
   /// User's country.
   TextColumn get country => text().nullable()();
+
   /// Whether user's contact information should be hidden.
   BoolColumn get hideContactInfoFromPublic => boolean()();
 
@@ -108,8 +121,10 @@ class UserProfiles extends Table {
 class Programs extends Table {
   /// Program reference
   IntColumn get id => integer()();
+
   /// Program display name
   TextColumn get name => text()();
+
   /// Program slug
   TextColumn get code => text()();
 
@@ -122,8 +137,10 @@ class Programs extends Table {
 class Roles extends Table {
   /// Role reference
   IntColumn get id => integer()();
+
   /// Role display name
   TextColumn get name => text()();
+
   /// Role slug
   TextColumn get code => text()();
 
@@ -135,8 +152,10 @@ class Roles extends Table {
 class UserProgramRoles extends Table {
   /// User identifier (foreign key)
   IntColumn get userId => integer().references(UserProfiles, #id)();
+
   /// Program identifier (foreign key)
   IntColumn get programId => integer().references(Programs, #id)();
+
   /// Role identifier (foreign key)
   IntColumn get roleId => integer().references(Roles, #id)();
 
@@ -148,6 +167,7 @@ class UserProgramRoles extends Table {
 class UserRoles extends Table {
   /// User identifier (foreign key)
   IntColumn get userId => integer().references(UserProfiles, #id)();
+
   /// Role code, e.g. "alert_editor"
   TextColumn get roleCode => text()();
 
@@ -155,9 +175,38 @@ class UserRoles extends Table {
   Set<Column> get primaryKey => {userId, roleCode};
 }
 
+/// FIFO queue of deploy/recover passport events awaiting submission to the
+/// Gateway (used when the device is offline or a submission attempt fails).
+class PendingOperations extends Table {
+  /// Primary key identifying the record; the natural FIFO ordering key.
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The platform this event is for (`Platform.platformRef`).
+  TextColumn get platformRef => text()();
+
+  /// The type of operation: 'deploy' or 'recover'.
+  TextColumn get action => text()();
+
+  /// The exact Gateway JSON request body, stored verbatim so replay never
+  /// needs to rebuild it from form state.
+  TextColumn get payloadJson => text()();
+
+  /// When this event was queued.
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// 'pending' (awaiting/replay-eligible) or 'failed' (needs manual retry).
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+
+  /// The error message from the most recent failed attempt, if any.
+  TextColumn get lastError => text().nullable()();
+
+  /// Number of submission attempts made so far.
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+}
+
 /// The local SQLite database using Drift ORM.
 @DriftDatabase(
-  tables: [Platforms, UserProfiles, Programs, Roles, UserProgramRoles, UserRoles],
+  tables: [Platforms, UserProfiles, Programs, Roles, UserProgramRoles, UserRoles, PendingOperations],
   daos: [AuthDao],
 )
 class AppDatabase extends _$AppDatabase {
@@ -168,7 +217,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -182,6 +231,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(platforms, platforms.observingNetwork);
         await m.addColumn(platforms, platforms.latestOperationType);
         await m.addColumn(platforms, platforms.latestOperationDate);
+      }
+      if (from < 3) {
+        await m.createTable(pendingOperations);
+      }
+      if (from < 4) {
+        await m.addColumn(platforms, platforms.ptfId);
       }
     },
   );
@@ -240,7 +295,35 @@ class AppDatabase extends _$AppDatabase {
 
   /// Watches a single platform by its reference, emitting updates on changes.
   Stream<Platform?> watchPlatformByRef(String ref) {
-    return (select(platforms)..where((p) => p.ref.equals(ref)))
-        .watchSingleOrNull();
+    return (select(platforms)..where((p) => p.ref.equals(ref))).watchSingleOrNull();
   }
+
+  /// Appends a new deploy/recover event to the FIFO queue.
+  Future<int> enqueuePendingOperation(PendingOperationsCompanion companion) =>
+      into(pendingOperations).insert(companion);
+
+  /// Watches all queued events (pending + failed), oldest first.
+  Stream<List<PendingOperation>> watchPendingOperations() =>
+      (select(pendingOperations)..orderBy([(t) => OrderingTerm.asc(t.id)])).watch();
+
+  /// One-shot FIFO fetch of all queued events, used by the replay loop.
+  Future<List<PendingOperation>> getPendingOperationsOrdered() =>
+      (select(pendingOperations)..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
+
+  /// Fetches a single queued event by id.
+  Future<PendingOperation?> getPendingOperationById(int id) =>
+      (select(pendingOperations)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  /// Removes a queued event once it has been sent successfully.
+  Future<void> deletePendingOperation(int id) => (delete(pendingOperations)..where((t) => t.id.equals(id))).go();
+
+  /// Marks a queued event as failed, recording the error and attempt count.
+  Future<void> markPendingOperationFailed(int id, {required String error, required int attempts}) =>
+      (update(pendingOperations)..where((t) => t.id.equals(id))).write(
+        PendingOperationsCompanion(
+          status: const Value('failed'),
+          lastError: Value(error),
+          attempts: Value(attempts),
+        ),
+      );
 }
