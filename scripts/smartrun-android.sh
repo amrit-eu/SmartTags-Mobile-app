@@ -37,7 +37,15 @@ resolve_flutter_device() {
 }
 
 link_db() {
-  ./scripts/link-android-db.sh 2>/dev/null
+  local label="$1"
+  local out
+  if out="$(./scripts/link-android-db.sh 2>/dev/null)"; then
+    echo ""
+    echo "=== $label ==="
+    echo "$out"
+    return 0
+  fi
+  return 1
 }
 
 flutter_target="$(resolve_flutter_device "$@")"
@@ -45,11 +53,11 @@ if [[ -z "$flutter_target" ]] || should_boot_android "$flutter_target"; then
   ./scripts/boot-android-emulator.sh
 fi
 
-link_db || true
+link_db "DB link — before Flutter launch" || true
 
 (
   for _ in $(seq 1 90); do
-    if link_db; then
+    if link_db "DB link — after Flutter launch / app container ready"; then
       exit 0
     fi
     sleep 2
