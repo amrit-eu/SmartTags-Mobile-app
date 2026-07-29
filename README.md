@@ -70,6 +70,26 @@ The app stores SQLite in the platform app sandbox. For development, scripts copy
 
 `smartrun.sh` opens and boots the iOS Simulator when it is shutdown. Re-run after deleting/reinstalling the app. Optional: `SIMULATOR_NAME` or `SIMULATOR_DEVICE_ID`.
 
+#### macOS — physical iPhone (USB)
+
+Simulator DB linking is skipped for real devices. Use your Apple **Development Team** via a local, gitignored file (not committed):
+
+```bash
+cp ios/Flutter/Local.xcconfig.example ios/Flutter/Local.xcconfig
+# Set DEVELOPMENT_TEAM to your Team ID (Xcode → Settings → Accounts, or Signing & Capabilities)
+```
+
+Then run on the device (use the id from `flutter devices`):
+
+```bash
+./scripts/smartrun.sh -d 00008130-000925DE02D1001C
+# or: flutter run -d <device-id>
+```
+
+First install: unlock the phone, trust the Mac, enable **Developer Mode** if prompted, and trust the developer certificate under **Settings → General → VPN & Device Management**. Free Apple IDs are limited to **3 sideloaded apps** at once.
+
+**Gateway / VPN:** the phone uses its own network (Wi‑Fi/cellular), not the Mac’s VPN over USB. Use VPN on the iPhone or test Gateway sync on the **simulator** while the Mac is on VPN.
+
 #### Linux / Windows WSL / Android emulator
 
 Requires [adb](https://developer.android.com/tools/adb) and a connected emulator or device (debug build):
