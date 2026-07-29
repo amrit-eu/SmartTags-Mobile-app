@@ -1,6 +1,6 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
@@ -54,7 +54,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     try {
       final result = await _runSyncIfNeeded();
       state = AsyncValue.data(result);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -93,8 +93,8 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     }
 
     final repository = ref.read(gatewayRepositoryProvider);
-    final phase = ref.read(platformsSyncPhaseProvider.notifier);
-    phase.setDownloading();
+    final phase = ref.read(platformsSyncPhaseProvider.notifier)
+      ..setDownloading();
     try {
       final platforms = await repository.fetchUnclosedMissions();
       if (platforms.isNotEmpty) {

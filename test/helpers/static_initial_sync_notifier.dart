@@ -13,10 +13,10 @@ class StaticInitialSyncNotifier extends InitialSyncNotifier {
   StaticInitialSyncNotifier.loading() : status = null, error = null;
 
   /// Creates a notifier whose [build] throws [error].
-  StaticInitialSyncNotifier.error(this.error) : status = null;
+  StaticInitialSyncNotifier.error(Exception this.error) : status = null;
 
   final InitialSyncStatus? status;
-  final Object? error;
+  final Exception? error;
 
   @override
   Future<InitialSyncStatus> build() async {
@@ -32,7 +32,7 @@ class StaticInitialSyncNotifier extends InitialSyncNotifier {
 
 /// Notifier used to verify the Retry button invokes [retry].
 class RetryTrackingNotifier extends InitialSyncNotifier {
-  var retryCount = 0;
+  int retryCount = 0;
 
   @override
   Future<InitialSyncStatus> build() async {

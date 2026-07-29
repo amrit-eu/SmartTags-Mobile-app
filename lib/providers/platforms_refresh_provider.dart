@@ -75,7 +75,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         );
       }
       state = const AsyncValue.data(null);
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
       _logRefreshFailure(error, stackTrace, connectivity: connectivity);
     } finally {

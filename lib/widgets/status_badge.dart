@@ -30,12 +30,11 @@ class StatusBadge extends StatelessWidget {
 
   /// Creates a [StatusBadge] with an explicit [PlatformStatusStyle].
   const StatusBadge.fromStyle({
-    required PlatformStatusStyle style,
+    required PlatformStatusStyle this.style,
     super.key,
   })  : rawStatus = null,
         status = null,
-        operationalStatus = null,
-        style = style;
+        operationalStatus = null;
 
   /// Raw status value from the API or local database.
   final String? rawStatus;

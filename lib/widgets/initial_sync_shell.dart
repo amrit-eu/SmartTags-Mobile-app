@@ -77,7 +77,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return _SyncFailedBanner(
         onRetry: () {
-          ref.read(initialSyncProvider.notifier).retry();
+          unawaited(ref.read(initialSyncProvider.notifier).retry());
         },
       );
     }

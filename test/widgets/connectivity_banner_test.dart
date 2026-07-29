@@ -53,7 +53,7 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
-          mapMarkersPaintedProvider.overrideWith(() => _PaintedMapMarkersNotifier()),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationPages()),
@@ -78,7 +78,7 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
-          mapMarkersPaintedProvider.overrideWith(() => _PaintedMapMarkersNotifier()),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationPages()),

@@ -3,6 +3,7 @@ import 'package:smart_tags/models/platform.dart';
 
 /// Visual style for a platform status badge or map marker.
 class PlatformStatusStyle {
+  /// Creates a [PlatformStatusStyle] with the given label and colors.
   const PlatformStatusStyle({
     required this.label,
     required this.backgroundColor,
@@ -19,6 +20,7 @@ class PlatformStatusStyle {
   final Color textColor;
 }
 
+/// Badge and map marker colors for each [PlatformStatus].
 abstract final class PlatformStatusPalette {
   /// Registered
   static const registered = PlatformStatusStyle(
@@ -88,6 +90,7 @@ abstract final class PlatformStatusPalette {
   }
 }
 
+/// Badge colors for each [OperationalStatus].
 abstract final class OperationalStatusPalette {
   /// Deployed
   static const deployed = PlatformStatusStyle(

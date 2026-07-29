@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_tags/main.dart' show MainNavigation;
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
