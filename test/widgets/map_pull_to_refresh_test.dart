@@ -3,19 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_tags/models/platforms_sync_phase.dart';
-import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/map_pull_to_refresh.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
-
-class _PhaseNotifier extends PlatformsSyncPhaseNotifier {
-  _PhaseNotifier(this.fixedPhase);
-
-  final PlatformsSyncPhase fixedPhase;
-
-  @override
-  PlatformsSyncPhase build() => fixedPhase;
-}
 
 void main() {
   testWidgets('shows refresh arrow while pulling before fetch starts', (tester) async {
@@ -24,11 +13,6 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          platformsSyncPhaseProvider.overrideWith(
-            () => _PhaseNotifier(PlatformsSyncPhase.downloading),
-          ),
-        ],
         child: MaterialApp(
           home: Scaffold(
             body: MapPullToRefresh(
@@ -54,7 +38,6 @@ void main() {
 
     // Still pulling — arrow only, no loading banner yet.
     expect(find.byIcon(Icons.refresh), findsOneWidget);
-    expect(find.text('Downloading platforms…'), findsNothing);
     expect(find.byType(PlatformsLoadingBanner), findsNothing);
 
     await gesture.up();
@@ -62,15 +45,12 @@ void main() {
     await refreshStarted.future;
     await tester.pump();
 
-    // Fetch triggered — shared loader banner with download phase.
-    expect(find.text('Downloading platforms…'), findsOneWidget);
-    expect(find.byType(PlatformsLoadingBanner), findsOneWidget);
+    // Fetch triggered — arrow clears; loading banner is owned by InitialSyncShell.
     expect(find.byIcon(Icons.refresh), findsNothing);
+    expect(find.byType(PlatformsLoadingBanner), findsNothing);
 
     refreshFinished.complete();
     await tester.pumpAndSettle();
-
-    expect(find.text('Downloading platforms…'), findsNothing);
   });
 
   testWidgets('does not refresh when pull starts away from the top edge', (tester) async {
@@ -101,6 +81,5 @@ void main() {
 
     expect(refreshed, isFalse);
     expect(find.byIcon(Icons.refresh), findsNothing);
-    expect(find.text('Downloading platforms…'), findsNothing);
   });
 }

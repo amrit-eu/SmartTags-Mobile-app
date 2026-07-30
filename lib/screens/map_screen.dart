@@ -562,21 +562,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   Future<void> _refreshPlatforms() async {
-    ScaffoldMessenger.of(context).clearSnackBars();
+    // Errors are shown by [InitialSyncShell] (top banner + Retry).
     await ref.read(platformsRefreshProvider.notifier).refresh();
-    if (!mounted) {
-      return;
-    }
-
-    final refresh = ref.read(platformsRefreshProvider);
-    if (refresh.hasError) {
-      final error = refresh.error!;
-      // Full details are already logged by PlatformsRefreshNotifier / GatewayRepository.
-      final message = error is StateError
-          ? error.message
-          : 'Could not refresh platforms';
-      _showToast(context, message, 'Close');
-    }
   }
 
   void _showToast(BuildContext context, String message, String label) {

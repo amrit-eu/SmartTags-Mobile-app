@@ -3,13 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
-import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 
 /// Instagram / Gmail-style pull-to-refresh for non-scrollable content.
 ///
 /// - While pulling: circular refresh arrow (fetch not started yet)
-/// - After trigger: shared [PlatformsLoadingBanner] with download/save phases
+/// - After trigger: loading banner is shown by the main shell sync strip
 ///
 /// Uses a [Listener] (not a [ScrollView] / [CustomScrollView]) so map rendering
 /// is never nested in a scrollable — avoiding `debugFrameWasSentToEngine` floods.
@@ -43,9 +41,6 @@ class MapPullToRefresh extends ConsumerStatefulWidget {
 class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
   /// Pull distance that triggers refresh (arrow fully revealed).
   static const double _triggerDistance = 48;
-
-  /// Full [PlatformsLoadingBanner] height once refresh starts.
-  static const double _bannerHeight = 44;
 
   /// How far content may rubber-band past the trigger for a satisfying overscroll.
   static const double _maxDrag = 180;
@@ -88,7 +83,8 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
     }
     setState(() {
       _refreshing = true;
-      _dragOffset = _bannerHeight;
+      // Shell sync strip shows the shared loading banner.
+      _dragOffset = 0;
       _clearPointer();
     });
 
@@ -177,8 +173,6 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
   @override
   Widget build(BuildContext context) {
     final progress = (_dragOffset / _triggerDistance).clamp(0.0, 2.5);
-    final phase = ref.watch(platformsSyncPhaseProvider);
-    final loadingMessage = phase.bannerMessage ?? 'Downloading platforms…';
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -189,9 +183,8 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_refreshing)
-            PlatformsLoadingBanner(message: loadingMessage)
-          else if (_dragOffset > 0.5)
+          // Loading banner lives in the main shell sync strip once fetch starts.
+          if (!_refreshing && _dragOffset > 0.5)
             SizedBox(
               height: _dragOffset,
               child: IgnorePointer(

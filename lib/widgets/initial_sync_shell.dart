@@ -3,12 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 
-/// Non-blocking first-load sync feedback shown above any tab in the main shell.
+/// Non-blocking sync feedback shown above any tab in the main shell.
+///
+/// Covers first-load download and pull-to-refresh errors in one banner slot.
 class InitialSyncShell extends ConsumerStatefulWidget {
   /// Creates an [InitialSyncShell].
   const InitialSyncShell({super.key});
@@ -48,12 +52,37 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     final syncAsync = ref.watch(initialSyncProvider);
     final platformCount = ref.watch(platformsStreamProvider).value?.length ?? 0;
     final markersPainted = ref.watch(mapMarkersPaintedProvider);
+    final phase = ref.watch(platformsSyncPhaseProvider);
+    final refresh = ref.watch(platformsRefreshProvider);
 
     ref.listen(platformsStreamProvider, (previous, next) {
       if ((next.value?.length ?? 0) > 0) {
         ref.read(initialSyncProvider.notifier).acknowledgeLocalData();
       }
     });
+
+    // Download/save in progress (Retry, pull-to-refresh, or first load).
+    if (phase != PlatformsSyncPhase.idle) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return PlatformsLoadingBanner(
+        message: phase.bannerMessage ?? 'Downloading platforms…',
+      );
+    }
+
+    // Pull-to-refresh / Retry failures: same top banner as first-load errors.
+    if (refresh.hasError) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      final error = refresh.error!;
+      final message = error is StateError
+          ? error.message
+          : 'Could not refresh platforms';
+      return _SyncFailedBanner(
+        message: message,
+        onRetry: () {
+          unawaited(ref.read(platformsRefreshProvider.notifier).refresh());
+        },
+      );
+    }
 
     if (markersPainted && platformCount > 0) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
@@ -67,7 +96,6 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
 
     if (syncAsync.isLoading) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
-      final phase = ref.watch(platformsSyncPhaseProvider);
       return PlatformsLoadingBanner(
         message: phase.bannerMessage ?? 'Downloading platforms…',
       );
@@ -76,6 +104,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (syncAsync.hasError) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return _SyncFailedBanner(
+        message: 'Could not load platforms',
         onRetry: () {
           unawaited(ref.read(initialSyncProvider.notifier).retry());
         },
@@ -96,8 +125,12 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
 }
 
 class _SyncFailedBanner extends StatelessWidget {
-  const _SyncFailedBanner({required this.onRetry});
+  const _SyncFailedBanner({
+    required this.message,
+    required this.onRetry,
+  });
 
+  final String message;
   final VoidCallback onRetry;
 
   @override
@@ -122,7 +155,7 @@ class _SyncFailedBanner extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Could not load platforms',
+                    message,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onErrorContainer,
                     ),
