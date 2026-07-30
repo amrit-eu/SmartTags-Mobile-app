@@ -73,6 +73,7 @@ void main() {
       final companion = GatewayPassportMapper.fromPassportItem(_samplePassportItem);
 
       expect(companion.ref.value, '2900314');
+      expect(companion.ptfId.value, '22');
       expect(companion.model.value, 'PROVOR_MT');
       expect(companion.platformCategory.value, 'Float');
       expect(companion.reportingStatus.value, 'OPERATIONAL');
@@ -100,6 +101,24 @@ void main() {
 
       expect(companion.latestOperationType.value, 'Recovery');
       expect(companion.operationalStatus.value, 'Recovered');
+    });
+
+    test('accepts a string ptfId and normalizes it', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      item['ptfId'] = '1155387';
+
+      final companion = GatewayPassportMapper.fromPassportItem(item);
+
+      expect(companion.ptfId.value, '1155387');
+    });
+
+    test('leaves ptfId null when missing from the source item', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      item.remove('ptfId');
+
+      final companion = GatewayPassportMapper.fromPassportItem(item);
+
+      expect(companion.ptfId.value, isNull);
     });
   });
 

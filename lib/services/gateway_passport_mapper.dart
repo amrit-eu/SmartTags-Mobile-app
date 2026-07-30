@@ -35,6 +35,7 @@ abstract final class GatewayPassportMapper {
 
     return PlatformsCompanion.insert(
       ref: (item['reference'] as String?) ?? (identification['reference'] as String?) ?? 'Unknown',
+      ptfId: Value(_asPtfId(item['ptfId'])),
       model: (assetModel['name'] as String?) ?? 'Unknown',
       network: observingNetworks.isNotEmpty ? observingNetworks.first : 'Unknown',
       lat: latestLat,
@@ -88,6 +89,18 @@ abstract final class GatewayPassportMapper {
   static double? _asDouble(Object? value) {
     if (value is num) {
       return value.toDouble();
+    }
+    return null;
+  }
+
+  /// The Gateway/OceanOPS platform id (`ptfId`) may come through as a number
+  /// or a string depending on the endpoint; normalise to a string.
+  static String? _asPtfId(Object? value) {
+    if (value is num) {
+      return value.toString();
+    }
+    if (value is String && value.isNotEmpty) {
+      return value;
     }
     return null;
   }

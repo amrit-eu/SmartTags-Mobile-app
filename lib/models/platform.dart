@@ -109,6 +109,7 @@ class Platform {
     this.latestOperationType,
     this.latestOperationDate,
     this.wigosId,
+    this.ptfId,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -155,4 +156,10 @@ class Platform {
 
   /// WIGOS identifier when available.
   final String? wigosId;
+
+  /// The Gateway/OceanOPS platform identifier (`ptfId`), distinct from
+  /// [platformRef]. Required to submit deploy/recover events to the Gateway;
+  /// `null` for platforms synced before this field was tracked, until the
+  /// next full sync.
+  final String? ptfId;
 }

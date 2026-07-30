@@ -65,6 +65,11 @@ class Platforms extends Table {
 
   /// Latest operation date from passport (#99).
   DateTimeColumn get latestOperationDate => dateTime().nullable()();
+
+  /// The Gateway/OceanOPS platform identifier (`ptfId` in the enriched
+  /// passport API), distinct from [ref]. Required to submit deploy/recover
+  /// passport events to the Gateway.
+  TextColumn get ptfId => text().nullable()();
 }
 
 @DataClassName('UserEntity')
