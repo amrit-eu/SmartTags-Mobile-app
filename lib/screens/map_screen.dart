@@ -447,6 +447,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       ),
       body: MapPullToRefresh(
         enabled: !_mapSkeletonVisible,
+        // Header only — do not start a pull from the map tiles.
+        edgeStartMaxY: kToolbarHeight,
         onRefresh: _refreshPlatforms,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
