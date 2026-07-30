@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/map_pull_to_refresh.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 
@@ -82,4 +84,49 @@ void main() {
     expect(refreshed, isFalse);
     expect(find.byIcon(Icons.refresh), findsNothing);
   });
+
+  testWidgets('ignores pull while a sync is already in progress', (tester) async {
+    var refreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          platformsSyncPhaseProvider.overrideWith(
+            () => _DownloadingPhaseNotifier(),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MapPullToRefresh(
+              onRefresh: () async {
+                refreshed = true;
+              },
+              child: const ColoredBox(
+                color: Colors.blueGrey,
+                child: SizedBox.expand(
+                  child: Text('content'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(const Offset(200, 24));
+    await gesture.moveBy(const Offset(0, 180));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.refresh), findsNothing);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(refreshed, isFalse);
+  });
+}
+
+class _DownloadingPhaseNotifier extends PlatformsSyncPhaseNotifier {
+  @override
+  PlatformsSyncPhase build() => PlatformsSyncPhase.downloading;
 }

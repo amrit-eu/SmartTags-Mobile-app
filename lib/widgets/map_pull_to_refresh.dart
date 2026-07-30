@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 
 /// Instagram / Gmail-style pull-to-refresh for non-scrollable content.
 ///
@@ -51,6 +53,14 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
   int? _pointer;
   Offset? _start;
 
+  bool get _pullAllowed {
+    if (!widget.enabled || _refreshing) {
+      return false;
+    }
+    // Block pull while Retry / another sync is already downloading.
+    return ref.read(platformsSyncPhaseProvider) == PlatformsSyncPhase.idle;
+  }
+
   void _clearPointer() {
     _tracking = false;
     _pointer = null;
@@ -78,7 +88,7 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
   }
 
   Future<void> _triggerRefresh() async {
-    if (_refreshing) {
+    if (_refreshing || !_pullAllowed) {
       return;
     }
     setState(() {
@@ -101,7 +111,7 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
   }
 
   void _onPointerDown(PointerDownEvent event) {
-    if (!widget.enabled || _refreshing) {
+    if (!_pullAllowed) {
       return;
     }
     // Start from the header / top band so normal scrolling stays smooth.
@@ -173,6 +183,14 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
   @override
   Widget build(BuildContext context) {
     final progress = (_dragOffset / _triggerDistance).clamp(0.0, 2.5);
+    final syncInProgress =
+        ref.watch(platformsSyncPhaseProvider) != PlatformsSyncPhase.idle;
+
+    ref.listen(platformsSyncPhaseProvider, (previous, next) {
+      if (next != PlatformsSyncPhase.idle && (_dragOffset > 0 || _tracking)) {
+        _snapBack();
+      }
+    });
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -184,7 +202,7 @@ class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Loading banner lives in the main shell sync strip once fetch starts.
-          if (!_refreshing && _dragOffset > 0.5)
+          if (!_refreshing && !syncInProgress && _dragOffset > 0.5)
             SizedBox(
               height: _dragOffset,
               child: IgnorePointer(
