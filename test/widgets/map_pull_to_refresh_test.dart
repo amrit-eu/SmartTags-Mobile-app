@@ -92,7 +92,7 @@ void main() {
       ProviderScope(
         overrides: [
           platformsSyncPhaseProvider.overrideWith(
-            () => _DownloadingPhaseNotifier(),
+            _DownloadingPhaseNotifier.new,
           ),
         ],
         child: MaterialApp(
