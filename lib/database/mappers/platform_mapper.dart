@@ -24,6 +24,7 @@ extension PlatformMapper on Platform {
       wigosId: wigosId,
       endingCauseId: endingCauseId,
       hasLatestObservation: hasLatestObservation,
+      ptfId: ptfId,
     );
   }
 }

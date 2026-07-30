@@ -249,6 +249,15 @@ class $PlatformsTable extends Platforms
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _ptfIdMeta = const VerificationMeta('ptfId');
+  @override
+  late final GeneratedColumn<String> ptfId = GeneratedColumn<String>(
+    'ptf_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -273,6 +282,7 @@ class $PlatformsTable extends Platforms
     latestOperationDate,
     endingCauseId,
     hasLatestObservation,
+    ptfId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -471,6 +481,12 @@ class $PlatformsTable extends Platforms
         ),
       );
     }
+    if (data.containsKey('ptf_id')) {
+      context.handle(
+        _ptfIdMeta,
+        ptfId.isAcceptableOrUnknown(data['ptf_id']!, _ptfIdMeta),
+      );
+    }
     return context;
   }
 
@@ -568,6 +584,10 @@ class $PlatformsTable extends Platforms
         DriftSqlType.bool,
         data['${effectivePrefix}has_latest_observation'],
       )!,
+      ptfId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ptf_id'],
+      ),
     );
   }
 
@@ -643,6 +663,11 @@ class Platform extends DataClass implements Insertable<Platform> {
 
   /// Whether passport includes a GTS latest observation (#100).
   final bool hasLatestObservation;
+
+  /// The Gateway/OceanOPS platform identifier (`ptfId` in the enriched
+  /// passport API), distinct from [ref]. Required to submit deploy/recover
+  /// passport events to the Gateway.
+  final String? ptfId;
   const Platform({
     required this.id,
     required this.ref,
@@ -666,6 +691,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     this.latestOperationDate,
     this.endingCauseId,
     required this.hasLatestObservation,
+    this.ptfId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -712,6 +738,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       map['ending_cause_id'] = Variable<int>(endingCauseId);
     }
     map['has_latest_observation'] = Variable<bool>(hasLatestObservation);
+    if (!nullToAbsent || ptfId != null) {
+      map['ptf_id'] = Variable<String>(ptfId);
+    }
     return map;
   }
 
@@ -759,6 +788,9 @@ class Platform extends DataClass implements Insertable<Platform> {
           ? const Value.absent()
           : Value(endingCauseId),
       hasLatestObservation: Value(hasLatestObservation),
+      ptfId: ptfId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ptfId),
     );
   }
 
@@ -796,6 +828,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       hasLatestObservation: serializer.fromJson<bool>(
         json['hasLatestObservation'],
       ),
+      ptfId: serializer.fromJson<String?>(json['ptfId']),
     );
   }
   @override
@@ -824,6 +857,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       'latestOperationDate': serializer.toJson<DateTime?>(latestOperationDate),
       'endingCauseId': serializer.toJson<int?>(endingCauseId),
       'hasLatestObservation': serializer.toJson<bool>(hasLatestObservation),
+      'ptfId': serializer.toJson<String?>(ptfId),
     };
   }
 
@@ -850,6 +884,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     Value<DateTime?> latestOperationDate = const Value.absent(),
     Value<int?> endingCauseId = const Value.absent(),
     bool? hasLatestObservation,
+    Value<String?> ptfId = const Value.absent(),
   }) => Platform(
     id: id ?? this.id,
     ref: ref ?? this.ref,
@@ -887,6 +922,7 @@ class Platform extends DataClass implements Insertable<Platform> {
         ? endingCauseId.value
         : this.endingCauseId,
     hasLatestObservation: hasLatestObservation ?? this.hasLatestObservation,
+    ptfId: ptfId.present ? ptfId.value : this.ptfId,
   );
   Platform copyWithCompanion(PlatformsCompanion data) {
     return Platform(
@@ -936,6 +972,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       hasLatestObservation: data.hasLatestObservation.present
           ? data.hasLatestObservation.value
           : this.hasLatestObservation,
+      ptfId: data.ptfId.present ? data.ptfId.value : this.ptfId,
     );
   }
 
@@ -963,7 +1000,8 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('latestOperationType: $latestOperationType, ')
           ..write('latestOperationDate: $latestOperationDate, ')
           ..write('endingCauseId: $endingCauseId, ')
-          ..write('hasLatestObservation: $hasLatestObservation')
+          ..write('hasLatestObservation: $hasLatestObservation, ')
+          ..write('ptfId: $ptfId')
           ..write(')'))
         .toString();
   }
@@ -992,6 +1030,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     latestOperationDate,
     endingCauseId,
     hasLatestObservation,
+    ptfId,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1018,7 +1057,8 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.latestOperationType == this.latestOperationType &&
           other.latestOperationDate == this.latestOperationDate &&
           other.endingCauseId == this.endingCauseId &&
-          other.hasLatestObservation == this.hasLatestObservation);
+          other.hasLatestObservation == this.hasLatestObservation &&
+          other.ptfId == this.ptfId);
 }
 
 class PlatformsCompanion extends UpdateCompanion<Platform> {
@@ -1044,6 +1084,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<DateTime?> latestOperationDate;
   final Value<int?> endingCauseId;
   final Value<bool> hasLatestObservation;
+  final Value<String?> ptfId;
   const PlatformsCompanion({
     this.id = const Value.absent(),
     this.ref = const Value.absent(),
@@ -1067,6 +1108,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.latestOperationDate = const Value.absent(),
     this.endingCauseId = const Value.absent(),
     this.hasLatestObservation = const Value.absent(),
+    this.ptfId = const Value.absent(),
   });
   PlatformsCompanion.insert({
     this.id = const Value.absent(),
@@ -1091,6 +1133,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.latestOperationDate = const Value.absent(),
     this.endingCauseId = const Value.absent(),
     this.hasLatestObservation = const Value.absent(),
+    this.ptfId = const Value.absent(),
   }) : ref = Value(ref),
        model = Value(model),
        network = Value(network),
@@ -1124,6 +1167,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<DateTime>? latestOperationDate,
     Expression<int>? endingCauseId,
     Expression<bool>? hasLatestObservation,
+    Expression<String>? ptfId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1151,6 +1195,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (endingCauseId != null) 'ending_cause_id': endingCauseId,
       if (hasLatestObservation != null)
         'has_latest_observation': hasLatestObservation,
+      if (ptfId != null) 'ptf_id': ptfId,
     });
   }
 
@@ -1177,6 +1222,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<DateTime?>? latestOperationDate,
     Value<int?>? endingCauseId,
     Value<bool>? hasLatestObservation,
+    Value<String?>? ptfId,
   }) {
     return PlatformsCompanion(
       id: id ?? this.id,
@@ -1201,6 +1247,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       latestOperationDate: latestOperationDate ?? this.latestOperationDate,
       endingCauseId: endingCauseId ?? this.endingCauseId,
       hasLatestObservation: hasLatestObservation ?? this.hasLatestObservation,
+      ptfId: ptfId ?? this.ptfId,
     );
   }
 
@@ -1279,6 +1326,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
         hasLatestObservation.value,
       );
     }
+    if (ptfId.present) {
+      map['ptf_id'] = Variable<String>(ptfId.value);
+    }
     return map;
   }
 
@@ -1306,7 +1356,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('latestOperationType: $latestOperationType, ')
           ..write('latestOperationDate: $latestOperationDate, ')
           ..write('endingCauseId: $endingCauseId, ')
-          ..write('hasLatestObservation: $hasLatestObservation')
+          ..write('hasLatestObservation: $hasLatestObservation, ')
+          ..write('ptfId: $ptfId')
           ..write(')'))
         .toString();
   }
@@ -3685,6 +3736,7 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       Value<DateTime?> latestOperationDate,
       Value<int?> endingCauseId,
       Value<bool> hasLatestObservation,
+      Value<String?> ptfId,
     });
 typedef $$PlatformsTableUpdateCompanionBuilder =
     PlatformsCompanion Function({
@@ -3710,6 +3762,7 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<DateTime?> latestOperationDate,
       Value<int?> endingCauseId,
       Value<bool> hasLatestObservation,
+      Value<String?> ptfId,
     });
 
 class $$PlatformsTableFilterComposer
@@ -3828,6 +3881,11 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<bool> get hasLatestObservation => $composableBuilder(
     column: $table.hasLatestObservation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ptfId => $composableBuilder(
+    column: $table.ptfId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3950,6 +4008,11 @@ class $$PlatformsTableOrderingComposer
     column: $table.hasLatestObservation,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get ptfId => $composableBuilder(
+    column: $table.ptfId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlatformsTableAnnotationComposer
@@ -4050,6 +4113,9 @@ class $$PlatformsTableAnnotationComposer
     column: $table.hasLatestObservation,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get ptfId =>
+      $composableBuilder(column: $table.ptfId, builder: (column) => column);
 }
 
 class $$PlatformsTableTableManager
@@ -4102,6 +4168,7 @@ class $$PlatformsTableTableManager
                 Value<DateTime?> latestOperationDate = const Value.absent(),
                 Value<int?> endingCauseId = const Value.absent(),
                 Value<bool> hasLatestObservation = const Value.absent(),
+                Value<String?> ptfId = const Value.absent(),
               }) => PlatformsCompanion(
                 id: id,
                 ref: ref,
@@ -4125,6 +4192,7 @@ class $$PlatformsTableTableManager
                 latestOperationDate: latestOperationDate,
                 endingCauseId: endingCauseId,
                 hasLatestObservation: hasLatestObservation,
+                ptfId: ptfId,
               ),
           createCompanionCallback:
               ({
@@ -4150,6 +4218,7 @@ class $$PlatformsTableTableManager
                 Value<DateTime?> latestOperationDate = const Value.absent(),
                 Value<int?> endingCauseId = const Value.absent(),
                 Value<bool> hasLatestObservation = const Value.absent(),
+                Value<String?> ptfId = const Value.absent(),
               }) => PlatformsCompanion.insert(
                 id: id,
                 ref: ref,
@@ -4173,6 +4242,7 @@ class $$PlatformsTableTableManager
                 latestOperationDate: latestOperationDate,
                 endingCauseId: endingCauseId,
                 hasLatestObservation: hasLatestObservation,
+                ptfId: ptfId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

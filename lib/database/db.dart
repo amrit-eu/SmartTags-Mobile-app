@@ -71,6 +71,11 @@ class Platforms extends Table {
 
   /// Whether passport includes a GTS latest observation (#100).
   BoolColumn get hasLatestObservation => boolean().withDefault(const Constant(false))();
+
+  /// The Gateway/OceanOPS platform identifier (`ptfId` in the enriched
+  /// passport API), distinct from [ref]. Required to submit deploy/recover
+  /// passport events to the Gateway.
+  TextColumn get ptfId => text().nullable()();
 }
 
 @DataClassName('UserEntity')

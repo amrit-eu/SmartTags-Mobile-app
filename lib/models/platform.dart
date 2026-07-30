@@ -109,8 +109,12 @@ class Platform {
     this.latestOperationType,
     this.latestOperationDate,
     this.wigosId,
+<<<<<<< HEAD
     this.endingCauseId,
     this.hasLatestObservation = false,
+=======
+    this.ptfId,
+>>>>>>> 2c427a4 (use ptfId to send deploy/recover event)
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -163,4 +167,9 @@ class Platform {
 
   /// True when passport includes a latest GTS observation (#100).
   final bool hasLatestObservation;
+  /// The Gateway/OceanOPS platform identifier (`ptfId`), distinct from
+  /// [platformRef]. Required to submit deploy/recover events to the Gateway;
+  /// `null` for platforms synced before this field was tracked, until the
+  /// next full sync.
+  final String? ptfId;
 }

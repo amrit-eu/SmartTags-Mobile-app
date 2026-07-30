@@ -1,20 +1,17 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/constants/oceanops_codes.dart';
-import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
-import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/widgets/common/collapsible_section.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -208,11 +205,24 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     //   return;
     // }
 
+    final ptfId = widget.platform.ptfId;
+    if (ptfId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Missing Gateway platform ID — refresh platform data (reconnect) before syncing.'),
+          ),
+        );
+        Navigator.pop(context);
+      }
+      return;
+    }
+
     final latitude = double.parse(_latitudeController.text);
     final longitude = double.parse(_longitudeController.text);
     final request = widget.action == DeployAction.deploy
         ? PassportEventRequest.deployment(
-            ptfId: widget.platform.platformRef,
+            ptfId: ptfId,
             deployment: DeploymentEventPayload(
               latitude: latitude,
               longitude: longitude,
@@ -226,7 +236,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
             ),
           )
         : PassportEventRequest.retrieval(
-            ptfId: widget.platform.platformRef,
+            ptfId: ptfId,
             retrieval: RetrievalEventPayload(
               latitude: latitude,
               longitude: longitude,
