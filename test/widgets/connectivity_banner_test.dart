@@ -1,12 +1,9 @@
-// Test for connection provider.
-
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_tags/database/connection/native.dart' as conn;
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
@@ -16,17 +13,13 @@ import 'package:smart_tags/providers/map_providers.dart';
 import '../helpers/static_initial_sync_notifier.dart';
 import '../helpers/test_main_navigation_pages.dart';
 
-class TestConnectivityStatus extends ConnectivityStatus {
-  ConnectivityResult? _testValue;
-  @override
-  FutureOr<ConnectivityResult?> build() async {
-    return _testValue;
-  }
+class _FixedConnectivity extends ConnectivityStatus {
+  _FixedConnectivity(this.result);
 
-  void set(ConnectivityResult? value) {
-    _testValue = value;
-    state = AsyncValue.data(value);
-  }
+  final ConnectivityResult? result;
+
+  @override
+  FutureOr<ConnectivityResult?> build() async => result;
 }
 
 Platform _samplePlatform() {
@@ -51,19 +44,14 @@ class _PaintedMapMarkersNotifier extends MapMarkersPaintedNotifier {
 }
 
 void main() {
-  testWidgets('does not show connectivity snackbar on network changes', (
-    WidgetTester tester,
-  ) async {
-    final testNotifier = TestConnectivityStatus();
-    final mockDatabase = AppDatabase.executor(conn.inMemoryConnection());
+  testWidgets('shows offline banner when offline and local data exists', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          checkConnectionProvider.overrideWith(() => testNotifier),
+          checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.none)),
           initialSyncProvider.overrideWith(
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
-          databaseProvider.overrideWithValue(mockDatabase),
           platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
           mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         ],
@@ -73,10 +61,33 @@ void main() {
       ),
     );
 
-    testNotifier.set(ConnectivityResult.wifi);
-    for (var i = 0; i < 10; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
+    await tester.pump();
+
+    expect(find.text('Offline — showing local data'), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('hides offline banner when back online', (tester) async {
+    final connectivity = _FixedConnectivity(ConnectivityResult.wifi);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          checkConnectionProvider.overrideWith(() => connectivity),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationPages()),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Offline — showing local data'), findsNothing);
   });
 }

@@ -3,6 +3,7 @@ import 'package:smart_tags/models/platform.dart';
 
 /// Visual style for a platform status badge or map marker.
 class PlatformStatusStyle {
+  /// Creates a [PlatformStatusStyle] with the given label and colors.
   const PlatformStatusStyle({
     required this.label,
     required this.backgroundColor,
@@ -19,6 +20,7 @@ class PlatformStatusStyle {
   final Color textColor;
 }
 
+/// Badge and map marker colors for each [PlatformStatus].
 abstract final class PlatformStatusPalette {
   /// Registered
   static const registered = PlatformStatusStyle(
@@ -84,6 +86,39 @@ abstract final class PlatformStatusPalette {
       PlatformStatus.inactive => inactive,
       PlatformStatus.closed => closed,
       PlatformStatus.unknown => unknown,
+    };
+  }
+}
+
+/// Badge colors for each [OperationalStatus].
+abstract final class OperationalStatusPalette {
+  /// Deployed
+  static const deployed = PlatformStatusStyle(
+    label: 'Deployed',
+    backgroundColor: Color(0xFF1976D2),
+    textColor: Colors.white,
+  );
+
+  /// Recovered
+  static const recovered = PlatformStatusStyle(
+    label: 'Recovered',
+    backgroundColor: Color(0xFFEF6C00),
+    textColor: Colors.white,
+  );
+
+  /// Unknown fallback
+  static const unknown = PlatformStatusStyle(
+    label: 'Unknown',
+    backgroundColor: Color(0xFF757575),
+    textColor: Colors.white,
+  );
+
+  /// Returns the palette entry for an [OperationalStatus] value.
+  static PlatformStatusStyle forStatus(OperationalStatus status) {
+    return switch (status) {
+      OperationalStatus.deployed => deployed,
+      OperationalStatus.recovered => recovered,
+      OperationalStatus.unknown => unknown,
     };
   }
 }

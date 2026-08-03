@@ -55,3 +55,6 @@ app.*.map.json
 /test/*/*.png
 
 screenshot-*
+
+# Local dev symlink to iOS simulator DB (see scripts/link-simulator-db.sh)
+.dev/

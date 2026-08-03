@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,25 +10,46 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/main.dart';
+import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
-import 'package:smart_tags/services/oceanops_repository.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
+
+import 'helpers/static_initial_sync_notifier.dart';
+
+class _FixedConnectivity extends ConnectivityStatus {
+  _FixedConnectivity(this.result);
+
+  final ConnectivityResult? result;
+
+  @override
+  FutureOr<ConnectivityResult?> build() async => result;
+}
+
 
 void main() {
   testWidgets('Should be able to navigate to QR Scanner page', (
     WidgetTester tester,
   ) async {
     final client = MockClient((request) async {
-      return http.Response('{}', 200);
+      return http.Response('{"items":[]}', 200);
     });
     final db = AppDatabase.executor(conn.inMemoryConnection());
-    final opsRepo = OceanOpsRepository(client: client);
+    final gatewayRepo = GatewayRepository(client: client);
     await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            oceanOpsRepositoryProvider.overrideWith((ref) => opsRepo),
+            gatewayRepositoryProvider.overrideWith((ref) => gatewayRepo),
             databaseProvider.overrideWith((ref) => db),
+            checkConnectionProvider.overrideWith(
+              () => _FixedConnectivity(ConnectivityResult.wifi),
+            ),
+            initialSyncProvider.overrideWith(
+              () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+            ),
+            platformsStreamProvider.overrideWith((ref) => Stream.value([])),
           ],
           child: const MaterialApp(
             home: MyApp(),

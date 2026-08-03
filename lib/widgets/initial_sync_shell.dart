@@ -1,0 +1,226 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
+import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
+import 'package:smart_tags/widgets/platforms_loading_banner.dart';
+
+/// Non-blocking sync feedback shown above any tab in the main shell.
+///
+/// Covers first-load download and pull-to-refresh errors in one banner slot.
+class InitialSyncShell extends ConsumerStatefulWidget {
+  /// Creates an [InitialSyncShell].
+  const InitialSyncShell({super.key});
+
+  @override
+  ConsumerState<InitialSyncShell> createState() => _InitialSyncShellState();
+}
+
+class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
+  static const Duration _displayPhaseTimeout = Duration(seconds: 8);
+
+  Timer? _displayTimeout;
+
+  @override
+  void dispose() {
+    _displayTimeout?.cancel();
+    super.dispose();
+  }
+
+  void _startDisplayTimeoutIfNeeded({required bool showingDisplaying}) {
+    if (!showingDisplaying) {
+      _displayTimeout?.cancel();
+      _displayTimeout = null;
+      return;
+    }
+
+    _displayTimeout ??= Timer(_displayPhaseTimeout, () {
+      if (!mounted) {
+        return;
+      }
+      ref.read(mapMarkersPaintedProvider.notifier).markPainted();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final syncAsync = ref.watch(initialSyncProvider);
+    final platformCount = ref.watch(platformsStreamProvider).value?.length ?? 0;
+    final markersPainted = ref.watch(mapMarkersPaintedProvider);
+    final phase = ref.watch(platformsSyncPhaseProvider);
+    final refresh = ref.watch(platformsRefreshProvider);
+
+    ref.listen(platformsStreamProvider, (previous, next) {
+      if ((next.value?.length ?? 0) > 0) {
+        ref.read(initialSyncProvider.notifier).acknowledgeLocalData();
+      }
+    });
+
+    // Download/save in progress (Retry, pull-to-refresh, or first load).
+    if (phase != PlatformsSyncPhase.idle) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return PlatformsLoadingBanner(
+        message: phase.bannerMessage ?? 'Downloading platforms…',
+      );
+    }
+
+    // Pull-to-refresh / Retry failures: same top banner as first-load errors.
+    if (refresh.hasError) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      final error = refresh.error!;
+      final message = error is StateError
+          ? error.message
+          : 'Could not refresh platforms';
+      return _SyncFailedBanner(
+        message: message,
+        onRetry: () {
+          unawaited(ref.read(platformsRefreshProvider.notifier).refresh());
+        },
+      );
+    }
+
+    if (markersPainted && platformCount > 0) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const SizedBox.shrink();
+    }
+
+    if (syncAsync.hasError && platformCount > 0) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const SizedBox.shrink();
+    }
+
+    if (syncAsync.isLoading) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return PlatformsLoadingBanner(
+        message: phase.bannerMessage ?? 'Downloading platforms…',
+      );
+    }
+
+    if (syncAsync.hasError) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return _SyncFailedBanner(
+        message: 'Could not load platforms',
+        onRetry: () {
+          unawaited(ref.read(initialSyncProvider.notifier).retry());
+        },
+      );
+    }
+
+    final status = syncAsync.value;
+    if (status == InitialSyncStatus.skippedOffline) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const _OfflineEmptyBanner();
+    }
+
+    _startDisplayTimeoutIfNeeded(showingDisplaying: true);
+    return const PlatformsLoadingBanner(
+      message: 'Displaying platforms…',
+    );
+  }
+}
+
+class _SyncFailedBanner extends StatelessWidget {
+  const _SyncFailedBanner({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.errorContainer,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.cloud_off,
+                  size: 18,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: onRetry,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfflineEmptyBanner extends StatelessWidget {
+  const _OfflineEmptyBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.cloud_off_outlined,
+                  size: 18,
+                  color: theme.colorScheme.outline,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'No local data. Connect to the internet to download platforms.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+}

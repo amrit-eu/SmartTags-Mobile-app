@@ -30,6 +30,12 @@ void main() {
       }
     });
 
+    test('isEmpty returns true for a new database', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+      expect(await db.isEmpty(), isTrue);
+      await db.close();
+    });
+
     test('Test content can be added to the DB', () async {
       // Use platform-aware in-memory database
       final db = AppDatabase.executor(conn.inMemoryConnection());

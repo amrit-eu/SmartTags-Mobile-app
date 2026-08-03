@@ -7,6 +7,13 @@ import 'package:smart_tags/helpers/connection_message.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('isDeviceOnline reflects connectivity state', () {
+    expect(isDeviceOnline(ConnectivityResult.wifi), isTrue);
+    expect(isDeviceOnline(ConnectivityResult.mobile), isTrue);
+    expect(isDeviceOnline(ConnectivityResult.none), isFalse);
+    expect(isDeviceOnline(null), isFalse);
+  });
+
   test('Check that a connectivity results return the correct message.', () async {
     final message = getConnectionMessage(ConnectivityResult.none);
     expect(message, 'Network connection lost');

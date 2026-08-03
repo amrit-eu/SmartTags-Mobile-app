@@ -1,8 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
-import 'package:smart_tags/services/oceanops_repository.dart';
+import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
 
 /// Provides a singleton instance of [AppDatabase] for the lifetime of the
 /// provider scope.
@@ -12,28 +16,129 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-/// Provides an instance of [OceanOpsRepository], which is responsible for
-/// fetching platform data from the remote API.
-///
-/// This provider does not manage any internal state and acts as a simple
-/// dependency-injection wrapper for the repository.
-final oceanOpsRepositoryProvider = Provider<OceanOpsRepository>((ref) {
-  return OceanOpsRepository();
+/// Provides an instance of [GatewayRepository] for Gateway passport sync.
+final gatewayRepositoryProvider = Provider<GatewayRepository>((ref) {
+  return GatewayRepository();
 });
 
-/// Performs the initial synchronization of platform data from the remote API
-/// into the local database.
-final initialSyncProvider = FutureProvider<void>((ref) async {
-  final db = ref.watch(databaseProvider);
-  final repository = ref.watch(oceanOpsRepositoryProvider);
+/// Loads unclosed missions from the Gateway into the local database on startup
+/// when the database is empty and the device is online.
+final initialSyncProvider =
+    AsyncNotifierProvider<InitialSyncNotifier, InitialSyncStatus>(
+  InitialSyncNotifier.new,
+);
 
-  try {
-    final platforms = await repository.fetchPlatforms();
-    await db.syncPlatforms(platforms);
-  } catch (e, st) {
-    debugPrint('Failed to sync data: $e');
-    Error.throwWithStackTrace(e, st);
+/// Coordinates the one-time initial Gateway → Drift sync.
+class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
+  Future<InitialSyncStatus>? _ongoingSync;
+
+  @override
+  Future<InitialSyncStatus> build() async {
+    return _runSyncIfNeeded();
   }
+
+  /// Retries the initial sync when the database is still empty.
+  Future<void> retry() async {
+    final db = ref.read(databaseProvider);
+    if (!await db.isEmpty()) {
+      state = const AsyncValue.data(InitialSyncStatus.notNeeded);
+      return;
+    }
+
+    if (!isDeviceOnline(await _currentConnectivity())) {
+      state = const AsyncValue.data(InitialSyncStatus.skippedOffline);
+      return;
+    }
+
+    state = const AsyncValue.loading();
+    try {
+      final result = await _runSyncIfNeeded();
+      state = AsyncValue.data(result);
+    } on Object catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Clears a stale loading/error state once platform rows exist locally.
+  void acknowledgeLocalData() {
+    if (state.hasError || state.isLoading) {
+      state = const AsyncValue.data(InitialSyncStatus.notNeeded);
+    }
+  }
+
+  Future<InitialSyncStatus> _runSyncIfNeeded() {
+    final existing = _ongoingSync;
+    if (existing != null) {
+      return existing;
+    }
+
+    final sync = _performSync();
+    _ongoingSync = sync;
+    return sync.whenComplete(() {
+      if (identical(_ongoingSync, sync)) {
+        _ongoingSync = null;
+      }
+    });
+  }
+
+  Future<InitialSyncStatus> _performSync() async {
+    final db = ref.read(databaseProvider);
+    if (!await db.isEmpty()) {
+      return InitialSyncStatus.notNeeded;
+    }
+
+    final connectivity = await _currentConnectivity();
+    if (!isDeviceOnline(connectivity)) {
+      return InitialSyncStatus.skippedOffline;
+    }
+
+    final repository = ref.read(gatewayRepositoryProvider);
+    final phase = ref.read(platformsSyncPhaseProvider.notifier)
+      ..setDownloading();
+    try {
+      final platforms = await repository.fetchUnclosedMissions();
+      if (platforms.isNotEmpty) {
+        phase.setSaving();
+        await db.syncPlatforms(platforms);
+      }
+      return InitialSyncStatus.completed;
+    } finally {
+      phase.setIdle();
+    }
+  }
+
+  Future<ConnectivityResult?> _currentConnectivity() async {
+    final async = ref.read(checkConnectionProvider);
+    final value = async.value;
+    if (value != null) {
+      return value;
+    }
+    if (async.hasError) {
+      return null;
+    }
+    try {
+      return await ref
+          .read(checkConnectionProvider.future)
+          .timeout(const Duration(seconds: 5));
+    } on Object {
+      return null;
+    }
+  }
+}
+
+/// Retries initial sync when connectivity is restored and the database is still empty.
+final initialSyncLifecycleProvider = Provider<void>((ref) {
+  ref.listen(
+    checkConnectionProvider.select((async) => async.value),
+    (previous, next) async {
+      if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
+        final db = ref.read(databaseProvider);
+        if (await db.isEmpty()) {
+          await ref.read(initialSyncProvider.notifier).retry();
+        }
+      }
+    },
+  );
 });
 
 /// Streams the full list of [Platform] entities from the local database.

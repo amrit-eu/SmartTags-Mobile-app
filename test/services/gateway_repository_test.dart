@@ -1,0 +1,125 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:smart_tags/config/gateway_config.dart';
+import 'package:smart_tags/services/gateway_passport_mapper.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
+
+const Map<String, dynamic> _samplePassportItem = {
+  'ptfId': 22,
+  'passportId': '0-22000-0-2900314',
+  'reference': '2900314',
+  'passport': {
+    'identification': {
+      'reference': '2900314',
+      'passportId': '0-22000-0-2900314',
+    },
+    'status': {
+      'reportingStatus': {
+        'name': 'OPERATIONAL',
+      },
+      'latestObservation': {
+        'latitude': 33.815,
+        'longitude': 149.765,
+        'timestamp': '2002-06-08T23:54:33Z',
+      },
+    },
+    'hardware': {
+      'platform': {
+        'asset': {
+          'wmo': '2900314',
+          'model': {
+            'name': 'PROVOR_MT',
+            'type': {
+              'name': 'Float',
+            },
+          },
+        },
+      },
+    },
+    'operations': {
+      'deployment': {
+        'latitude': 33.999,
+        'longitude': 143.993,
+        'timestamp': '2001-10-12T00:00:00Z',
+      },
+    },
+    'affiliation': {
+      'goosObservingNetworks': [
+        {
+          'name': 'Argo',
+          'wigosCode': 'argo',
+        },
+      ],
+    },
+  },
+};
+
+void main() {
+  group('GatewayPassportMapper', () {
+    test('maps passport fields required for #97 and #99', () {
+      final companion = GatewayPassportMapper.fromPassportItem(_samplePassportItem);
+
+      expect(companion.ref.value, '2900314');
+      expect(companion.model.value, 'PROVOR_MT');
+      expect(companion.platformCategory.value, 'Float');
+      expect(companion.reportingStatus.value, 'OPERATIONAL');
+      expect(companion.observingNetwork.value, 'Argo');
+      expect(companion.wigosId.value, '2900314');
+      expect(companion.status.value, 'OPERATIONAL');
+      expect(companion.latestOperationType.value, 'Deployment');
+      expect(companion.operationalStatus.value, 'Deployed');
+      expect(companion.lat.value, 33.815);
+      expect(companion.lon.value, 149.765);
+    });
+
+    test('maps ended missions to Recovery', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      (item['passport'] as Map<String, dynamic>)['operations'] = {
+        'deployment': {
+          'latitude': 1,
+          'longitude': 2,
+          'timestamp': '2001-10-12T00:00:00Z',
+        },
+        'endTimestamp': '2002-06-08T23:54:33Z',
+      };
+
+      final companion = GatewayPassportMapper.fromPassportItem(item);
+
+      expect(companion.latestOperationType.value, 'Recovery');
+      expect(companion.operationalStatus.value, 'Recovered');
+    });
+  });
+
+  group('GatewayRepository', () {
+    test('fetchUnclosedMissions returns mapped platforms on success', () async {
+      final mockResponse = {
+        'items': [_samplePassportItem],
+        'total': 1,
+      };
+
+      final client = MockClient((request) async {
+        expect(request.url, GatewayConfig.unclosedPassportsUri);
+        return http.Response(json.encode(mockResponse), 200);
+      });
+
+      final repository = GatewayRepository(client: client);
+      final platforms = await repository.fetchUnclosedMissions();
+
+      expect(platforms.length, 1);
+      expect(platforms.first.ref.value, '2900314');
+    });
+
+    test('fetchUnclosedMissions throws on error response', () async {
+      final client = MockClient((request) async {
+        return http.Response('Not Found', 404);
+      });
+
+      final repository = GatewayRepository(client: client);
+
+      expect(repository.fetchUnclosedMissions, throwsException);
+    });
+  });
+}

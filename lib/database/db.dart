@@ -23,7 +23,7 @@ class Platforms extends Table {
   /// Latest reported longitude.
   RealColumn get lon => real()();
 
-  /// Status string (Active/Inactive).
+  /// CT-RST platform status (e.g. OPERATIONAL, INACTIVE).
   TextColumn get status => text()();
 
   /// Operational status (Deployed/Recovered).
@@ -49,6 +49,21 @@ class Platforms extends Table {
 
   /// Additional notes about the latest operation (optional).
   TextColumn get operationNotes => text().nullable()();
+
+  /// Platform category from passport (e.g. Float, Drifting buoy).
+  TextColumn get platformCategory => text().nullable()();
+
+  /// Passport reporting status for display chips (#97).
+  TextColumn get reportingStatus => text().nullable()();
+
+  /// Observing network names from passport affiliation (#97).
+  TextColumn get observingNetwork => text().nullable()();
+
+  /// Latest operation type: Deployment or Recovery (#99).
+  TextColumn get latestOperationType => text().nullable()();
+
+  /// Latest operation date from passport (#99).
+  DateTimeColumn get latestOperationDate => dateTime().nullable()();
 }
 
 /// The local SQLite database using Drift ORM.
@@ -61,7 +76,29 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.addColumn(platforms, platforms.platformCategory);
+        await m.addColumn(platforms, platforms.reportingStatus);
+        await m.addColumn(platforms, platforms.observingNetwork);
+        await m.addColumn(platforms, platforms.latestOperationType);
+        await m.addColumn(platforms, platforms.latestOperationDate);
+      }
+    },
+  );
+
+  /// Returns true when no platform rows exist locally.
+  Future<bool> isEmpty() async {
+    final rows = await (select(platforms)..limit(1)).get();
+    return rows.isEmpty;
+  }
 
   /// Inserts a list of platforms. Fails if any already exist.
   Future<void> insertPlatforms(List<PlatformsCompanion> companions) async {
@@ -109,7 +146,7 @@ class AppDatabase extends _$AppDatabase {
     return (select(platforms)..where((p) => p.ref.equals(ref))).get();
   }
 
-  /// Watches a single platform by its reference, emitting updates when it changes.
+  /// Watches a single platform by its reference, emitting updates on changes.
   Stream<Platform?> watchPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref)))
         .watchSingleOrNull();
