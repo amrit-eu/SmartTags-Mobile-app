@@ -236,7 +236,6 @@ class _PlatformSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
