@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
+import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
@@ -125,7 +126,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          'Latest position',
+                          'Latest observation',
                           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -138,50 +139,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Platform Metadata Section
-            SectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    platform.model,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    platform.platformRef,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const Divider(height: 24),
-                  ContainerRow(
-                    label: 'Latest position',
-                    value:
-                        '${platform.latestPosition.latitude.toStringAsFixed(3)}, '
-                        '${platform.latestPosition.longitude.toStringAsFixed(3)}',
-                  ),
-                  const Divider(height: 16),
-                  ContainerRow(
-                    label: 'Network',
-                    value: platform.network,
-                  ),
-                  const Divider(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Status',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      StatusBadge.fromStatus(status: platform.status),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            _PlatformSummaryCard(platform: platform),
             const SizedBox(height: 16),
 
             // Latest Operation Section
@@ -196,22 +154,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                     ),
                   ),
                   const Divider(height: 24),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Operational Status',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      StatusBadge.fromOperationalStatus(
-                        operationalStatus: platform.operationalStatus,
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 16),
                   ContainerRow(
                     label: 'Last updated',
                     value:
@@ -222,9 +164,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                   const Divider(height: 16),
                   ContainerRow(
                     label: 'Position',
-                    value:
-                        '${platform.operationLocation.latitude.toStringAsFixed(3)}, '
-                        '${platform.operationLocation.longitude.toStringAsFixed(3)}',
+                    value: formatLatLng(platform.operationLocation),
                   ),
                   const Divider(height: 16),
                   ContainerRow(
@@ -266,6 +206,88 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           : const Text('Deploy'),
         ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+}
+
+/// Passport-aligned summary on the platform details page (#97).
+class _PlatformSummaryCard extends StatelessWidget {
+  const _PlatformSummaryCard({required this.platform});
+
+  final Platform platform;
+
+  static String _dash(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '-';
+    }
+    final trimmed = value.trim();
+    if (trimmed.toLowerCase() == 'unknown') {
+      return '-';
+    }
+    return trimmed;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SectionContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _dash(platform.platformCategory),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _dash(platform.model),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              StatusBadge.fromOperationalStatus(
+                operationalStatus: platform.operationalStatus,
+                showLeadingDot: true,
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          ContainerRow(
+            label: 'WIGOS ID',
+            value: _dash(platform.wigosId),
+          ),
+          const Divider(height: 16),
+          ContainerRow(
+            label: 'Latest observation',
+            value: formatLatLng(platform.latestPosition),
+          ),
+          const Divider(height: 16),
+          ContainerRow(
+            label: 'Last updated',
+            value:
+                '${DateFormat('MMM dd, yyyy, hh:mm a').format(platform.lastUpdated)} UTC',
+          ),
+          const Divider(height: 16),
+          ContainerRow(
+            label: 'Observing network',
+            value: _dash(platform.observingNetwork ?? platform.network),
+          ),
+        ],
+      ),
     );
   }
 }
