@@ -102,7 +102,7 @@ class AuthService {
       throw const RefreshException('No refresh token available');
     }
 
-    final uri = Uri.parse('https://amrit.isival.ifremer.fr/amrit-gateway/api/oceanops/data/auth/refresh');
+    final uri = GatewayConfig.refreshUri;
     debugPrint('Attempting token refresh');
     try {
       final response = await _client.post(

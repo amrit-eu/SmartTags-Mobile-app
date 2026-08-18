@@ -3,12 +3,12 @@ import 'package:smart_tags/models/program_role.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 
 /// Available roles.
- enum Role {
-   anonymous,
-   loggedIn,
-   programMember,
-   programManager,
-   superUser;
+enum Role {
+  anonymous,
+  loggedIn,
+  programMember,
+  programManager,
+  superUser;
 
   String? get code => switch (this) {
     Role.programMember => 'program-member',
@@ -16,13 +16,15 @@ import 'package:smart_tags/providers/auth_provider.dart';
     _ => null, // anonymous/loggedIn/superUser aren't program-scoped ranks
   };
 }
+
 /// Available resources.
 enum Resource { mission, deployment, asset, alert }
+
 /// Available actions.
 enum Action { view, viewSensitive, create, edit, delete, ack, unack, archive }
 
 const Map<Resource, Map<Action, Role>> _policy = {
-   // TODO(eawetchy): Add all relevant permissions mappings.
+  // TODO(eawetchy): Add all relevant permissions mappings.
   Resource.deployment: {
     Action.view: Role.anonymous,
     Action.viewSensitive: Role.loggedIn,
@@ -59,13 +61,13 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
     if (user == null) {
       return _policy[resource]?[action] == Role.anonymous;
     }
-    // TODO(eawetchy): Confirm actual string used
-    // TODO(eawetchy): Are there other global roles that need to be taken into account here?
-    if (user.roles.contains('superuser')) return true;
+
+    if (user.roles.contains('alert_admin')) return true;
 
     final requiredRole = _policy[resource]?[action];
     if (requiredRole == null) return false; // permission not defined (log?)
-    if (requiredRole == Role.loggedIn || requiredRole == Role.anonymous) return true; // grant anonymous actions to logged in users
+    if (requiredRole == Role.loggedIn || requiredRole == Role.anonymous)
+      return true; // grant anonymous actions to logged in users
 
     if (programId == null) return false;
 
