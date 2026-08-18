@@ -12,6 +12,9 @@ abstract final class GatewayConfig {
   /// Login endpoint for mobile authentication.
   static Uri get loginUri => apiUri('oceanops/data/auth/login');
 
+  /// Logout endpoint for mobile authentication.
+  static Uri get logoutUri => apiUri('oceanops/data/auth/logout');
+
   /// refresh endpoint for mobile authentication.
   static Uri get refreshUri => apiUri('oceanops/data/auth/refresh');
 }

@@ -247,13 +247,38 @@ class AuthService {
 
   /// Delete tokens from cache and secure storage.
   Future<Null> logout() async {
+    final logoutUri = GatewayConfig.logoutUri;
+    // post to back-end logout and ignore results
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    if (refreshToken != null) {
+      try {
+        await _client.post(
+          logoutUri,
+          headers: const {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'refresh_token': refreshToken,
+          }),
+        );
+      } catch (e) {
+        debugPrint('Logout backend call failed (ignored): $e');
+      }
+    }
+
+    // delete local tokens
     await _deleteAccessToken();
     await _storage.delete(key: 'refresh_token');
     final userId = await getUserId();
-    if (userId == null) return null;
-    await _authDao.clearProfile(int.parse(userId));
+    final parsedUserId = userId != null ? int.tryParse(userId) : null;
+    if (parsedUserId != null) {
+      await _authDao.clearProfile(parsedUserId);
+    }
     await _storage.delete(key: 'userId');
-    // Should send a logout request to Gateway API, but no logout URL is currently documented.
+
+    // reinit _cachedUserId;
+    _cachedUserId = null;
+
     return null;
   }
 }
