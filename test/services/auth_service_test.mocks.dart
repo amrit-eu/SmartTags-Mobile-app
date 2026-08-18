@@ -621,9 +621,9 @@ class MockAuthDao extends _i1.Mock implements _i6.AuthDao {
           as _i7.Future<_i10.User?>);
 
   @override
-  _i7.Future<void> clearProfile(int? userId) =>
+  _i7.Future<void> clearProfile(int? userRef) =>
       (super.noSuchMethod(
-            Invocation.method(#clearProfile, [userId]),
+            Invocation.method(#clearProfile, [userRef]),
             returnValue: _i7.Future<void>.value(),
             returnValueForMissingStub: _i7.Future<void>.value(),
           )

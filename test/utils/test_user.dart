@@ -1,3 +1,4 @@
+import 'package:smart_tags/models/country.dart';
 import 'package:smart_tags/models/program.dart';
 import 'package:smart_tags/models/program_role.dart';
 import 'package:smart_tags/models/role.dart';
@@ -16,13 +17,18 @@ User createTestUser({
   String tel2 = '789123',
   String address = 'Postal Address, Location',
   bool hideContactInfoFromPublic = false,
-  String? country,
+  Country? country = const Country(
+    id: 156,
+    name: 'France',
+    code2: 'FR',
+    nameShort: 'FRANCE',
+  ),
   List<String> roles = const ['alert_editor'],
   List<ProgramRole> programRoles = const [
     ProgramRole(
       program: Program(id: 4, name: 'Argo Australia', code: 'argo-australia'),
       role: Role(id: 2, name: 'Program Manager', code: 'program-manager'),
-    )
+    ),
   ],
 }) {
   return User(

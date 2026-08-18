@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/models/country.dart';
 import 'package:smart_tags/models/program.dart';
 import 'package:smart_tags/models/program_role.dart';
 import 'package:smart_tags/models/role.dart';
@@ -32,7 +35,9 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
           tel2: profile.tel2,
           address: profile.address,
           hideContactInfoFromPublic: profile.hideContactInfoFromPublic,
-          country: Value(profile.country),
+          country: Value(
+            profile.country != null ? jsonEncode(profile.country!.toJson()) : null,
+          ),
         ),
       );
 
@@ -55,39 +60,36 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
       }
 
       /// Link user's profile with their program roles (delete and replace).
-      await (delete(userProgramRoles)
-        ..where((t) => t.userId.equals(profile.id)))
-        .go();
+      await (delete(userProgramRoles)..where((t) => t.userId.equals(profile.id))).go();
       if (profile.programRoles.isNotEmpty) {
         await batch((b) {
           b.insertAll(
             userProgramRoles,
             [
               for (final pr in profile.programRoles)
-              UserProgramRolesCompanion.insert(
-                userId: profile.id,
-                programId: pr.program.id,
-                roleId: pr.role.id,
-              ),
+                UserProgramRolesCompanion.insert(
+                  userId: profile.id,
+                  programId: pr.program.id,
+                  roleId: pr.role.id,
+                ),
             ],
           );
         });
       }
 
       /// Link user's roles outside of programs (delete and replace).
-      await (delete(userRoles)..where((t) => t.userId.equals(profile.id)))
-          .go();
+      await (delete(userRoles)..where((t) => t.userId.equals(profile.id))).go();
       if (profile.roles.isNotEmpty) {
         await batch((b) {
-        b.insertAll(
-          userRoles,
-          [
-            for (final roleCode in profile.roles)
-              UserRolesCompanion.insert(
-              userId: profile.id,
-              roleCode: roleCode,
-            ),
-          ],
+          b.insertAll(
+            userRoles,
+            [
+              for (final roleCode in profile.roles)
+                UserRolesCompanion.insert(
+                  userId: profile.id,
+                  roleCode: roleCode,
+                ),
+            ],
           );
         });
       }
@@ -96,17 +98,14 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
 
   /// Retrieve current user profile from the DB.
   Future<User?> loadProfile(int userId) async {
-    final profileRow = await (select(userProfiles)
-      ..where((t) => t.id.equals(userId)))
-        .getSingleOrNull();
+    final profileRow = await (select(userProfiles)..where((t) => t.id.equals(userId))).getSingleOrNull();
     if (profileRow == null) return null;
 
     // Join userProgramRoles -> programs / roles to rebuild ProgramRole objects.
     final query = select(userProgramRoles).join([
       innerJoin(programs, programs.id.equalsExp(userProgramRoles.programId)),
       innerJoin(roles, roles.id.equalsExp(userProgramRoles.roleId)),
-    ])
-      ..where(userProgramRoles.userId.equals(userId));
+    ])..where(userProgramRoles.userId.equals(userId));
 
     final programRoleRows = await query.get();
     final programRoles = programRoleRows.map((row) {
@@ -126,36 +125,34 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
       );
     }).toList();
 
-    final roleRows = await (select(userRoles)
-      ..where((t) => t.userId.equals(userId)))
-        .get();
+    final roleRows = await (select(userRoles)..where((t) => t.userId.equals(userId))).get();
     final flatRoles = roleRows.map((r) => r.roleCode).toList();
 
     return User(
-        id: profileRow.ref,
-        email: profileRow.email,
-        email2: profileRow.email2,
-        fullName: profileRow.fullName,
-        firstName: profileRow.firstName,
-        lastName: profileRow.lastName,
-        title: profileRow.title,
-        orcid: profileRow.orcid,
-        tel: profileRow.tel,
-        tel2: profileRow.tel2,
-        address: profileRow.address,
-        hideContactInfoFromPublic: profileRow.hideContactInfoFromPublic,
-        country: profileRow.country,
-        roles: flatRoles,
-        programRoles: programRoles,
+      id: profileRow.ref,
+      email: profileRow.email,
+      email2: profileRow.email2,
+      fullName: profileRow.fullName,
+      firstName: profileRow.firstName,
+      lastName: profileRow.lastName,
+      title: profileRow.title,
+      orcid: profileRow.orcid,
+      tel: profileRow.tel,
+      tel2: profileRow.tel2,
+      address: profileRow.address,
+      hideContactInfoFromPublic: profileRow.hideContactInfoFromPublic,
+      country: profileRow.country != null
+          ? Country.fromJson(jsonDecode(profileRow.country!) as Map<String, dynamic>)
+          : null,
+      roles: flatRoles,
+      programRoles: programRoles,
     );
   }
 
   /// Remove the cached profile for [userRef] and its associated program-role and role rows.
   Future<void> clearProfile(int userRef) async {
     await transaction(() async {
-      final userProfile = await (select(userProfiles)
-        ..where((t) => t.ref.equals(userRef)))
-          .getSingleOrNull();
+      final userProfile = await (select(userProfiles)..where((t) => t.ref.equals(userRef))).getSingleOrNull();
 
       if (userProfile == null) {
         // Nothing to clear.
@@ -165,15 +162,14 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
 
       // Capture which programs this user was linked to, before removing
       // the join rows, so we know what to check for orphaning.
-      final programIds = await (selectOnly(userProgramRoles)
-        ..addColumns([userProgramRoles.programId])
-        ..where(userProgramRoles.userId.equals(userRef)))
-          .map((row) => row.read(userProgramRoles.programId)!)
-          .get();
+      final programIds =
+          await (selectOnly(userProgramRoles)
+                ..addColumns([userProgramRoles.programId])
+                ..where(userProgramRoles.userId.equals(userRef)))
+              .map((row) => row.read(userProgramRoles.programId)!)
+              .get();
 
-      await (delete(userProgramRoles)
-        ..where((t) => t.userId.equals(userRef)))
-          .go();
+      await (delete(userProgramRoles)..where((t) => t.userId.equals(userRef))).go();
       await (delete(userRoles)..where((t) => t.userId.equals(userRef))).go();
       await (delete(userProfiles)..where((t) => t.id.equals(userId))).go();
       await (delete(programs)..where((t) => t.id.isIn(programIds))).go();

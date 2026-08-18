@@ -221,12 +221,10 @@ class AuthService {
           'password': password,
         }),
       );
-
       final successCodes = <int>[200, 201];
       if (successCodes.contains(response.statusCode)) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
-
         await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
         final userInfo = authResponse.contact;
         _cachedUserId = userInfo.id.toString();

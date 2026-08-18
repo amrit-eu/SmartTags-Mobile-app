@@ -40,15 +40,16 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
           if (user != null) {
             // If user is not null, navigate to the user profile screen.
             await Navigator.of(context).pushReplacement(
-                MaterialPageRoute<UserProfileScreen>(
-                  builder: (BuildContext ctx) => UserProfileScreen(
-                    user: user,
-                  ),
-                )
+              MaterialPageRoute<UserProfileScreen>(
+                builder: (BuildContext ctx) => UserProfileScreen(
+                  user: user,
+                ),
+              ),
             );
           }
         },
         error: (error, _) {
+          debugPrint('Login failed: $error');
           ref.read(errorNotificationProvider.notifier).setError('Login failed: $error');
         },
       );
@@ -142,17 +143,16 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                   // Login Button
                   ElevatedButton(
                     key: const Key('logInButton'),
-                    onPressed: isLoading ? null : () async {
-                      final form = _formKey.currentState;
-                      if (form == null || !form.validate()) {
-                        return;
-                      }
-                      final email = _emailController.text.trim();
-                      final password = _passwordController.text;
-                      await ref
-                          .read(authProvider.notifier)
-                          .login(email, password)
-                          .then((_) {
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final form = _formKey.currentState;
+                            if (form == null || !form.validate()) {
+                              return;
+                            }
+                            final email = _emailController.text.trim();
+                            final password = _passwordController.text;
+                            await ref.read(authProvider.notifier).login(email, password).then((_) {
                               final authState = _authState;
                               if (!context.mounted) return;
                               if (authState is AsyncData<User?> && authState.value != null) {
@@ -163,19 +163,19 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                                 );
                               }
                             });
-                    },
+                          },
                     child: isLoading
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
                         : const Text(
-                      'Sign In',
-                    ),
+                            'Sign In',
+                          ),
                   ),
                   const SizedBox(height: 16),
                 ],
