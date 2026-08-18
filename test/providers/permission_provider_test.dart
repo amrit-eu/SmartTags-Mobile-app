@@ -101,7 +101,7 @@ void main() {
 
   group('superuser', () {
     setUp(() {
-      final user = createTestUser(roles: const ['superuser'], programRoles: const []);
+      final user = createTestUser(roles: const ['alert_admin'], programRoles: const []);
       container = buildContainer(user);
     });
 
@@ -120,13 +120,13 @@ void main() {
   group('program-member user', () {
     setUp(() {
       final user = createTestUser(
-      roles: const [],
-      programRoles: const [
-        ProgramRole(
-          program: Program(id: 42, name: 'Test Program', code: 'test-program'),
-          role: model.Role(id: 1, name: 'Program Member', code: 'program-member'),
-        ),
-      ],
+        roles: const [],
+        programRoles: const [
+          ProgramRole(
+            program: Program(id: 42, name: 'Test Program', code: 'test-program'),
+            role: model.Role(id: 1, name: 'Program Member', code: 'program-member'),
+          ),
+        ],
       );
 
       container = buildContainer(user);
@@ -161,7 +161,6 @@ void main() {
     setUp(() {
       // Uses createTestUser's default of program-manager on program 4.
       container = buildContainer(createTestUser());
-
     });
 
     test('is granted actions requiring program-member', () async {
@@ -195,6 +194,4 @@ void main() {
       expect(can(Action.create, Resource.deployment, programId: 42), isFalse);
     });
   });
-
-
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -26,7 +25,6 @@ final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(AuthNotifier.new
 ///   via [AuthService].
 /// - [logout] sets the state to `null`.
 class AuthNotifier extends AsyncNotifier<User?> {
-
   late final AuthService _authService;
 
   @override
@@ -65,7 +63,8 @@ class AuthNotifier extends AsyncNotifier<User?> {
     try {
       await _authService.logout();
       state = const AsyncData(null);
-    } on PlatformException catch (e, st) { // error deleting token from storage
+    } on PlatformException catch (e, st) {
+      // error deleting token from storage
       // Emit error first so UI can read it
       state = AsyncError<User?>(e, st);
       // Then restore previous user so UI stays logged in
@@ -75,18 +74,22 @@ class AuthNotifier extends AsyncNotifier<User?> {
 
   /// Helper to handle refresh exceptions consistently across all methods.
   void _handleRefreshException(RefreshException e) {
-    ref.read(errorNotificationProvider.notifier).setError(
-      '${e.message}: Please log in again.',
-      type: 'session_expired',
-    );
+    ref
+        .read(errorNotificationProvider.notifier)
+        .setError(
+          '${e.message}: Please log in again.',
+          type: 'session_expired',
+        );
     state = const AsyncData(null);
   }
 
   void _handleTemporaryError(Object e) {
-    ref.read(errorNotificationProvider.notifier).setError(
-      'A temporary error occurred. Please try again later.',
-      type: 'temporary_error',
-    );
+    ref
+        .read(errorNotificationProvider.notifier)
+        .setError(
+          'A temporary error occurred. Please try again later.',
+          type: 'temporary_error',
+        );
   }
 
   /// Wraps any async operation that might trigger a token refresh error.
