@@ -12,6 +12,8 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
+import '../helpers/fake_auth_service.dart';
+
 class _FixedConnectivity extends ConnectivityStatus {
   _FixedConnectivity(this.result);
 
@@ -31,7 +33,7 @@ PassportEventRequest _sampleRequest() {
 /// Fake repository whose outcome per call is scripted by [outcomes]:
 /// `null` succeeds, otherwise the given exception is thrown.
 class _ScriptedGatewayRepository extends GatewayRepository {
-  _ScriptedGatewayRepository(this.outcomes);
+  _ScriptedGatewayRepository(this.outcomes) : super(authService: NoOpAuthService());
 
   final List<Exception?> outcomes;
   final List<String> sentBodies = [];

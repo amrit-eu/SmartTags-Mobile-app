@@ -1,17 +1,20 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/constants/oceanops_codes.dart';
+import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
 import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/widgets/common/collapsible_section.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -178,33 +181,6 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       return;
     }
 
-    // Attempt to update the record in the local sqlite database.
-    // TODO : update local dbwith new model
-    // try {
-    //   await ref.read(databaseProvider).updatePlatforms([
-    //     PlatformsCompanion(
-    //       ref: Value(widget.platform.platformRef),
-    //       model: Value(widget.platform.model),
-    //       lat: Value(double.parse(_latitudeController.text)),
-    //       lon: Value(double.parse(_longitudeController.text)),
-    //       lastUpdated: Value(_selectedDateTime!),
-    //       operationLat: Value(double.parse(_latitudeController.text)),
-    //       operationLon: Value(double.parse(_longitudeController.text)),
-    //       operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
-    //       status: Value(widget.platform.status.apiName),
-    //       operationNotes: Value(_notesController.text),
-    //     ),
-    //   ]);
-    // } on Exception catch (e) {
-    //   debugPrint('Error updating platform: $e');
-    //   if (mounted) {
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text('Failed to update platform.')),
-    //     );
-    //   }
-    //   return;
-    // }
-
     final ptfId = widget.platform.ptfId;
     if (ptfId == null) {
       if (mounted) {
@@ -251,6 +227,33 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     final outcome = await ref
         .read(passportEventQueueProvider.notifier)
         .enqueueOrSend(platformRef: widget.platform.platformRef, action: widget.action, request: request);
+
+    // The event was sent (or queued for later sync) successfully; reflect
+    // the new state in the local database so the UI updates immediately.
+    try {
+      await ref.read(databaseProvider).updatePlatforms([
+        PlatformsCompanion(
+          ref: Value(widget.platform.platformRef),
+          model: Value(widget.platform.model),
+          lat: Value(latitude),
+          lon: Value(longitude),
+          lastUpdated: Value(_selectedDateTime!),
+          operationLat: Value(latitude),
+          operationLon: Value(longitude),
+          operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
+          status: Value(widget.platform.status.apiName),
+          operationNotes: Value(_notesController.text),
+        ),
+      ]);
+    } on Exception catch (e) {
+      debugPrint('Error updating platform: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update platform.')),
+        );
+      }
+      return;
+    }
 
     // If successful, show a success message.
     if (mounted) {

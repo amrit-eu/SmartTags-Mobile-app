@@ -46,6 +46,19 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final platformAsync = ref.watch(platformByRefStreamProvider(widget.platformRef));
+    final platform = platformAsync.value?.toDomain();
+
+    if (platform == null) {
+      return Scaffold(
+        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // final userPermissions = ref.watch(permissionProvider);
+    // // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
+    // final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
+
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
       next.whenData((dbPlatform) {
@@ -56,13 +69,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       });
     });
 
-    final platform = platformAsync.value?.toDomain();
-    if (platform == null) {
-      return Scaffold(
-        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
     return Scaffold(
       appBar: TopNavigation(
         title: const Text('Platform Details'),
