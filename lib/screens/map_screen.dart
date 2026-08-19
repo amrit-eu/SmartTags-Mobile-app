@@ -98,6 +98,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
+    // `repeat` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
+    // stays satisfied on analyzer versions that don't yet honour the annotation.
+    // ignore: unnecessary_unawaited
     unawaited(_pulseController.repeat(reverse: true));
 
     // Animation controller for popup effect.
@@ -178,6 +181,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     });
     // Reset and play animation
     if (mounted) {
+      // `forward` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
+      // stays satisfied on analyzer versions that don't yet honour the annotation.
+      // ignore: unnecessary_unawaited
       unawaited(_popupAnimationController.forward(from: 0));
     }
     // Center map on the selected marker.
@@ -338,6 +344,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    // `push` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
+                    // stays satisfied on analyzer versions that don't yet honour the annotation.
+                    // ignore: unnecessary_unawaited
                     unawaited(
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
