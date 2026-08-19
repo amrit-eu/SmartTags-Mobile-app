@@ -5,7 +5,7 @@ import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/screens/user_login.dart';
 
-import '../utils/FakeAuthNotifiers.dart';
+import '../utils/fake_auth_notifiers.dart';
 
 void main() {
   testWidgets('Login screen redirects to profile page on login success', (tester) async {

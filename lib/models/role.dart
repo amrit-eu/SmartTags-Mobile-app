@@ -15,5 +15,6 @@ class Role extends ApiObject {
     return Role(id: r.id, name: r.name, code: r.code);
   }
 
+  /// Serialises [Role] object to JSON.
   Map<String, dynamic> toJson() => toJsonFields();
 }

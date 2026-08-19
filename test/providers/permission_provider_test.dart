@@ -7,7 +7,7 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 
-import '../utils/FakeAuthNotifiers.dart';
+import '../utils/fake_auth_notifiers.dart';
 import '../utils/test_user.dart';
 
 void main() {
@@ -81,7 +81,7 @@ void main() {
       await container.read(authProvider.future);
       final can = container.read(permissionProvider);
 
-      expect(can(Action.create, Resource.deployment, programId: null), isFalse);
+      expect(can(Action.create, Resource.deployment), isFalse);
     });
 
     test('is denied program-scoped actions when they have no program role', () async {

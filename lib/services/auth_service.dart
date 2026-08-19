@@ -261,7 +261,7 @@ class AuthService {
             'refresh_token': refreshToken,
           }),
         );
-      } catch (e) {
+      } on Exception catch (e) {
         debugPrint('Logout backend call failed (ignored): $e');
       }
     }

@@ -4,12 +4,22 @@ import 'package:smart_tags/providers/auth_provider.dart';
 
 /// Available roles.
 enum Role {
+  /// Not authenticated.
   anonymous,
+
+  /// Authenticated, but not necessarily a member of any program.
   loggedIn,
+
+  /// A regular member of a program.
   programMember,
+
+  /// A manager of a program.
   programManager,
+
+  /// Has elevated permissions across all programs.
   superUser;
 
+  /// The API code for this role, or `null` if it isn't program-scoped.
   String? get code => switch (this) {
     Role.programMember => 'program-member',
     Role.programManager => 'program-manager',
@@ -18,10 +28,46 @@ enum Role {
 }
 
 /// Available resources.
-enum Resource { mission, deployment, asset, alert }
+enum Resource {
+  /// A mission.
+  mission,
+
+  /// A deployment.
+  deployment,
+
+  /// An asset.
+  asset,
+
+  /// An alert.
+  alert,
+}
 
 /// Available actions.
-enum Action { view, viewSensitive, create, edit, delete, ack, unack, archive }
+enum Action {
+  /// View a resource.
+  view,
+
+  /// View sensitive details of a resource.
+  viewSensitive,
+
+  /// Create a resource.
+  create,
+
+  /// Edit a resource.
+  edit,
+
+  /// Delete a resource.
+  delete,
+
+  /// Acknowledge an alert.
+  ack,
+
+  /// Unacknowledge an alert.
+  unack,
+
+  /// Archive an alert.
+  archive,
+}
 
 const Map<Resource, Map<Action, Role>> _policy = {
   // TODO(eawetchy): Add all relevant permissions mappings.
@@ -66,8 +112,9 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
 
     final requiredRole = _policy[resource]?[action];
     if (requiredRole == null) return false; // permission not defined (log?)
-    if (requiredRole == Role.loggedIn || requiredRole == Role.anonymous)
+    if (requiredRole == Role.loggedIn || requiredRole == Role.anonymous) {
       return true; // grant anonymous actions to logged in users
+    }
 
     if (programId == null) return false;
 
@@ -92,11 +139,24 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
 
 /// Shortcuts to allow omitting the action when calling the provider
 extension PermissionShortcuts on bool Function(Action action, Resource resource, {int? programId}) {
+  /// Whether the current user can view [resource].
   bool canView(Resource resource, {int? programId}) => this(Action.view, resource, programId: programId);
+
+  /// Whether the current user can create [resource].
   bool canCreate(Resource resource, {int? programId}) => this(Action.create, resource, programId: programId);
+
+  /// Whether the current user can edit [resource].
   bool canEdit(Resource resource, {int? programId}) => this(Action.edit, resource, programId: programId);
+
+  /// Whether the current user can delete [resource].
   bool canDelete(Resource resource, {int? programId}) => this(Action.delete, resource, programId: programId);
+
+  /// Whether the current user can acknowledge an alert.
   bool canAck({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+
+  /// Whether the current user can unacknowledge an alert.
   bool canUnack({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+
+  /// Whether the current user can archive an alert.
   bool canArchive({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
 }

@@ -32,7 +32,7 @@ void main() {
       'name': 'Joe Bloggs',
       'exp': 1767225600, // token expiry 01-Jan-2026 00:00:00
       'contactId': 123456,
-      'roles': ['alert-editor']
+      'roles': ['alert-editor'],
     },
   );
   final mockAuthResponse = buildAuthResponse();
@@ -163,7 +163,7 @@ void main() {
 
     final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
     await authService.login(email: 'joe.bloggs@test.com', password: 'password');
-
+    when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'fake_refresh_token');
     await authService.logout();
 
     verify(mockFlutterSecureStorage.delete(key: 'token')).called(1);
@@ -185,6 +185,7 @@ void main() {
     final storedUser = await db.select(db.userProfiles).getSingleOrNull();
     expect(storedUser, isNotNull);
 
+    when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'fake_refresh_token');
     await authService.logout();
     final storedUserAfterLogout = await db.select(db.userProfiles).getSingleOrNull();
     final storedPrograms = await db.select(db.programs).getSingleOrNull();
@@ -292,7 +293,7 @@ void main() {
           allOf(
             isA<AuthException>(),
             predicate<AuthException>(
-                  (e) => e.message == 'Received malformed access token: Invalid JWT user claims',
+              (e) => e.message == 'Received malformed access token: Invalid JWT user claims',
             ),
           ),
         ),
@@ -377,7 +378,15 @@ void main() {
   test('Access token is refreshed successfully when expired', () async {
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
-    final newMockJwt = buildJwt(payload: {'name': 'Alice Example', 'sub': 'alice@example.com', 'contactId': 123456, 'exp': 1767398400, 'roles': ['alert-editor']});
+    final newMockJwt = buildJwt(
+      payload: {
+        'name': 'Alice Example',
+        'sub': 'alice@example.com',
+        'contactId': 123456,
+        'exp': 1767398400,
+        'roles': ['alert-editor'],
+      },
+    );
     final client = MockClient((request) async {
       return http.Response(
         json.encode(buildAuthResponse(accessTokenRs256: newMockJwt, refreshToken: 'newMockRefreshToken')),
@@ -400,7 +409,15 @@ void main() {
     final invalidJwt = buildJwt(payload: {'name': 'Alice Example', 'sub': 'alice@example.com', 'contactId': 123456});
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => invalidJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
-    final newMockJwt = buildJwt(payload: {'name': 'Alice Example', 'sub': 'alice@example.com', 'contactId': 123456, 'exp': 1, 'roles': ['alert-editor']});
+    final newMockJwt = buildJwt(
+      payload: {
+        'name': 'Alice Example',
+        'sub': 'alice@example.com',
+        'contactId': 123456,
+        'exp': 1,
+        'roles': ['alert-editor'],
+      },
+    );
     final client = MockClient((request) async {
       return http.Response(
         json.encode(buildAuthResponse(accessTokenRs256: newMockJwt, refreshToken: 'newMockRefreshToken')),

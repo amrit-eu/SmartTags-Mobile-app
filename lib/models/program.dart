@@ -15,5 +15,6 @@ class Program extends ApiObject {
     return Program(id: r.id, name: r.name, code: r.code);
   }
 
+  /// Serialises [Program] object to JSON.
   Map<String, dynamic> toJson() => toJsonFields();
 }
