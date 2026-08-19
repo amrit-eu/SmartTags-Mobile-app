@@ -34,14 +34,14 @@ class GatewayAuthException extends GatewayException {
 /// Amrit Gateway API.
 class GatewayRepository {
   /// Creates a [GatewayRepository] instance.
-  GatewayRepository({http.Client? client, AuthService? authService})
+  GatewayRepository({required AuthService authService, http.Client? client})
     : _client = client ?? http.Client(),
-      _authService = authService ?? AuthService();
+      _authService = authService;
 
   final http.Client _client;
   final AuthService _authService;
 
-  /// Loads unclosed missions from the Gateway enriched passport endpoint.
+  /// Loads unclosed missions from the Gateway enriched passposrt endpoint.
   Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
     final uri = GatewayConfig.unclosedPassportsUri;
     try {

@@ -16,6 +16,8 @@ import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
+import '../helpers/fake_auth_service.dart';
+
 class MockErrorDatabase extends AppDatabase {
   /// A mock database that throws an error on update, used to test error handling in the UI.
   MockErrorDatabase() : super.executor(conn.inMemoryConnection());
@@ -28,6 +30,8 @@ class MockErrorDatabase extends AppDatabase {
 
 /// A fake [GatewayRepository] that always succeeds without touching auth or the network.
 class _SucceedingGatewayRepository extends GatewayRepository {
+  _SucceedingGatewayRepository() : super(authService: NoOpAuthService());
+
   @override
   Future<void> submitPassportEventJson(String body) async {}
 }
@@ -180,6 +184,7 @@ void main() {
 
   testWidgets('Submitting the form updates the corresponding platform record in the database (online)', (tester) async {
     final platform = Platform(
+      ptfId: '123',
       platformRef: 'TEST-001',
       model: 'Model 1',
       network: 'Network 1',
@@ -214,8 +219,8 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(
-              _WifiConnectivityStatus.new,
-            ),
+            _WifiConnectivityStatus.new,
+          ),
           gatewayRepositoryProvider.overrideWith((ref) => _SucceedingGatewayRepository()),
         ],
         child: MaterialApp(
@@ -286,8 +291,11 @@ void main() {
     // Clean up the database
     await db.close();
   });
-  testWidgets('Submitting the form updates the corresponding platform record in the database (offline)', (tester) async {
+  testWidgets('Submitting the form updates the corresponding platform record in the database (offline)', (
+    tester,
+  ) async {
     final platform = Platform(
+      ptfId: '123',
       platformRef: 'TEST-001',
       model: 'Model 1',
       network: 'Network 1',
@@ -322,8 +330,8 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(
-              _NoConnectivityStatus.new,
-            )
+            _NoConnectivityStatus.new,
+          ),
         ],
         child: MaterialApp(
           home: Navigator(
@@ -398,6 +406,7 @@ void main() {
   });
   testWidgets('Submitting the form with failure of database update shows error in the UI.', (tester) async {
     final platform = Platform(
+      ptfId: '123',
       platformRef: 'TEST-001',
       model: 'Model 1',
       network: 'Network 1',
@@ -415,6 +424,10 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          // Avoid depending on the real connectivity_plus platform channel,
+          // which never resolves in a widget test and would otherwise hang
+          // enqueueOrSend until its 5s connectivity-check timeout.
+          checkConnectionProvider.overrideWith(_NoConnectivityStatus.new),
         ],
         child: MaterialApp(
           home: Navigator(
@@ -688,7 +701,7 @@ void main() {
         overrides: [
           checkConnectionProvider.overrideWith(
             _NoConnectivityStatus.new,
-          )
+          ),
         ],
         child: MaterialApp(
           home: DeployPlatformScreen(
@@ -703,25 +716,25 @@ void main() {
     // Verify that the expected offline widget is shown.
     expect(find.byType(OfflineStatus), findsOneWidget);
   });
-    testWidgets('Offline status does not show when the device is online.', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            checkConnectionProvider.overrideWith(
-              _WifiConnectivityStatus.new,
-            )
-          ],
-          child: MaterialApp(
-            home: DeployPlatformScreen(
-              platform: testPlatform,
-              action: DeployAction.deploy,
-            ),
+  testWidgets('Offline status does not show when the device is online.', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          checkConnectionProvider.overrideWith(
+            _WifiConnectivityStatus.new,
+          ),
+        ],
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
           ),
         ),
-      );
-      await tester.pumpAndSettle();
-  
-      // Verify that the expected offline widget is not shown.
-      expect(find.byType(OfflineStatus), findsNothing);
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify that the expected offline widget is not shown.
+    expect(find.byType(OfflineStatus), findsNothing);
   });
 }

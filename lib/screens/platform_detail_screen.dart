@@ -44,14 +44,19 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final platformAsync = ref.watch(platformByRefStreamProvider(widget.platformRef));
-<<<<<<< HEAD
-    final userPermissions = ref.watch(permissionProvider);
-    // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
-    final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
-    
-=======
+    final platform = platformAsync.value?.toDomain();
 
->>>>>>> d5c284d (WIP deploy & recover update)
+    if (platform == null) {
+      return Scaffold(
+        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // final userPermissions = ref.watch(permissionProvider);
+    // // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
+    // final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
+
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
       next.whenData((dbPlatform) {
@@ -62,13 +67,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       });
     });
 
-    final platform = platformAsync.value?.toDomain();
-    if (platform == null) {
-      return Scaffold(
-        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
     return Scaffold(
       appBar: TopNavigation(
         title: const Text('Platform Details'),
@@ -245,34 +243,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           ],
         ),
       ),
-<<<<<<< HEAD
-      floatingActionButton: 
-        FloatingActionButton.extended(
-          heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
-          onPressed: canEditExamplePlatform
-              ? () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute<DeployPlatformScreen>(
-                      builder: (context) => DeployPlatformScreen(
-                        action: platform.operationalStatus == OperationalStatus.deployed
-                        ? DeployAction.recover
-                        : DeployAction.deploy,
-                        platform: platform,
-                      ),
-                    ),
-                  );
-                }
-              : null,
-          backgroundColor: canEditExamplePlatform ? null : const Color.fromARGB(40, 40, 40, 40),
-          icon: platform.operationalStatus == OperationalStatus.deployed
-          ? const Icon(Icons.repeat)
-          : const Icon(Icons.arrow_circle_up_rounded),
-          label: platform.operationalStatus == OperationalStatus.deployed
-          ? const Text('Recover')
-          : const Text('Deploy'),
-        ),
-=======
       floatingActionButton: FloatingActionButton.extended(
         heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
         onPressed: () async {
@@ -293,7 +263,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             : const Icon(Icons.arrow_circle_up_rounded),
         label: platform.operationalStatus == OperationalStatus.deployed ? const Text('Recover') : const Text('Deploy'),
       ),
->>>>>>> d5c284d (WIP deploy & recover update)
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

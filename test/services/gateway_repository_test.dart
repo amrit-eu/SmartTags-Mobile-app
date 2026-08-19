@@ -4,12 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:smart_tags/config/gateway_config.dart';
+import 'package:smart_tags/database/daos/auth_dao.dart';
+import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
+/// A throwaway [AuthDao] backed by an in-memory DB, only to satisfy
+/// [AuthService]'s required constructor argument. Never queried, since
+/// [_FakeAuthService] overrides [AuthService.getAccessToken].
+AuthDao _fakeAuthDao() => AppDatabase.executor(conn.inMemoryConnection()).authDao;
+
 class _FakeAuthService extends AuthService {
-  _FakeAuthService(this._token);
+  _FakeAuthService(this._token) : super(authDao: _fakeAuthDao());
 
   final String? _token;
 
@@ -134,7 +142,7 @@ void main() {
         return http.Response(json.encode(mockResponse), 200);
       });
 
-      final repository = GatewayRepository(client: client);
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
       final platforms = await repository.fetchUnclosedMissions();
 
       expect(platforms.length, 1);
@@ -146,7 +154,7 @@ void main() {
         return http.Response('Not Found', 404);
       });
 
-      final repository = GatewayRepository(client: client);
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
 
       expect(repository.fetchUnclosedMissions, throwsException);
     });

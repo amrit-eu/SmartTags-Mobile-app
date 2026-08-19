@@ -208,8 +208,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       return;
     }
 
-    final tileKey =
-        '${tile.coordinates.z}_${tile.coordinates.x}_${tile.coordinates.y}';
+    final tileKey = '${tile.coordinates.z}_${tile.coordinates.x}_${tile.coordinates.y}';
     if (!_countedBaseTiles.add(tileKey)) {
       return;
     }
@@ -315,7 +314,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ID: ${platform.platformRef}',
+                          'WMO ID: ${platform.platformRef}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
