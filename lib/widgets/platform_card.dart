@@ -42,6 +42,9 @@ class PlatformCard extends StatelessWidget {
             platform.operationLon,
           ),
         );
+        // `push` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
+        // stays satisfied on analyzer versions that don't yet honour the annotation.
+        // ignore: unnecessary_unawaited
         unawaited(
           Navigator.of(context).push(
             MaterialPageRoute<void>(

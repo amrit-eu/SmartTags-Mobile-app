@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
+import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/helpers/jwt_decode.dart';
 import 'package:smart_tags/models/auth_response.dart';
 import 'package:smart_tags/models/user.dart';
@@ -12,6 +13,7 @@ import 'package:smart_tags/models/user.dart';
 class AuthException implements Exception {
   /// Creates an [AuthException] with the given [message].
   const AuthException(this.message);
+
   /// The error message describing the authentication failure.
   final String message;
 
@@ -29,27 +31,41 @@ class RefreshException extends AuthException {
 /// A service responsible for handling authentication-related API calls.
 ///
 /// This service communicates with the backend API to log in a user
-/// and returns the authenticated [UserProfile].
+/// and returns the authenticated [User].
 /// It throws [AuthException] on invalid credentials, network errors,
 /// or malformed responses.
 class AuthService {
   /// Creates an [AuthService] with the provided HTTP client.
   AuthService({
+    required AuthDao authDao,
     http.Client? client,
     FlutterSecureStorage? storage,
-  }) :
-    _client = client ?? http.Client(),
-    _storage = storage ?? const FlutterSecureStorage();
+  }) : _authDao = authDao,
+       _client = client ?? http.Client(),
+       _storage = storage ?? const FlutterSecureStorage();
 
+  final AuthDao _authDao;
   final http.Client _client;
   final FlutterSecureStorage _storage;
 
   String? _cachedToken;
+  String? _cachedUserId;
 
   Future<void> _saveToken(String token, String refreshToken) async {
+    try {
+      _decodeToken(token);
+    } catch (e) {
+      // Malformed token from the server
+      throw AuthException('Received malformed access token: $e');
+    }
+
     _cachedToken = token;
     await _storage.write(key: 'token', value: token);
     await _storage.write(key: 'refresh_token', value: refreshToken);
+  }
+
+  Future<void> _saveUserInfo(User user) async {
+    await _authDao.saveProfile(user);
   }
 
   Future<void> _deleteAccessToken() async {
@@ -78,7 +94,6 @@ class AuthService {
   /// Attempts to refresh the access token using the stored refresh token.
   /// If successful, saves the new access token and returns it.
   Future<String?> _refreshToken() async {
-
     // Get the refresh token from secure storage. If it's not available, we can't refresh.
     // Log the user out in this case since they need to log in again to get a new refresh token.
     final refreshToken = await _storage.read(key: 'refresh_token');
@@ -87,7 +102,7 @@ class AuthService {
       throw const RefreshException('No refresh token available');
     }
 
-    final uri = Uri.parse('https://oceanops-api-main.isival.ifremer.fr/api/data/auth/refresh');
+    final uri = GatewayConfig.refreshUri;
     debugPrint('Attempting token refresh');
     try {
       final response = await _client.post(
@@ -112,25 +127,38 @@ class AuthService {
       } else {
         throw const AuthException('Unable to refresh token');
       }
-    } on FormatException  {
+    } on FormatException {
       throw const AuthException('Invalid server response');
     }
   }
 
-  UserProfile? _decodeUserFromToken(String token) {
+  TokenClaims _decodeToken(String token) {
     final claims = decodeJwtClaims(token);
+    final roles = claims['roles'];
 
     if (claims['contactId'] is! int ||
         claims['name'] is! String ||
-        claims['sub'] is! String) {
+        claims['sub'] is! String ||
+        claims['exp'] is! int ||
+        roles is! List ||
+        roles.any((e) => e is! String)) {
       throw const AuthException('Invalid JWT user claims');
     }
 
-    return UserProfile(
-        id: claims['contactId'] as int,
-        fullName: claims['name'] as String,
-        email: claims['sub'] as String
+    return TokenClaims(
+      contactId: claims['contactId'] as int,
+      name: claims['name'] as String,
+      sub: claims['sub'] as String,
+      roles: roles.cast<String>(),
+      exp: claims['exp'] as int,
     );
+  }
+
+  /// Retrieve ID of the current user from memory cache or storage.
+  Future<String?> getUserId() async {
+    // Check in-memory cache first for performance, then fallback to secure storage.
+    final userId = _cachedUserId ?? await _storage.read(key: 'userId');
+    return userId;
   }
 
   /// Returns JWT from memory cache or secure storage if expiry time has not passed
@@ -162,31 +190,21 @@ class AuthService {
   }
 
   /// Decode user information from stored JWT
-  Future<UserProfile?> getAuthenticatedUser() async {
-    final token = await getAccessToken();
-    if (token == null) return null;
-
-    try {
-      return _decodeUserFromToken(token);
-    } on JwtDecodingException {
-      // token corrupted, treat as logged out
-      await _deleteAccessToken();
-      return null;
-    } on AuthException {
-      // Missing required claims, treat as logged out
-      await _deleteAccessToken();
-      return null;
-    }
+  Future<User?> getAuthenticatedUser() async {
+    final userId = await getUserId();
+    if (userId == null) return null;
+    final user = _authDao.loadProfile(int.parse(userId));
+    return user;
   }
 
   /// Authenticates a user with the given [email] and [password].
-  /// Returns a [UserProfile] if authentication is successful.
+  /// Returns a [User] if authentication is successful.
   ///
   /// Throws [AuthException] if:
   /// - The credentials are invalid (status code != 200)
   /// - There is a network error
   /// - The server returns an invalid response
-  Future<UserProfile> login({
+  Future<User> login({
     required String email,
     required String password,
   }) async {
@@ -203,15 +221,17 @@ class AuthService {
           'password': password,
         }),
       );
-
       final successCodes = <int>[200, 201];
       if (successCodes.contains(response.statusCode)) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
-
         await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
+        final userInfo = authResponse.contact;
+        _cachedUserId = userInfo.id.toString();
+        await _storage.write(key: 'userId', value: userInfo.id.toString());
+        await _saveUserInfo(userInfo);
 
-        return authResponse.contact;
+        return userInfo;
       } else if (response.statusCode == 401) {
         throw const AuthException('Invalid credentials');
       } else {
@@ -227,10 +247,38 @@ class AuthService {
 
   /// Delete tokens from cache and secure storage.
   Future<Null> logout() async {
+    final logoutUri = GatewayConfig.logoutUri;
+    // post to back-end logout and ignore results
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    if (refreshToken != null) {
+      try {
+        await _client.post(
+          logoutUri,
+          headers: const {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'refresh_token': refreshToken,
+          }),
+        );
+      } on Exception catch (e) {
+        debugPrint('Logout backend call failed (ignored): $e');
+      }
+    }
+
+    // delete local tokens
     await _deleteAccessToken();
     await _storage.delete(key: 'refresh_token');
-    // Should send a logout request to Gateway API, but no logout URL is currently documented.
+    final userId = await getUserId();
+    final parsedUserId = userId != null ? int.tryParse(userId) : null;
+    if (parsedUserId != null) {
+      await _authDao.clearProfile(parsedUserId);
+    }
+    await _storage.delete(key: 'userId');
+
+    // reinit _cachedUserId;
+    _cachedUserId = null;
+
     return null;
   }
-
 }

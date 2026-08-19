@@ -7,9 +7,14 @@ abstract final class GatewayConfig {
   static Uri apiUri(String path) => Uri.parse('$baseUrl/api/$path');
 
   /// Enriched passport export for unclosed missions (#111).
-  static Uri get unclosedPassportsUri =>
-      apiUri('oceanops/data/enriched-goos-passport-not-closed');
+  static Uri get unclosedPassportsUri => apiUri('oceanops/data/enriched-goos-passport-not-closed');
 
   /// Login endpoint for mobile authentication.
   static Uri get loginUri => apiUri('oceanops/data/auth/login');
+
+  /// Logout endpoint for mobile authentication.
+  static Uri get logoutUri => apiUri('oceanops/data/auth/logout');
+
+  /// refresh endpoint for mobile authentication.
+  static Uri get refreshUri => apiUri('oceanops/data/auth/refresh');
 }

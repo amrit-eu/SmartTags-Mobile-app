@@ -1194,15 +1194,1830 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   }
 }
 
+class $UserProfilesTable extends UserProfiles
+    with TableInfo<$UserProfilesTable, UserEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _refMeta = const VerificationMeta('ref');
+  @override
+  late final GeneratedColumn<int> ref = GeneratedColumn<int>(
+    'ref',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _email2Meta = const VerificationMeta('email2');
+  @override
+  late final GeneratedColumn<String> email2 = GeneratedColumn<String>(
+    'email2',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fullNameMeta = const VerificationMeta(
+    'fullName',
+  );
+  @override
+  late final GeneratedColumn<String> fullName = GeneratedColumn<String>(
+    'full_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firstNameMeta = const VerificationMeta(
+    'firstName',
+  );
+  @override
+  late final GeneratedColumn<String> firstName = GeneratedColumn<String>(
+    'first_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastNameMeta = const VerificationMeta(
+    'lastName',
+  );
+  @override
+  late final GeneratedColumn<String> lastName = GeneratedColumn<String>(
+    'last_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _orcidMeta = const VerificationMeta('orcid');
+  @override
+  late final GeneratedColumn<String> orcid = GeneratedColumn<String>(
+    'orcid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _telMeta = const VerificationMeta('tel');
+  @override
+  late final GeneratedColumn<String> tel = GeneratedColumn<String>(
+    'tel',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tel2Meta = const VerificationMeta('tel2');
+  @override
+  late final GeneratedColumn<String> tel2 = GeneratedColumn<String>(
+    'tel2',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countryMeta = const VerificationMeta(
+    'country',
+  );
+  @override
+  late final GeneratedColumn<String> country = GeneratedColumn<String>(
+    'country',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hideContactInfoFromPublicMeta =
+      const VerificationMeta('hideContactInfoFromPublic');
+  @override
+  late final GeneratedColumn<bool> hideContactInfoFromPublic =
+      GeneratedColumn<bool>(
+        'hide_contact_info_from_public',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("hide_contact_info_from_public" IN (0, 1))',
+        ),
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ref,
+    email,
+    email2,
+    fullName,
+    firstName,
+    lastName,
+    title,
+    orcid,
+    tel,
+    tel2,
+    address,
+    country,
+    hideContactInfoFromPublic,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('ref')) {
+      context.handle(
+        _refMeta,
+        ref.isAcceptableOrUnknown(data['ref']!, _refMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_refMeta);
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_emailMeta);
+    }
+    if (data.containsKey('email2')) {
+      context.handle(
+        _email2Meta,
+        email2.isAcceptableOrUnknown(data['email2']!, _email2Meta),
+      );
+    }
+    if (data.containsKey('full_name')) {
+      context.handle(
+        _fullNameMeta,
+        fullName.isAcceptableOrUnknown(data['full_name']!, _fullNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fullNameMeta);
+    }
+    if (data.containsKey('first_name')) {
+      context.handle(
+        _firstNameMeta,
+        firstName.isAcceptableOrUnknown(data['first_name']!, _firstNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_firstNameMeta);
+    }
+    if (data.containsKey('last_name')) {
+      context.handle(
+        _lastNameMeta,
+        lastName.isAcceptableOrUnknown(data['last_name']!, _lastNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lastNameMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('orcid')) {
+      context.handle(
+        _orcidMeta,
+        orcid.isAcceptableOrUnknown(data['orcid']!, _orcidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orcidMeta);
+    }
+    if (data.containsKey('tel')) {
+      context.handle(
+        _telMeta,
+        tel.isAcceptableOrUnknown(data['tel']!, _telMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_telMeta);
+    }
+    if (data.containsKey('tel2')) {
+      context.handle(
+        _tel2Meta,
+        tel2.isAcceptableOrUnknown(data['tel2']!, _tel2Meta),
+      );
+    } else if (isInserting) {
+      context.missing(_tel2Meta);
+    }
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_addressMeta);
+    }
+    if (data.containsKey('country')) {
+      context.handle(
+        _countryMeta,
+        country.isAcceptableOrUnknown(data['country']!, _countryMeta),
+      );
+    }
+    if (data.containsKey('hide_contact_info_from_public')) {
+      context.handle(
+        _hideContactInfoFromPublicMeta,
+        hideContactInfoFromPublic.isAcceptableOrUnknown(
+          data['hide_contact_info_from_public']!,
+          _hideContactInfoFromPublicMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_hideContactInfoFromPublicMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserEntity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      ref: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ref'],
+      )!,
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      )!,
+      email2: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email2'],
+      ),
+      fullName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}full_name'],
+      )!,
+      firstName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}first_name'],
+      )!,
+      lastName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_name'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      orcid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}orcid'],
+      )!,
+      tel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tel'],
+      )!,
+      tel2: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tel2'],
+      )!,
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      )!,
+      country: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}country'],
+      ),
+      hideContactInfoFromPublic: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hide_contact_info_from_public'],
+      )!,
+    );
+  }
+
+  @override
+  $UserProfilesTable createAlias(String alias) {
+    return $UserProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class UserEntity extends DataClass implements Insertable<UserEntity> {
+  /// Primary key identifying the record.
+  final int id;
+
+  /// External reference (ID) from server.
+  final int ref;
+
+  /// User's primary email.
+  final String email;
+
+  /// User's secondary email.
+  final String? email2;
+
+  /// User's full name.
+  final String fullName;
+
+  /// User's first name.
+  final String firstName;
+
+  /// User's last name.
+  final String lastName;
+
+  /// User's title.
+  final String title;
+
+  /// User's ORCID.
+  final String orcid;
+
+  /// User's primary phone number.
+  final String tel;
+
+  /// User's secondary phone number.
+  final String tel2;
+
+  /// User's postal address
+  final String address;
+
+  /// User's country.
+  final String? country;
+
+  /// Whether user's contact information should be hidden.
+  final bool hideContactInfoFromPublic;
+  const UserEntity({
+    required this.id,
+    required this.ref,
+    required this.email,
+    this.email2,
+    required this.fullName,
+    required this.firstName,
+    required this.lastName,
+    required this.title,
+    required this.orcid,
+    required this.tel,
+    required this.tel2,
+    required this.address,
+    this.country,
+    required this.hideContactInfoFromPublic,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['ref'] = Variable<int>(ref);
+    map['email'] = Variable<String>(email);
+    if (!nullToAbsent || email2 != null) {
+      map['email2'] = Variable<String>(email2);
+    }
+    map['full_name'] = Variable<String>(fullName);
+    map['first_name'] = Variable<String>(firstName);
+    map['last_name'] = Variable<String>(lastName);
+    map['title'] = Variable<String>(title);
+    map['orcid'] = Variable<String>(orcid);
+    map['tel'] = Variable<String>(tel);
+    map['tel2'] = Variable<String>(tel2);
+    map['address'] = Variable<String>(address);
+    if (!nullToAbsent || country != null) {
+      map['country'] = Variable<String>(country);
+    }
+    map['hide_contact_info_from_public'] = Variable<bool>(
+      hideContactInfoFromPublic,
+    );
+    return map;
+  }
+
+  UserProfilesCompanion toCompanion(bool nullToAbsent) {
+    return UserProfilesCompanion(
+      id: Value(id),
+      ref: Value(ref),
+      email: Value(email),
+      email2: email2 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email2),
+      fullName: Value(fullName),
+      firstName: Value(firstName),
+      lastName: Value(lastName),
+      title: Value(title),
+      orcid: Value(orcid),
+      tel: Value(tel),
+      tel2: Value(tel2),
+      address: Value(address),
+      country: country == null && nullToAbsent
+          ? const Value.absent()
+          : Value(country),
+      hideContactInfoFromPublic: Value(hideContactInfoFromPublic),
+    );
+  }
+
+  factory UserEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserEntity(
+      id: serializer.fromJson<int>(json['id']),
+      ref: serializer.fromJson<int>(json['ref']),
+      email: serializer.fromJson<String>(json['email']),
+      email2: serializer.fromJson<String?>(json['email2']),
+      fullName: serializer.fromJson<String>(json['fullName']),
+      firstName: serializer.fromJson<String>(json['firstName']),
+      lastName: serializer.fromJson<String>(json['lastName']),
+      title: serializer.fromJson<String>(json['title']),
+      orcid: serializer.fromJson<String>(json['orcid']),
+      tel: serializer.fromJson<String>(json['tel']),
+      tel2: serializer.fromJson<String>(json['tel2']),
+      address: serializer.fromJson<String>(json['address']),
+      country: serializer.fromJson<String?>(json['country']),
+      hideContactInfoFromPublic: serializer.fromJson<bool>(
+        json['hideContactInfoFromPublic'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'ref': serializer.toJson<int>(ref),
+      'email': serializer.toJson<String>(email),
+      'email2': serializer.toJson<String?>(email2),
+      'fullName': serializer.toJson<String>(fullName),
+      'firstName': serializer.toJson<String>(firstName),
+      'lastName': serializer.toJson<String>(lastName),
+      'title': serializer.toJson<String>(title),
+      'orcid': serializer.toJson<String>(orcid),
+      'tel': serializer.toJson<String>(tel),
+      'tel2': serializer.toJson<String>(tel2),
+      'address': serializer.toJson<String>(address),
+      'country': serializer.toJson<String?>(country),
+      'hideContactInfoFromPublic': serializer.toJson<bool>(
+        hideContactInfoFromPublic,
+      ),
+    };
+  }
+
+  UserEntity copyWith({
+    int? id,
+    int? ref,
+    String? email,
+    Value<String?> email2 = const Value.absent(),
+    String? fullName,
+    String? firstName,
+    String? lastName,
+    String? title,
+    String? orcid,
+    String? tel,
+    String? tel2,
+    String? address,
+    Value<String?> country = const Value.absent(),
+    bool? hideContactInfoFromPublic,
+  }) => UserEntity(
+    id: id ?? this.id,
+    ref: ref ?? this.ref,
+    email: email ?? this.email,
+    email2: email2.present ? email2.value : this.email2,
+    fullName: fullName ?? this.fullName,
+    firstName: firstName ?? this.firstName,
+    lastName: lastName ?? this.lastName,
+    title: title ?? this.title,
+    orcid: orcid ?? this.orcid,
+    tel: tel ?? this.tel,
+    tel2: tel2 ?? this.tel2,
+    address: address ?? this.address,
+    country: country.present ? country.value : this.country,
+    hideContactInfoFromPublic:
+        hideContactInfoFromPublic ?? this.hideContactInfoFromPublic,
+  );
+  UserEntity copyWithCompanion(UserProfilesCompanion data) {
+    return UserEntity(
+      id: data.id.present ? data.id.value : this.id,
+      ref: data.ref.present ? data.ref.value : this.ref,
+      email: data.email.present ? data.email.value : this.email,
+      email2: data.email2.present ? data.email2.value : this.email2,
+      fullName: data.fullName.present ? data.fullName.value : this.fullName,
+      firstName: data.firstName.present ? data.firstName.value : this.firstName,
+      lastName: data.lastName.present ? data.lastName.value : this.lastName,
+      title: data.title.present ? data.title.value : this.title,
+      orcid: data.orcid.present ? data.orcid.value : this.orcid,
+      tel: data.tel.present ? data.tel.value : this.tel,
+      tel2: data.tel2.present ? data.tel2.value : this.tel2,
+      address: data.address.present ? data.address.value : this.address,
+      country: data.country.present ? data.country.value : this.country,
+      hideContactInfoFromPublic: data.hideContactInfoFromPublic.present
+          ? data.hideContactInfoFromPublic.value
+          : this.hideContactInfoFromPublic,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserEntity(')
+          ..write('id: $id, ')
+          ..write('ref: $ref, ')
+          ..write('email: $email, ')
+          ..write('email2: $email2, ')
+          ..write('fullName: $fullName, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
+          ..write('title: $title, ')
+          ..write('orcid: $orcid, ')
+          ..write('tel: $tel, ')
+          ..write('tel2: $tel2, ')
+          ..write('address: $address, ')
+          ..write('country: $country, ')
+          ..write('hideContactInfoFromPublic: $hideContactInfoFromPublic')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ref,
+    email,
+    email2,
+    fullName,
+    firstName,
+    lastName,
+    title,
+    orcid,
+    tel,
+    tel2,
+    address,
+    country,
+    hideContactInfoFromPublic,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserEntity &&
+          other.id == this.id &&
+          other.ref == this.ref &&
+          other.email == this.email &&
+          other.email2 == this.email2 &&
+          other.fullName == this.fullName &&
+          other.firstName == this.firstName &&
+          other.lastName == this.lastName &&
+          other.title == this.title &&
+          other.orcid == this.orcid &&
+          other.tel == this.tel &&
+          other.tel2 == this.tel2 &&
+          other.address == this.address &&
+          other.country == this.country &&
+          other.hideContactInfoFromPublic == this.hideContactInfoFromPublic);
+}
+
+class UserProfilesCompanion extends UpdateCompanion<UserEntity> {
+  final Value<int> id;
+  final Value<int> ref;
+  final Value<String> email;
+  final Value<String?> email2;
+  final Value<String> fullName;
+  final Value<String> firstName;
+  final Value<String> lastName;
+  final Value<String> title;
+  final Value<String> orcid;
+  final Value<String> tel;
+  final Value<String> tel2;
+  final Value<String> address;
+  final Value<String?> country;
+  final Value<bool> hideContactInfoFromPublic;
+  const UserProfilesCompanion({
+    this.id = const Value.absent(),
+    this.ref = const Value.absent(),
+    this.email = const Value.absent(),
+    this.email2 = const Value.absent(),
+    this.fullName = const Value.absent(),
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
+    this.title = const Value.absent(),
+    this.orcid = const Value.absent(),
+    this.tel = const Value.absent(),
+    this.tel2 = const Value.absent(),
+    this.address = const Value.absent(),
+    this.country = const Value.absent(),
+    this.hideContactInfoFromPublic = const Value.absent(),
+  });
+  UserProfilesCompanion.insert({
+    this.id = const Value.absent(),
+    required int ref,
+    required String email,
+    this.email2 = const Value.absent(),
+    required String fullName,
+    required String firstName,
+    required String lastName,
+    required String title,
+    required String orcid,
+    required String tel,
+    required String tel2,
+    required String address,
+    this.country = const Value.absent(),
+    required bool hideContactInfoFromPublic,
+  }) : ref = Value(ref),
+       email = Value(email),
+       fullName = Value(fullName),
+       firstName = Value(firstName),
+       lastName = Value(lastName),
+       title = Value(title),
+       orcid = Value(orcid),
+       tel = Value(tel),
+       tel2 = Value(tel2),
+       address = Value(address),
+       hideContactInfoFromPublic = Value(hideContactInfoFromPublic);
+  static Insertable<UserEntity> custom({
+    Expression<int>? id,
+    Expression<int>? ref,
+    Expression<String>? email,
+    Expression<String>? email2,
+    Expression<String>? fullName,
+    Expression<String>? firstName,
+    Expression<String>? lastName,
+    Expression<String>? title,
+    Expression<String>? orcid,
+    Expression<String>? tel,
+    Expression<String>? tel2,
+    Expression<String>? address,
+    Expression<String>? country,
+    Expression<bool>? hideContactInfoFromPublic,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ref != null) 'ref': ref,
+      if (email != null) 'email': email,
+      if (email2 != null) 'email2': email2,
+      if (fullName != null) 'full_name': fullName,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
+      if (title != null) 'title': title,
+      if (orcid != null) 'orcid': orcid,
+      if (tel != null) 'tel': tel,
+      if (tel2 != null) 'tel2': tel2,
+      if (address != null) 'address': address,
+      if (country != null) 'country': country,
+      if (hideContactInfoFromPublic != null)
+        'hide_contact_info_from_public': hideContactInfoFromPublic,
+    });
+  }
+
+  UserProfilesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? ref,
+    Value<String>? email,
+    Value<String?>? email2,
+    Value<String>? fullName,
+    Value<String>? firstName,
+    Value<String>? lastName,
+    Value<String>? title,
+    Value<String>? orcid,
+    Value<String>? tel,
+    Value<String>? tel2,
+    Value<String>? address,
+    Value<String?>? country,
+    Value<bool>? hideContactInfoFromPublic,
+  }) {
+    return UserProfilesCompanion(
+      id: id ?? this.id,
+      ref: ref ?? this.ref,
+      email: email ?? this.email,
+      email2: email2 ?? this.email2,
+      fullName: fullName ?? this.fullName,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      title: title ?? this.title,
+      orcid: orcid ?? this.orcid,
+      tel: tel ?? this.tel,
+      tel2: tel2 ?? this.tel2,
+      address: address ?? this.address,
+      country: country ?? this.country,
+      hideContactInfoFromPublic:
+          hideContactInfoFromPublic ?? this.hideContactInfoFromPublic,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (ref.present) {
+      map['ref'] = Variable<int>(ref.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (email2.present) {
+      map['email2'] = Variable<String>(email2.value);
+    }
+    if (fullName.present) {
+      map['full_name'] = Variable<String>(fullName.value);
+    }
+    if (firstName.present) {
+      map['first_name'] = Variable<String>(firstName.value);
+    }
+    if (lastName.present) {
+      map['last_name'] = Variable<String>(lastName.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (orcid.present) {
+      map['orcid'] = Variable<String>(orcid.value);
+    }
+    if (tel.present) {
+      map['tel'] = Variable<String>(tel.value);
+    }
+    if (tel2.present) {
+      map['tel2'] = Variable<String>(tel2.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (country.present) {
+      map['country'] = Variable<String>(country.value);
+    }
+    if (hideContactInfoFromPublic.present) {
+      map['hide_contact_info_from_public'] = Variable<bool>(
+        hideContactInfoFromPublic.value,
+      );
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('ref: $ref, ')
+          ..write('email: $email, ')
+          ..write('email2: $email2, ')
+          ..write('fullName: $fullName, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
+          ..write('title: $title, ')
+          ..write('orcid: $orcid, ')
+          ..write('tel: $tel, ')
+          ..write('tel2: $tel2, ')
+          ..write('address: $address, ')
+          ..write('country: $country, ')
+          ..write('hideContactInfoFromPublic: $hideContactInfoFromPublic')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProgramsTable extends Programs
+    with TableInfo<$ProgramsTable, ProgramEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProgramsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, code];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'programs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProgramEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProgramEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProgramEntity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+    );
+  }
+
+  @override
+  $ProgramsTable createAlias(String alias) {
+    return $ProgramsTable(attachedDatabase, alias);
+  }
+}
+
+class ProgramEntity extends DataClass implements Insertable<ProgramEntity> {
+  /// Program reference
+  final int id;
+
+  /// Program display name
+  final String name;
+
+  /// Program slug
+  final String code;
+  const ProgramEntity({
+    required this.id,
+    required this.name,
+    required this.code,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['code'] = Variable<String>(code);
+    return map;
+  }
+
+  ProgramsCompanion toCompanion(bool nullToAbsent) {
+    return ProgramsCompanion(
+      id: Value(id),
+      name: Value(name),
+      code: Value(code),
+    );
+  }
+
+  factory ProgramEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProgramEntity(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      code: serializer.fromJson<String>(json['code']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'code': serializer.toJson<String>(code),
+    };
+  }
+
+  ProgramEntity copyWith({int? id, String? name, String? code}) =>
+      ProgramEntity(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        code: code ?? this.code,
+      );
+  ProgramEntity copyWithCompanion(ProgramsCompanion data) {
+    return ProgramEntity(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      code: data.code.present ? data.code.value : this.code,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgramEntity(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('code: $code')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, code);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProgramEntity &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.code == this.code);
+}
+
+class ProgramsCompanion extends UpdateCompanion<ProgramEntity> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> code;
+  const ProgramsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.code = const Value.absent(),
+  });
+  ProgramsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String code,
+  }) : name = Value(name),
+       code = Value(code);
+  static Insertable<ProgramEntity> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? code,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (code != null) 'code': code,
+    });
+  }
+
+  ProgramsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? code,
+  }) {
+    return ProgramsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProgramsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('code: $code')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RolesTable extends Roles with TableInfo<$RolesTable, RoleEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RolesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, code];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'roles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RoleEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RoleEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RoleEntity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+    );
+  }
+
+  @override
+  $RolesTable createAlias(String alias) {
+    return $RolesTable(attachedDatabase, alias);
+  }
+}
+
+class RoleEntity extends DataClass implements Insertable<RoleEntity> {
+  /// Role reference
+  final int id;
+
+  /// Role display name
+  final String name;
+
+  /// Role slug
+  final String code;
+  const RoleEntity({required this.id, required this.name, required this.code});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['code'] = Variable<String>(code);
+    return map;
+  }
+
+  RolesCompanion toCompanion(bool nullToAbsent) {
+    return RolesCompanion(id: Value(id), name: Value(name), code: Value(code));
+  }
+
+  factory RoleEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RoleEntity(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      code: serializer.fromJson<String>(json['code']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'code': serializer.toJson<String>(code),
+    };
+  }
+
+  RoleEntity copyWith({int? id, String? name, String? code}) => RoleEntity(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    code: code ?? this.code,
+  );
+  RoleEntity copyWithCompanion(RolesCompanion data) {
+    return RoleEntity(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      code: data.code.present ? data.code.value : this.code,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RoleEntity(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('code: $code')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, code);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RoleEntity &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.code == this.code);
+}
+
+class RolesCompanion extends UpdateCompanion<RoleEntity> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> code;
+  const RolesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.code = const Value.absent(),
+  });
+  RolesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String code,
+  }) : name = Value(name),
+       code = Value(code);
+  static Insertable<RoleEntity> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? code,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (code != null) 'code': code,
+    });
+  }
+
+  RolesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? code,
+  }) {
+    return RolesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RolesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('code: $code')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserProgramRolesTable extends UserProgramRoles
+    with TableInfo<$UserProgramRolesTable, UserProgramRole> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserProgramRolesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_profiles (id)',
+    ),
+  );
+  static const VerificationMeta _programIdMeta = const VerificationMeta(
+    'programId',
+  );
+  @override
+  late final GeneratedColumn<int> programId = GeneratedColumn<int>(
+    'program_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES programs (id)',
+    ),
+  );
+  static const VerificationMeta _roleIdMeta = const VerificationMeta('roleId');
+  @override
+  late final GeneratedColumn<int> roleId = GeneratedColumn<int>(
+    'role_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES roles (id)',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [userId, programId, roleId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_program_roles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserProgramRole> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('program_id')) {
+      context.handle(
+        _programIdMeta,
+        programId.isAcceptableOrUnknown(data['program_id']!, _programIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_programIdMeta);
+    }
+    if (data.containsKey('role_id')) {
+      context.handle(
+        _roleIdMeta,
+        roleId.isAcceptableOrUnknown(data['role_id']!, _roleIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, programId, roleId};
+  @override
+  UserProgramRole map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserProgramRole(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_id'],
+      )!,
+      programId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}program_id'],
+      )!,
+      roleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}role_id'],
+      )!,
+    );
+  }
+
+  @override
+  $UserProgramRolesTable createAlias(String alias) {
+    return $UserProgramRolesTable(attachedDatabase, alias);
+  }
+}
+
+class UserProgramRole extends DataClass implements Insertable<UserProgramRole> {
+  /// User identifier (foreign key)
+  final int userId;
+
+  /// Program identifier (foreign key)
+  final int programId;
+
+  /// Role identifier (foreign key)
+  final int roleId;
+  const UserProgramRole({
+    required this.userId,
+    required this.programId,
+    required this.roleId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<int>(userId);
+    map['program_id'] = Variable<int>(programId);
+    map['role_id'] = Variable<int>(roleId);
+    return map;
+  }
+
+  UserProgramRolesCompanion toCompanion(bool nullToAbsent) {
+    return UserProgramRolesCompanion(
+      userId: Value(userId),
+      programId: Value(programId),
+      roleId: Value(roleId),
+    );
+  }
+
+  factory UserProgramRole.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserProgramRole(
+      userId: serializer.fromJson<int>(json['userId']),
+      programId: serializer.fromJson<int>(json['programId']),
+      roleId: serializer.fromJson<int>(json['roleId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<int>(userId),
+      'programId': serializer.toJson<int>(programId),
+      'roleId': serializer.toJson<int>(roleId),
+    };
+  }
+
+  UserProgramRole copyWith({int? userId, int? programId, int? roleId}) =>
+      UserProgramRole(
+        userId: userId ?? this.userId,
+        programId: programId ?? this.programId,
+        roleId: roleId ?? this.roleId,
+      );
+  UserProgramRole copyWithCompanion(UserProgramRolesCompanion data) {
+    return UserProgramRole(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      programId: data.programId.present ? data.programId.value : this.programId,
+      roleId: data.roleId.present ? data.roleId.value : this.roleId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProgramRole(')
+          ..write('userId: $userId, ')
+          ..write('programId: $programId, ')
+          ..write('roleId: $roleId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(userId, programId, roleId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserProgramRole &&
+          other.userId == this.userId &&
+          other.programId == this.programId &&
+          other.roleId == this.roleId);
+}
+
+class UserProgramRolesCompanion extends UpdateCompanion<UserProgramRole> {
+  final Value<int> userId;
+  final Value<int> programId;
+  final Value<int> roleId;
+  final Value<int> rowid;
+  const UserProgramRolesCompanion({
+    this.userId = const Value.absent(),
+    this.programId = const Value.absent(),
+    this.roleId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserProgramRolesCompanion.insert({
+    required int userId,
+    required int programId,
+    required int roleId,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       programId = Value(programId),
+       roleId = Value(roleId);
+  static Insertable<UserProgramRole> custom({
+    Expression<int>? userId,
+    Expression<int>? programId,
+    Expression<int>? roleId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (programId != null) 'program_id': programId,
+      if (roleId != null) 'role_id': roleId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserProgramRolesCompanion copyWith({
+    Value<int>? userId,
+    Value<int>? programId,
+    Value<int>? roleId,
+    Value<int>? rowid,
+  }) {
+    return UserProgramRolesCompanion(
+      userId: userId ?? this.userId,
+      programId: programId ?? this.programId,
+      roleId: roleId ?? this.roleId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (programId.present) {
+      map['program_id'] = Variable<int>(programId.value);
+    }
+    if (roleId.present) {
+      map['role_id'] = Variable<int>(roleId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProgramRolesCompanion(')
+          ..write('userId: $userId, ')
+          ..write('programId: $programId, ')
+          ..write('roleId: $roleId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserRolesTable extends UserRoles
+    with TableInfo<$UserRolesTable, UserRole> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserRolesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_profiles (id)',
+    ),
+  );
+  static const VerificationMeta _roleCodeMeta = const VerificationMeta(
+    'roleCode',
+  );
+  @override
+  late final GeneratedColumn<String> roleCode = GeneratedColumn<String>(
+    'role_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [userId, roleCode];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_roles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserRole> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('role_code')) {
+      context.handle(
+        _roleCodeMeta,
+        roleCode.isAcceptableOrUnknown(data['role_code']!, _roleCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleCodeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, roleCode};
+  @override
+  UserRole map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserRole(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_id'],
+      )!,
+      roleCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role_code'],
+      )!,
+    );
+  }
+
+  @override
+  $UserRolesTable createAlias(String alias) {
+    return $UserRolesTable(attachedDatabase, alias);
+  }
+}
+
+class UserRole extends DataClass implements Insertable<UserRole> {
+  /// User identifier (foreign key)
+  final int userId;
+
+  /// Role code, e.g. "alert_editor"
+  final String roleCode;
+  const UserRole({required this.userId, required this.roleCode});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<int>(userId);
+    map['role_code'] = Variable<String>(roleCode);
+    return map;
+  }
+
+  UserRolesCompanion toCompanion(bool nullToAbsent) {
+    return UserRolesCompanion(userId: Value(userId), roleCode: Value(roleCode));
+  }
+
+  factory UserRole.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserRole(
+      userId: serializer.fromJson<int>(json['userId']),
+      roleCode: serializer.fromJson<String>(json['roleCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<int>(userId),
+      'roleCode': serializer.toJson<String>(roleCode),
+    };
+  }
+
+  UserRole copyWith({int? userId, String? roleCode}) => UserRole(
+    userId: userId ?? this.userId,
+    roleCode: roleCode ?? this.roleCode,
+  );
+  UserRole copyWithCompanion(UserRolesCompanion data) {
+    return UserRole(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      roleCode: data.roleCode.present ? data.roleCode.value : this.roleCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserRole(')
+          ..write('userId: $userId, ')
+          ..write('roleCode: $roleCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(userId, roleCode);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserRole &&
+          other.userId == this.userId &&
+          other.roleCode == this.roleCode);
+}
+
+class UserRolesCompanion extends UpdateCompanion<UserRole> {
+  final Value<int> userId;
+  final Value<String> roleCode;
+  final Value<int> rowid;
+  const UserRolesCompanion({
+    this.userId = const Value.absent(),
+    this.roleCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserRolesCompanion.insert({
+    required int userId,
+    required String roleCode,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       roleCode = Value(roleCode);
+  static Insertable<UserRole> custom({
+    Expression<int>? userId,
+    Expression<String>? roleCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (roleCode != null) 'role_code': roleCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserRolesCompanion copyWith({
+    Value<int>? userId,
+    Value<String>? roleCode,
+    Value<int>? rowid,
+  }) {
+    return UserRolesCompanion(
+      userId: userId ?? this.userId,
+      roleCode: roleCode ?? this.roleCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (roleCode.present) {
+      map['role_code'] = Variable<String>(roleCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserRolesCompanion(')
+          ..write('userId: $userId, ')
+          ..write('roleCode: $roleCode, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PlatformsTable platforms = $PlatformsTable(this);
+  late final $UserProfilesTable userProfiles = $UserProfilesTable(this);
+  late final $ProgramsTable programs = $ProgramsTable(this);
+  late final $RolesTable roles = $RolesTable(this);
+  late final $UserProgramRolesTable userProgramRoles = $UserProgramRolesTable(
+    this,
+  );
+  late final $UserRolesTable userRoles = $UserRolesTable(this);
+  late final AuthDao authDao = AuthDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [platforms];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    platforms,
+    userProfiles,
+    programs,
+    roles,
+    userProgramRoles,
+    userRoles,
+  ];
 }
 
 typedef $$PlatformsTableCreateCompanionBuilder =
@@ -1698,10 +3513,1827 @@ typedef $$PlatformsTableProcessedTableManager =
       Platform,
       PrefetchHooks Function()
     >;
+typedef $$UserProfilesTableCreateCompanionBuilder =
+    UserProfilesCompanion Function({
+      Value<int> id,
+      required int ref,
+      required String email,
+      Value<String?> email2,
+      required String fullName,
+      required String firstName,
+      required String lastName,
+      required String title,
+      required String orcid,
+      required String tel,
+      required String tel2,
+      required String address,
+      Value<String?> country,
+      required bool hideContactInfoFromPublic,
+    });
+typedef $$UserProfilesTableUpdateCompanionBuilder =
+    UserProfilesCompanion Function({
+      Value<int> id,
+      Value<int> ref,
+      Value<String> email,
+      Value<String?> email2,
+      Value<String> fullName,
+      Value<String> firstName,
+      Value<String> lastName,
+      Value<String> title,
+      Value<String> orcid,
+      Value<String> tel,
+      Value<String> tel2,
+      Value<String> address,
+      Value<String?> country,
+      Value<bool> hideContactInfoFromPublic,
+    });
+
+final class $$UserProfilesTableReferences
+    extends BaseReferences<_$AppDatabase, $UserProfilesTable, UserEntity> {
+  $$UserProfilesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>>
+  _userProgramRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userProgramRoles,
+    aliasName: $_aliasNameGenerator(
+      db.userProfiles.id,
+      db.userProgramRoles.userId,
+    ),
+  );
+
+  $$UserProgramRolesTableProcessedTableManager get userProgramRolesRefs {
+    final manager = $$UserProgramRolesTableTableManager(
+      $_db,
+      $_db.userProgramRoles,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _userProgramRolesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$UserRolesTable, List<UserRole>>
+  _userRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userRoles,
+    aliasName: $_aliasNameGenerator(db.userProfiles.id, db.userRoles.userId),
+  );
+
+  $$UserRolesTableProcessedTableManager get userRolesRefs {
+    final manager = $$UserRolesTableTableManager(
+      $_db,
+      $_db.userRoles,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userRolesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$UserProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
+  $$UserProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ref => $composableBuilder(
+    column: $table.ref,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email2 => $composableBuilder(
+    column: $table.email2,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fullName => $composableBuilder(
+    column: $table.fullName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orcid => $composableBuilder(
+    column: $table.orcid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tel => $composableBuilder(
+    column: $table.tel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tel2 => $composableBuilder(
+    column: $table.tel2,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hideContactInfoFromPublic => $composableBuilder(
+    column: $table.hideContactInfoFromPublic,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userProgramRolesRefs(
+    Expression<bool> Function($$UserProgramRolesTableFilterComposer f) f,
+  ) {
+    final $$UserProgramRolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userProgramRoles,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProgramRolesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProgramRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> userRolesRefs(
+    Expression<bool> Function($$UserRolesTableFilterComposer f) f,
+  ) {
+    final $$UserRolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userRoles,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserRolesTableFilterComposer(
+            $db: $db,
+            $table: $db.userRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$UserProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
+  $$UserProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ref => $composableBuilder(
+    column: $table.ref,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email2 => $composableBuilder(
+    column: $table.email2,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fullName => $composableBuilder(
+    column: $table.fullName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orcid => $composableBuilder(
+    column: $table.orcid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tel => $composableBuilder(
+    column: $table.tel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tel2 => $composableBuilder(
+    column: $table.tel2,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hideContactInfoFromPublic => $composableBuilder(
+    column: $table.hideContactInfoFromPublic,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
+  $$UserProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get ref =>
+      $composableBuilder(column: $table.ref, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get email2 =>
+      $composableBuilder(column: $table.email2, builder: (column) => column);
+
+  GeneratedColumn<String> get fullName =>
+      $composableBuilder(column: $table.fullName, builder: (column) => column);
+
+  GeneratedColumn<String> get firstName =>
+      $composableBuilder(column: $table.firstName, builder: (column) => column);
+
+  GeneratedColumn<String> get lastName =>
+      $composableBuilder(column: $table.lastName, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get orcid =>
+      $composableBuilder(column: $table.orcid, builder: (column) => column);
+
+  GeneratedColumn<String> get tel =>
+      $composableBuilder(column: $table.tel, builder: (column) => column);
+
+  GeneratedColumn<String> get tel2 =>
+      $composableBuilder(column: $table.tel2, builder: (column) => column);
+
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
+
+  GeneratedColumn<bool> get hideContactInfoFromPublic => $composableBuilder(
+    column: $table.hideContactInfoFromPublic,
+    builder: (column) => column,
+  );
+
+  Expression<T> userProgramRolesRefs<T extends Object>(
+    Expression<T> Function($$UserProgramRolesTableAnnotationComposer a) f,
+  ) {
+    final $$UserProgramRolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userProgramRoles,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProgramRolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProgramRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> userRolesRefs<T extends Object>(
+    Expression<T> Function($$UserRolesTableAnnotationComposer a) f,
+  ) {
+    final $$UserRolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userRoles,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserRolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$UserProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserProfilesTable,
+          UserEntity,
+          $$UserProfilesTableFilterComposer,
+          $$UserProfilesTableOrderingComposer,
+          $$UserProfilesTableAnnotationComposer,
+          $$UserProfilesTableCreateCompanionBuilder,
+          $$UserProfilesTableUpdateCompanionBuilder,
+          (UserEntity, $$UserProfilesTableReferences),
+          UserEntity,
+          PrefetchHooks Function({
+            bool userProgramRolesRefs,
+            bool userRolesRefs,
+          })
+        > {
+  $$UserProfilesTableTableManager(_$AppDatabase db, $UserProfilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> ref = const Value.absent(),
+                Value<String> email = const Value.absent(),
+                Value<String?> email2 = const Value.absent(),
+                Value<String> fullName = const Value.absent(),
+                Value<String> firstName = const Value.absent(),
+                Value<String> lastName = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> orcid = const Value.absent(),
+                Value<String> tel = const Value.absent(),
+                Value<String> tel2 = const Value.absent(),
+                Value<String> address = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<bool> hideContactInfoFromPublic = const Value.absent(),
+              }) => UserProfilesCompanion(
+                id: id,
+                ref: ref,
+                email: email,
+                email2: email2,
+                fullName: fullName,
+                firstName: firstName,
+                lastName: lastName,
+                title: title,
+                orcid: orcid,
+                tel: tel,
+                tel2: tel2,
+                address: address,
+                country: country,
+                hideContactInfoFromPublic: hideContactInfoFromPublic,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int ref,
+                required String email,
+                Value<String?> email2 = const Value.absent(),
+                required String fullName,
+                required String firstName,
+                required String lastName,
+                required String title,
+                required String orcid,
+                required String tel,
+                required String tel2,
+                required String address,
+                Value<String?> country = const Value.absent(),
+                required bool hideContactInfoFromPublic,
+              }) => UserProfilesCompanion.insert(
+                id: id,
+                ref: ref,
+                email: email,
+                email2: email2,
+                fullName: fullName,
+                firstName: firstName,
+                lastName: lastName,
+                title: title,
+                orcid: orcid,
+                tel: tel,
+                tel2: tel2,
+                address: address,
+                country: country,
+                hideContactInfoFromPublic: hideContactInfoFromPublic,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserProfilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({userProgramRolesRefs = false, userRolesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (userProgramRolesRefs) db.userProgramRoles,
+                    if (userRolesRefs) db.userRoles,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (userProgramRolesRefs)
+                        await $_getPrefetchedData<
+                          UserEntity,
+                          $UserProfilesTable,
+                          UserProgramRole
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserProfilesTableReferences
+                              ._userProgramRolesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userProgramRolesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (userRolesRefs)
+                        await $_getPrefetchedData<
+                          UserEntity,
+                          $UserProfilesTable,
+                          UserRole
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserProfilesTableReferences
+                              ._userRolesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userRolesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$UserProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserProfilesTable,
+      UserEntity,
+      $$UserProfilesTableFilterComposer,
+      $$UserProfilesTableOrderingComposer,
+      $$UserProfilesTableAnnotationComposer,
+      $$UserProfilesTableCreateCompanionBuilder,
+      $$UserProfilesTableUpdateCompanionBuilder,
+      (UserEntity, $$UserProfilesTableReferences),
+      UserEntity,
+      PrefetchHooks Function({bool userProgramRolesRefs, bool userRolesRefs})
+    >;
+typedef $$ProgramsTableCreateCompanionBuilder =
+    ProgramsCompanion Function({
+      Value<int> id,
+      required String name,
+      required String code,
+    });
+typedef $$ProgramsTableUpdateCompanionBuilder =
+    ProgramsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> code,
+    });
+
+final class $$ProgramsTableReferences
+    extends BaseReferences<_$AppDatabase, $ProgramsTable, ProgramEntity> {
+  $$ProgramsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>>
+  _userProgramRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userProgramRoles,
+    aliasName: $_aliasNameGenerator(
+      db.programs.id,
+      db.userProgramRoles.programId,
+    ),
+  );
+
+  $$UserProgramRolesTableProcessedTableManager get userProgramRolesRefs {
+    final manager = $$UserProgramRolesTableTableManager(
+      $_db,
+      $_db.userProgramRoles,
+    ).filter((f) => f.programId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _userProgramRolesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ProgramsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgramsTable> {
+  $$ProgramsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userProgramRolesRefs(
+    Expression<bool> Function($$UserProgramRolesTableFilterComposer f) f,
+  ) {
+    final $$UserProgramRolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userProgramRoles,
+      getReferencedColumn: (t) => t.programId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProgramRolesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProgramRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ProgramsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgramsTable> {
+  $$ProgramsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProgramsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgramsTable> {
+  $$ProgramsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  Expression<T> userProgramRolesRefs<T extends Object>(
+    Expression<T> Function($$UserProgramRolesTableAnnotationComposer a) f,
+  ) {
+    final $$UserProgramRolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userProgramRoles,
+      getReferencedColumn: (t) => t.programId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProgramRolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProgramRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ProgramsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProgramsTable,
+          ProgramEntity,
+          $$ProgramsTableFilterComposer,
+          $$ProgramsTableOrderingComposer,
+          $$ProgramsTableAnnotationComposer,
+          $$ProgramsTableCreateCompanionBuilder,
+          $$ProgramsTableUpdateCompanionBuilder,
+          (ProgramEntity, $$ProgramsTableReferences),
+          ProgramEntity,
+          PrefetchHooks Function({bool userProgramRolesRefs})
+        > {
+  $$ProgramsTableTableManager(_$AppDatabase db, $ProgramsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProgramsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgramsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgramsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> code = const Value.absent(),
+              }) => ProgramsCompanion(id: id, name: name, code: code),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required String code,
+              }) => ProgramsCompanion.insert(id: id, name: name, code: code),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProgramsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userProgramRolesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (userProgramRolesRefs) db.userProgramRoles,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (userProgramRolesRefs)
+                    await $_getPrefetchedData<
+                      ProgramEntity,
+                      $ProgramsTable,
+                      UserProgramRole
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ProgramsTableReferences
+                          ._userProgramRolesRefsTable(db),
+                      managerFromTypedResult: (p0) => $$ProgramsTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).userProgramRolesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.programId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProgramsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProgramsTable,
+      ProgramEntity,
+      $$ProgramsTableFilterComposer,
+      $$ProgramsTableOrderingComposer,
+      $$ProgramsTableAnnotationComposer,
+      $$ProgramsTableCreateCompanionBuilder,
+      $$ProgramsTableUpdateCompanionBuilder,
+      (ProgramEntity, $$ProgramsTableReferences),
+      ProgramEntity,
+      PrefetchHooks Function({bool userProgramRolesRefs})
+    >;
+typedef $$RolesTableCreateCompanionBuilder =
+    RolesCompanion Function({
+      Value<int> id,
+      required String name,
+      required String code,
+    });
+typedef $$RolesTableUpdateCompanionBuilder =
+    RolesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> code,
+    });
+
+final class $$RolesTableReferences
+    extends BaseReferences<_$AppDatabase, $RolesTable, RoleEntity> {
+  $$RolesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>>
+  _userProgramRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userProgramRoles,
+    aliasName: $_aliasNameGenerator(db.roles.id, db.userProgramRoles.roleId),
+  );
+
+  $$UserProgramRolesTableProcessedTableManager get userProgramRolesRefs {
+    final manager = $$UserProgramRolesTableTableManager(
+      $_db,
+      $_db.userProgramRoles,
+    ).filter((f) => f.roleId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _userProgramRolesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RolesTableFilterComposer extends Composer<_$AppDatabase, $RolesTable> {
+  $$RolesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userProgramRolesRefs(
+    Expression<bool> Function($$UserProgramRolesTableFilterComposer f) f,
+  ) {
+    final $$UserProgramRolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userProgramRoles,
+      getReferencedColumn: (t) => t.roleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProgramRolesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProgramRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RolesTable> {
+  $$RolesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RolesTable> {
+  $$RolesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  Expression<T> userProgramRolesRefs<T extends Object>(
+    Expression<T> Function($$UserProgramRolesTableAnnotationComposer a) f,
+  ) {
+    final $$UserProgramRolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userProgramRoles,
+      getReferencedColumn: (t) => t.roleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProgramRolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProgramRoles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RolesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RolesTable,
+          RoleEntity,
+          $$RolesTableFilterComposer,
+          $$RolesTableOrderingComposer,
+          $$RolesTableAnnotationComposer,
+          $$RolesTableCreateCompanionBuilder,
+          $$RolesTableUpdateCompanionBuilder,
+          (RoleEntity, $$RolesTableReferences),
+          RoleEntity,
+          PrefetchHooks Function({bool userProgramRolesRefs})
+        > {
+  $$RolesTableTableManager(_$AppDatabase db, $RolesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RolesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> code = const Value.absent(),
+              }) => RolesCompanion(id: id, name: name, code: code),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required String code,
+              }) => RolesCompanion.insert(id: id, name: name, code: code),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$RolesTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userProgramRolesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (userProgramRolesRefs) db.userProgramRoles,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (userProgramRolesRefs)
+                    await $_getPrefetchedData<
+                      RoleEntity,
+                      $RolesTable,
+                      UserProgramRole
+                    >(
+                      currentTable: table,
+                      referencedTable: $$RolesTableReferences
+                          ._userProgramRolesRefsTable(db),
+                      managerFromTypedResult: (p0) => $$RolesTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).userProgramRolesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.roleId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RolesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RolesTable,
+      RoleEntity,
+      $$RolesTableFilterComposer,
+      $$RolesTableOrderingComposer,
+      $$RolesTableAnnotationComposer,
+      $$RolesTableCreateCompanionBuilder,
+      $$RolesTableUpdateCompanionBuilder,
+      (RoleEntity, $$RolesTableReferences),
+      RoleEntity,
+      PrefetchHooks Function({bool userProgramRolesRefs})
+    >;
+typedef $$UserProgramRolesTableCreateCompanionBuilder =
+    UserProgramRolesCompanion Function({
+      required int userId,
+      required int programId,
+      required int roleId,
+      Value<int> rowid,
+    });
+typedef $$UserProgramRolesTableUpdateCompanionBuilder =
+    UserProgramRolesCompanion Function({
+      Value<int> userId,
+      Value<int> programId,
+      Value<int> roleId,
+      Value<int> rowid,
+    });
+
+final class $$UserProgramRolesTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $UserProgramRolesTable, UserProgramRole> {
+  $$UserProgramRolesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserProfilesTable _userIdTable(_$AppDatabase db) =>
+      db.userProfiles.createAlias(
+        $_aliasNameGenerator(db.userProgramRoles.userId, db.userProfiles.id),
+      );
+
+  $$UserProfilesTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$UserProfilesTableTableManager(
+      $_db,
+      $_db.userProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ProgramsTable _programIdTable(_$AppDatabase db) =>
+      db.programs.createAlias(
+        $_aliasNameGenerator(db.userProgramRoles.programId, db.programs.id),
+      );
+
+  $$ProgramsTableProcessedTableManager get programId {
+    final $_column = $_itemColumn<int>('program_id')!;
+
+    final manager = $$ProgramsTableTableManager(
+      $_db,
+      $_db.programs,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_programIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $RolesTable _roleIdTable(_$AppDatabase db) => db.roles.createAlias(
+    $_aliasNameGenerator(db.userProgramRoles.roleId, db.roles.id),
+  );
+
+  $$RolesTableProcessedTableManager get roleId {
+    final $_column = $_itemColumn<int>('role_id')!;
+
+    final manager = $$RolesTableTableManager(
+      $_db,
+      $_db.roles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_roleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$UserProgramRolesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserProgramRolesTable> {
+  $$UserProgramRolesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$UserProfilesTableFilterComposer get userId {
+    final $$UserProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProgramsTableFilterComposer get programId {
+    final $$ProgramsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.programId,
+      referencedTable: $db.programs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProgramsTableFilterComposer(
+            $db: $db,
+            $table: $db.programs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RolesTableFilterComposer get roleId {
+    final $$RolesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.roleId,
+      referencedTable: $db.roles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RolesTableFilterComposer(
+            $db: $db,
+            $table: $db.roles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserProgramRolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserProgramRolesTable> {
+  $$UserProgramRolesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$UserProfilesTableOrderingComposer get userId {
+    final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProgramsTableOrderingComposer get programId {
+    final $$ProgramsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.programId,
+      referencedTable: $db.programs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProgramsTableOrderingComposer(
+            $db: $db,
+            $table: $db.programs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RolesTableOrderingComposer get roleId {
+    final $$RolesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.roleId,
+      referencedTable: $db.roles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RolesTableOrderingComposer(
+            $db: $db,
+            $table: $db.roles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserProgramRolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserProgramRolesTable> {
+  $$UserProgramRolesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  $$UserProfilesTableAnnotationComposer get userId {
+    final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ProgramsTableAnnotationComposer get programId {
+    final $$ProgramsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.programId,
+      referencedTable: $db.programs,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProgramsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.programs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RolesTableAnnotationComposer get roleId {
+    final $$RolesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.roleId,
+      referencedTable: $db.roles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RolesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.roles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserProgramRolesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserProgramRolesTable,
+          UserProgramRole,
+          $$UserProgramRolesTableFilterComposer,
+          $$UserProgramRolesTableOrderingComposer,
+          $$UserProgramRolesTableAnnotationComposer,
+          $$UserProgramRolesTableCreateCompanionBuilder,
+          $$UserProgramRolesTableUpdateCompanionBuilder,
+          (UserProgramRole, $$UserProgramRolesTableReferences),
+          UserProgramRole,
+          PrefetchHooks Function({bool userId, bool programId, bool roleId})
+        > {
+  $$UserProgramRolesTableTableManager(
+    _$AppDatabase db,
+    $UserProgramRolesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserProgramRolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProgramRolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProgramRolesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> userId = const Value.absent(),
+                Value<int> programId = const Value.absent(),
+                Value<int> roleId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserProgramRolesCompanion(
+                userId: userId,
+                programId: programId,
+                roleId: roleId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int userId,
+                required int programId,
+                required int roleId,
+                Value<int> rowid = const Value.absent(),
+              }) => UserProgramRolesCompanion.insert(
+                userId: userId,
+                programId: programId,
+                roleId: roleId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserProgramRolesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({userId = false, programId = false, roleId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (userId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.userId,
+                                    referencedTable:
+                                        $$UserProgramRolesTableReferences
+                                            ._userIdTable(db),
+                                    referencedColumn:
+                                        $$UserProgramRolesTableReferences
+                                            ._userIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (programId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.programId,
+                                    referencedTable:
+                                        $$UserProgramRolesTableReferences
+                                            ._programIdTable(db),
+                                    referencedColumn:
+                                        $$UserProgramRolesTableReferences
+                                            ._programIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (roleId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.roleId,
+                                    referencedTable:
+                                        $$UserProgramRolesTableReferences
+                                            ._roleIdTable(db),
+                                    referencedColumn:
+                                        $$UserProgramRolesTableReferences
+                                            ._roleIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$UserProgramRolesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserProgramRolesTable,
+      UserProgramRole,
+      $$UserProgramRolesTableFilterComposer,
+      $$UserProgramRolesTableOrderingComposer,
+      $$UserProgramRolesTableAnnotationComposer,
+      $$UserProgramRolesTableCreateCompanionBuilder,
+      $$UserProgramRolesTableUpdateCompanionBuilder,
+      (UserProgramRole, $$UserProgramRolesTableReferences),
+      UserProgramRole,
+      PrefetchHooks Function({bool userId, bool programId, bool roleId})
+    >;
+typedef $$UserRolesTableCreateCompanionBuilder =
+    UserRolesCompanion Function({
+      required int userId,
+      required String roleCode,
+      Value<int> rowid,
+    });
+typedef $$UserRolesTableUpdateCompanionBuilder =
+    UserRolesCompanion Function({
+      Value<int> userId,
+      Value<String> roleCode,
+      Value<int> rowid,
+    });
+
+final class $$UserRolesTableReferences
+    extends BaseReferences<_$AppDatabase, $UserRolesTable, UserRole> {
+  $$UserRolesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UserProfilesTable _userIdTable(_$AppDatabase db) =>
+      db.userProfiles.createAlias(
+        $_aliasNameGenerator(db.userRoles.userId, db.userProfiles.id),
+      );
+
+  $$UserProfilesTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$UserProfilesTableTableManager(
+      $_db,
+      $_db.userProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$UserRolesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserRolesTable> {
+  $$UserRolesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get roleCode => $composableBuilder(
+    column: $table.roleCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserProfilesTableFilterComposer get userId {
+    final $$UserProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserRolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserRolesTable> {
+  $$UserRolesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get roleCode => $composableBuilder(
+    column: $table.roleCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserProfilesTableOrderingComposer get userId {
+    final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserRolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserRolesTable> {
+  $$UserRolesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get roleCode =>
+      $composableBuilder(column: $table.roleCode, builder: (column) => column);
+
+  $$UserProfilesTableAnnotationComposer get userId {
+    final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserRolesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserRolesTable,
+          UserRole,
+          $$UserRolesTableFilterComposer,
+          $$UserRolesTableOrderingComposer,
+          $$UserRolesTableAnnotationComposer,
+          $$UserRolesTableCreateCompanionBuilder,
+          $$UserRolesTableUpdateCompanionBuilder,
+          (UserRole, $$UserRolesTableReferences),
+          UserRole,
+          PrefetchHooks Function({bool userId})
+        > {
+  $$UserRolesTableTableManager(_$AppDatabase db, $UserRolesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserRolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserRolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserRolesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> userId = const Value.absent(),
+                Value<String> roleCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserRolesCompanion(
+                userId: userId,
+                roleCode: roleCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int userId,
+                required String roleCode,
+                Value<int> rowid = const Value.absent(),
+              }) => UserRolesCompanion.insert(
+                userId: userId,
+                roleCode: roleCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserRolesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (userId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.userId,
+                                referencedTable: $$UserRolesTableReferences
+                                    ._userIdTable(db),
+                                referencedColumn: $$UserRolesTableReferences
+                                    ._userIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$UserRolesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserRolesTable,
+      UserRole,
+      $$UserRolesTableFilterComposer,
+      $$UserRolesTableOrderingComposer,
+      $$UserRolesTableAnnotationComposer,
+      $$UserRolesTableCreateCompanionBuilder,
+      $$UserRolesTableUpdateCompanionBuilder,
+      (UserRole, $$UserRolesTableReferences),
+      UserRole,
+      PrefetchHooks Function({bool userId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$PlatformsTableTableManager get platforms =>
       $$PlatformsTableTableManager(_db, _db.platforms);
+  $$UserProfilesTableTableManager get userProfiles =>
+      $$UserProfilesTableTableManager(_db, _db.userProfiles);
+  $$ProgramsTableTableManager get programs =>
+      $$ProgramsTableTableManager(_db, _db.programs);
+  $$RolesTableTableManager get roles =>
+      $$RolesTableTableManager(_db, _db.roles);
+  $$UserProgramRolesTableTableManager get userProgramRoles =>
+      $$UserProgramRolesTableTableManager(_db, _db.userProgramRoles);
+  $$UserRolesTableTableManager get userRoles =>
+      $$UserRolesTableTableManager(_db, _db.userRoles);
 }

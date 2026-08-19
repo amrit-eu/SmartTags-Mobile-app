@@ -10,7 +10,7 @@ import 'package:smart_tags/screens/user_login.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
-/// A screen that displays information about a [UserProfile].
+/// A screen that displays information about a [User].
 ///
 /// Shows the user's avatar, ID, email, and full name.
 class UserProfileScreen extends ConsumerStatefulWidget {
@@ -18,18 +18,18 @@ class UserProfileScreen extends ConsumerStatefulWidget {
   const UserProfileScreen({required this.user, super.key});
 
   /// The profile to display.
-  final UserProfile user;
+  final User user;
 
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
-  AsyncValue<UserProfile?>? _authState;
+  AsyncValue<User?>? _authState;
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<UserProfile?>>(authProvider, (prev, next) async {
+    ref.listen<AsyncValue<User?>>(authProvider, (prev, next) async {
       _authState = next;
       unawaited(next.whenOrNull(
         data: (user) async {
@@ -90,7 +90,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 onPressed: () async {
                   await ref.read(authProvider.notifier).logout();
                   final authState = _authState;
-                  if (context.mounted && authState is AsyncData<UserProfile?> && authState.value == null) {
+                  if (context.mounted && authState is AsyncData<User?> && authState.value == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Logout successful')),
                     );

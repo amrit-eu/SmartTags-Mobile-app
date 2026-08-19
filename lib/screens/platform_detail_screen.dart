@@ -8,6 +8,7 @@ import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
@@ -43,6 +44,9 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final platformAsync = ref.watch(platformByRefStreamProvider(widget.platformRef));
+    final userPermissions = ref.watch(permissionProvider);
+    // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
+    final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
     
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
@@ -245,19 +249,22 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       floatingActionButton: 
         FloatingActionButton.extended(
           heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
-          onPressed: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute<DeployPlatformScreen>(
-                builder: (context) => DeployPlatformScreen(
-                  action: platform.operationalStatus == OperationalStatus.deployed
-                  ? DeployAction.recover
-                  : DeployAction.deploy,
-                  platform: platform,
-                ),
-              ),
-            );
-          },
+          onPressed: canEditExamplePlatform
+              ? () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute<DeployPlatformScreen>(
+                      builder: (context) => DeployPlatformScreen(
+                        action: platform.operationalStatus == OperationalStatus.deployed
+                        ? DeployAction.recover
+                        : DeployAction.deploy,
+                        platform: platform,
+                      ),
+                    ),
+                  );
+                }
+              : null,
+          backgroundColor: canEditExamplePlatform ? null : const Color.fromARGB(40, 40, 40, 40),
           icon: platform.operationalStatus == OperationalStatus.deployed
           ? const Icon(Icons.repeat)
           : const Icon(Icons.arrow_circle_up_rounded),

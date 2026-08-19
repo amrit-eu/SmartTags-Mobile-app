@@ -20,21 +20,50 @@ class AuthResponse {
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     return switch (json) {
       {
-      'success': final bool success,
-      'access_token_rs256': final String accessTokenRs256,
-      'refresh_token': final String refreshToken,
-      'refresh_expires_in': final int refreshExpiresIn,
-      'expires_in': final int expiresIn,
-      'contact': final Map<String, dynamic> contact,
-      } => AuthResponse(
-        success: success,
-        accessTokenRs256: accessTokenRs256,
-        refreshToken: refreshToken,
-        refreshExpiresIn: refreshExpiresIn,
-        expiresIn: expiresIn,
-        contact: UserProfile.fromJson(contact),
-      ),
+        'success': final bool success,
+        'access_token_rs256': final String accessTokenRs256,
+        'refresh_token': final String refreshToken,
+        'refresh_expires_in': final int refreshExpiresIn,
+        'expires_in': final int expiresIn,
+        'contact': final Map<String, dynamic> contact,
+      } =>
+        AuthResponse(
+          success: success,
+          accessTokenRs256: accessTokenRs256,
+          refreshToken: refreshToken,
+          refreshExpiresIn: refreshExpiresIn,
+          expiresIn: expiresIn,
+          contact: User.fromJson(contact),
+        ),
       _ => throw const FormatException('Failed to read auth response.'),
+    };
+  }
+
+  /// Serialise [AuthResponse] object to JSON  (used for testing)
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'access_token_rs256': accessTokenRs256,
+      'refresh_token': refreshToken,
+      'refresh_expires_in': refreshExpiresIn,
+      'expires_in': expiresIn,
+      'contact': {
+        'id': contact.id,
+        'email': contact.email,
+        'email2': contact.email2,
+        'fullName': contact.fullName,
+        'firstName': contact.firstName,
+        'lastName': contact.lastName,
+        'title': contact.title,
+        'orcid': contact.orcid,
+        'tel': contact.tel,
+        'tel2': contact.tel2,
+        'address': contact.address,
+        'hideContactInfoFromPublic': contact.hideContactInfoFromPublic,
+        'country': contact.country,
+        'roles': contact.roles,
+        'programRoles': contact.programRoles.map((pr) => pr.toJson()).toList(),
+      },
     };
   }
 
@@ -53,6 +82,6 @@ class AuthResponse {
   /// Seconds until expiry of session token (default: 3600 = 1 hour)
   final int expiresIn;
 
-  /// [UserProfile] object containing information about the contact user
-  final UserProfile contact;
+  /// [User] object containing information about the contact user
+  final User contact;
 }
