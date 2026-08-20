@@ -7,6 +7,7 @@ import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
@@ -52,10 +53,10 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-
-    // final userPermissions = ref.watch(permissionProvider);
-    // // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
-    // final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
+    // Permissions
+    final userPermissions = ref.watch(permissionProvider);
+    final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: platform.program?.id ?? 0);
+    final isLoggedIn = ref.watch(authProvider).value != null;
 
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
@@ -245,10 +246,18 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           ],
         ),
       ),
-      // TODO(ylubac) : should include a permission check with canEditExamplePlatform as soon as programId is saved with Platform metadata.
       floatingActionButton: FloatingActionButton.extended(
         heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
         onPressed: () async {
+          if (!canEditExamplePlatform) {
+            final message = isLoggedIn
+                ? "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program."
+                : 'Log in to edit this platform.';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+            return;
+          }
           await Navigator.push(
             context,
             MaterialPageRoute<DeployPlatformScreen>(
