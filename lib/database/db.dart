@@ -76,6 +76,17 @@ class Platforms extends Table {
   /// passport API), distinct from [ref]. Required to submit deploy/recover
   /// passport events to the Gateway.
   TextColumn get ptfId => text().nullable()();
+
+  /// Supervising program identifier from the passport's
+  /// `affiliation.supervisingProgram` (optional). Needed for permission
+  /// checks (e.g. `canEdit(Resource.deployment, programId: ...)`).
+  IntColumn get programId => integer().nullable()();
+
+  /// Supervising program display name (optional).
+  TextColumn get programName => text().nullable()();
+
+  /// Supervising program slug (optional).
+  TextColumn get programCode => text().nullable()();
 }
 
 @DataClassName('UserEntity')
@@ -228,7 +239,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -250,6 +261,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.addColumn(platforms, platforms.ptfId);
+      }
+      if (from < 5) {
+        await m.addColumn(platforms, platforms.programId);
+        await m.addColumn(platforms, platforms.programName);
+        await m.addColumn(platforms, platforms.programCode);
       }
     },
   );
