@@ -233,6 +233,39 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _programIdMeta = const VerificationMeta(
+    'programId',
+  );
+  @override
+  late final GeneratedColumn<int> programId = GeneratedColumn<int>(
+    'program_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _programNameMeta = const VerificationMeta(
+    'programName',
+  );
+  @override
+  late final GeneratedColumn<String> programName = GeneratedColumn<String>(
+    'program_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _programCodeMeta = const VerificationMeta(
+    'programCode',
+  );
+  @override
+  late final GeneratedColumn<String> programCode = GeneratedColumn<String>(
+    'program_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -256,6 +289,9 @@ class $PlatformsTable extends Platforms
     latestOperationType,
     latestOperationDate,
     ptfId,
+    programId,
+    programName,
+    programCode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -442,6 +478,30 @@ class $PlatformsTable extends Platforms
         ptfId.isAcceptableOrUnknown(data['ptf_id']!, _ptfIdMeta),
       );
     }
+    if (data.containsKey('program_id')) {
+      context.handle(
+        _programIdMeta,
+        programId.isAcceptableOrUnknown(data['program_id']!, _programIdMeta),
+      );
+    }
+    if (data.containsKey('program_name')) {
+      context.handle(
+        _programNameMeta,
+        programName.isAcceptableOrUnknown(
+          data['program_name']!,
+          _programNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('program_code')) {
+      context.handle(
+        _programCodeMeta,
+        programCode.isAcceptableOrUnknown(
+          data['program_code']!,
+          _programCodeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -535,6 +595,18 @@ class $PlatformsTable extends Platforms
         DriftSqlType.string,
         data['${effectivePrefix}ptf_id'],
       ),
+      programId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}program_id'],
+      ),
+      programName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}program_name'],
+      ),
+      programCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}program_code'],
+      ),
     );
   }
 
@@ -609,6 +681,17 @@ class Platform extends DataClass implements Insertable<Platform> {
   /// passport API), distinct from [ref]. Required to submit deploy/recover
   /// passport events to the Gateway.
   final String? ptfId;
+
+  /// Supervising program identifier from the passport's
+  /// `affiliation.supervisingProgram` (optional). Needed for permission
+  /// checks (e.g. `canEdit(Resource.deployment, programId: ...)`).
+  final int? programId;
+
+  /// Supervising program display name (optional).
+  final String? programName;
+
+  /// Supervising program slug (optional).
+  final String? programCode;
   const Platform({
     required this.id,
     required this.ref,
@@ -631,6 +714,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     this.latestOperationType,
     this.latestOperationDate,
     this.ptfId,
+    this.programId,
+    this.programName,
+    this.programCode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -675,6 +761,15 @@ class Platform extends DataClass implements Insertable<Platform> {
     }
     if (!nullToAbsent || ptfId != null) {
       map['ptf_id'] = Variable<String>(ptfId);
+    }
+    if (!nullToAbsent || programId != null) {
+      map['program_id'] = Variable<int>(programId);
+    }
+    if (!nullToAbsent || programName != null) {
+      map['program_name'] = Variable<String>(programName);
+    }
+    if (!nullToAbsent || programCode != null) {
+      map['program_code'] = Variable<String>(programCode);
     }
     return map;
   }
@@ -722,6 +817,15 @@ class Platform extends DataClass implements Insertable<Platform> {
       ptfId: ptfId == null && nullToAbsent
           ? const Value.absent()
           : Value(ptfId),
+      programId: programId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programId),
+      programName: programName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programName),
+      programCode: programCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programCode),
     );
   }
 
@@ -756,6 +860,9 @@ class Platform extends DataClass implements Insertable<Platform> {
         json['latestOperationDate'],
       ),
       ptfId: serializer.fromJson<String?>(json['ptfId']),
+      programId: serializer.fromJson<int?>(json['programId']),
+      programName: serializer.fromJson<String?>(json['programName']),
+      programCode: serializer.fromJson<String?>(json['programCode']),
     );
   }
   @override
@@ -783,6 +890,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       'latestOperationType': serializer.toJson<String?>(latestOperationType),
       'latestOperationDate': serializer.toJson<DateTime?>(latestOperationDate),
       'ptfId': serializer.toJson<String?>(ptfId),
+      'programId': serializer.toJson<int?>(programId),
+      'programName': serializer.toJson<String?>(programName),
+      'programCode': serializer.toJson<String?>(programCode),
     };
   }
 
@@ -808,6 +918,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     Value<String?> latestOperationType = const Value.absent(),
     Value<DateTime?> latestOperationDate = const Value.absent(),
     Value<String?> ptfId = const Value.absent(),
+    Value<int?> programId = const Value.absent(),
+    Value<String?> programName = const Value.absent(),
+    Value<String?> programCode = const Value.absent(),
   }) => Platform(
     id: id ?? this.id,
     ref: ref ?? this.ref,
@@ -842,6 +955,9 @@ class Platform extends DataClass implements Insertable<Platform> {
         ? latestOperationDate.value
         : this.latestOperationDate,
     ptfId: ptfId.present ? ptfId.value : this.ptfId,
+    programId: programId.present ? programId.value : this.programId,
+    programName: programName.present ? programName.value : this.programName,
+    programCode: programCode.present ? programCode.value : this.programCode,
   );
   Platform copyWithCompanion(PlatformsCompanion data) {
     return Platform(
@@ -886,6 +1002,13 @@ class Platform extends DataClass implements Insertable<Platform> {
           ? data.latestOperationDate.value
           : this.latestOperationDate,
       ptfId: data.ptfId.present ? data.ptfId.value : this.ptfId,
+      programId: data.programId.present ? data.programId.value : this.programId,
+      programName: data.programName.present
+          ? data.programName.value
+          : this.programName,
+      programCode: data.programCode.present
+          ? data.programCode.value
+          : this.programCode,
     );
   }
 
@@ -912,7 +1035,10 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('observingNetwork: $observingNetwork, ')
           ..write('latestOperationType: $latestOperationType, ')
           ..write('latestOperationDate: $latestOperationDate, ')
-          ..write('ptfId: $ptfId')
+          ..write('ptfId: $ptfId, ')
+          ..write('programId: $programId, ')
+          ..write('programName: $programName, ')
+          ..write('programCode: $programCode')
           ..write(')'))
         .toString();
   }
@@ -940,6 +1066,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     latestOperationType,
     latestOperationDate,
     ptfId,
+    programId,
+    programName,
+    programCode,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -965,7 +1094,10 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.observingNetwork == this.observingNetwork &&
           other.latestOperationType == this.latestOperationType &&
           other.latestOperationDate == this.latestOperationDate &&
-          other.ptfId == this.ptfId);
+          other.ptfId == this.ptfId &&
+          other.programId == this.programId &&
+          other.programName == this.programName &&
+          other.programCode == this.programCode);
 }
 
 class PlatformsCompanion extends UpdateCompanion<Platform> {
@@ -990,6 +1122,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<String?> latestOperationType;
   final Value<DateTime?> latestOperationDate;
   final Value<String?> ptfId;
+  final Value<int?> programId;
+  final Value<String?> programName;
+  final Value<String?> programCode;
   const PlatformsCompanion({
     this.id = const Value.absent(),
     this.ref = const Value.absent(),
@@ -1012,6 +1147,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.latestOperationType = const Value.absent(),
     this.latestOperationDate = const Value.absent(),
     this.ptfId = const Value.absent(),
+    this.programId = const Value.absent(),
+    this.programName = const Value.absent(),
+    this.programCode = const Value.absent(),
   });
   PlatformsCompanion.insert({
     this.id = const Value.absent(),
@@ -1035,6 +1173,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.latestOperationType = const Value.absent(),
     this.latestOperationDate = const Value.absent(),
     this.ptfId = const Value.absent(),
+    this.programId = const Value.absent(),
+    this.programName = const Value.absent(),
+    this.programCode = const Value.absent(),
   }) : ref = Value(ref),
        model = Value(model),
        network = Value(network),
@@ -1067,6 +1208,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<String>? latestOperationType,
     Expression<DateTime>? latestOperationDate,
     Expression<String>? ptfId,
+    Expression<int>? programId,
+    Expression<String>? programName,
+    Expression<String>? programCode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1092,6 +1236,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (latestOperationDate != null)
         'latest_operation_date': latestOperationDate,
       if (ptfId != null) 'ptf_id': ptfId,
+      if (programId != null) 'program_id': programId,
+      if (programName != null) 'program_name': programName,
+      if (programCode != null) 'program_code': programCode,
     });
   }
 
@@ -1117,6 +1264,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<String?>? latestOperationType,
     Value<DateTime?>? latestOperationDate,
     Value<String?>? ptfId,
+    Value<int?>? programId,
+    Value<String?>? programName,
+    Value<String?>? programCode,
   }) {
     return PlatformsCompanion(
       id: id ?? this.id,
@@ -1140,6 +1290,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       latestOperationType: latestOperationType ?? this.latestOperationType,
       latestOperationDate: latestOperationDate ?? this.latestOperationDate,
       ptfId: ptfId ?? this.ptfId,
+      programId: programId ?? this.programId,
+      programName: programName ?? this.programName,
+      programCode: programCode ?? this.programCode,
     );
   }
 
@@ -1213,6 +1366,15 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     if (ptfId.present) {
       map['ptf_id'] = Variable<String>(ptfId.value);
     }
+    if (programId.present) {
+      map['program_id'] = Variable<int>(programId.value);
+    }
+    if (programName.present) {
+      map['program_name'] = Variable<String>(programName.value);
+    }
+    if (programCode.present) {
+      map['program_code'] = Variable<String>(programCode.value);
+    }
     return map;
   }
 
@@ -1239,7 +1401,10 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('observingNetwork: $observingNetwork, ')
           ..write('latestOperationType: $latestOperationType, ')
           ..write('latestOperationDate: $latestOperationDate, ')
-          ..write('ptfId: $ptfId')
+          ..write('ptfId: $ptfId, ')
+          ..write('programId: $programId, ')
+          ..write('programName: $programName, ')
+          ..write('programCode: $programCode')
           ..write(')'))
         .toString();
   }
@@ -3617,6 +3782,9 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       Value<String?> latestOperationType,
       Value<DateTime?> latestOperationDate,
       Value<String?> ptfId,
+      Value<int?> programId,
+      Value<String?> programName,
+      Value<String?> programCode,
     });
 typedef $$PlatformsTableUpdateCompanionBuilder =
     PlatformsCompanion Function({
@@ -3641,6 +3809,9 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> latestOperationType,
       Value<DateTime?> latestOperationDate,
       Value<String?> ptfId,
+      Value<int?> programId,
+      Value<String?> programName,
+      Value<String?> programCode,
     });
 
 class $$PlatformsTableFilterComposer
@@ -3754,6 +3925,21 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<String> get ptfId => $composableBuilder(
     column: $table.ptfId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get programId => $composableBuilder(
+    column: $table.programId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programName => $composableBuilder(
+    column: $table.programName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get programCode => $composableBuilder(
+    column: $table.programCode,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3871,6 +4057,21 @@ class $$PlatformsTableOrderingComposer
     column: $table.ptfId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get programId => $composableBuilder(
+    column: $table.programId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get programName => $composableBuilder(
+    column: $table.programName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get programCode => $composableBuilder(
+    column: $table.programCode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlatformsTableAnnotationComposer
@@ -3964,6 +4165,19 @@ class $$PlatformsTableAnnotationComposer
 
   GeneratedColumn<String> get ptfId =>
       $composableBuilder(column: $table.ptfId, builder: (column) => column);
+
+  GeneratedColumn<int> get programId =>
+      $composableBuilder(column: $table.programId, builder: (column) => column);
+
+  GeneratedColumn<String> get programName => $composableBuilder(
+    column: $table.programName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get programCode => $composableBuilder(
+    column: $table.programCode,
+    builder: (column) => column,
+  );
 }
 
 class $$PlatformsTableTableManager
@@ -4015,6 +4229,9 @@ class $$PlatformsTableTableManager
                 Value<String?> latestOperationType = const Value.absent(),
                 Value<DateTime?> latestOperationDate = const Value.absent(),
                 Value<String?> ptfId = const Value.absent(),
+                Value<int?> programId = const Value.absent(),
+                Value<String?> programName = const Value.absent(),
+                Value<String?> programCode = const Value.absent(),
               }) => PlatformsCompanion(
                 id: id,
                 ref: ref,
@@ -4037,6 +4254,9 @@ class $$PlatformsTableTableManager
                 latestOperationType: latestOperationType,
                 latestOperationDate: latestOperationDate,
                 ptfId: ptfId,
+                programId: programId,
+                programName: programName,
+                programCode: programCode,
               ),
           createCompanionCallback:
               ({
@@ -4061,6 +4281,9 @@ class $$PlatformsTableTableManager
                 Value<String?> latestOperationType = const Value.absent(),
                 Value<DateTime?> latestOperationDate = const Value.absent(),
                 Value<String?> ptfId = const Value.absent(),
+                Value<int?> programId = const Value.absent(),
+                Value<String?> programName = const Value.absent(),
+                Value<String?> programCode = const Value.absent(),
               }) => PlatformsCompanion.insert(
                 id: id,
                 ref: ref,
@@ -4083,6 +4306,9 @@ class $$PlatformsTableTableManager
                 latestOperationType: latestOperationType,
                 latestOperationDate: latestOperationDate,
                 ptfId: ptfId,
+                programId: programId,
+                programName: programName,
+                programCode: programCode,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

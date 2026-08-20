@@ -20,6 +20,7 @@ abstract final class GatewayPassportMapper {
     final reportingStatus = status['reportingStatus'] as Map<String, dynamic>? ?? {};
     final latestObservation = status['latestObservation'] as Map<String, dynamic>? ?? {};
     final deployment = operations['deployment'] as Map<String, dynamic>?;
+    final supervisingProgram = affiliation['supervisingProgram'] as Map<String, dynamic>?;
 
     final observingNetworks = _observingNetworkNames(affiliation);
     final endTimestamp = operations['endTimestamp'] as String?;
@@ -55,6 +56,9 @@ abstract final class GatewayPassportMapper {
       latestOperationDate: Value(
         _parseDateTime(hasEnded ? endTimestamp : deploymentTimestamp),
       ),
+      programId: Value(supervisingProgram?['id'] as int?),
+      programName: Value(supervisingProgram?['name'] as String?),
+      programCode: Value(supervisingProgram?['code'] as String?),
     );
   }
 

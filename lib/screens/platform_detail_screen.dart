@@ -170,6 +170,8 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                     value: platform.network,
                   ),
                   const Divider(height: 16),
+                  ContainerRow(label: 'Program', value: platform.program?.name ?? 'Unknown'),
+                  const Divider(height: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -243,6 +245,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           ],
         ),
       ),
+      // TODO(ylubac) : should include a permission check with canEditExamplePlatform as soon as programId is saved with Platform metadata.
       floatingActionButton: FloatingActionButton.extended(
         heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
         onPressed: () async {

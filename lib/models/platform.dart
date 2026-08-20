@@ -1,4 +1,5 @@
 import 'package:latlong2/latlong.dart';
+import 'package:smart_tags/models/program.dart';
 
 /// CT-RST platform lifecycle status (OceanOPS code table).
 enum PlatformStatus {
@@ -110,6 +111,7 @@ class Platform {
     this.latestOperationDate,
     this.wigosId,
     this.ptfId,
+    this.program,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -162,4 +164,8 @@ class Platform {
   /// `null` for platforms synced before this field was tracked, until the
   /// next full sync.
   final String? ptfId;
+
+  /// The supervising program from the passport's affiliation metadata
+  /// (e.g. used for permission checks), when known.
+  final Program? program;
 }
