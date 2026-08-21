@@ -193,8 +193,8 @@ void main() {
       expect(find.text('ID: TEST-001'), findsOneWidget);
       expect(find.text('Latitude'), findsOneWidget);
       expect(find.text('Longitude'), findsOneWidget);
-      expect(find.text('45.500'), findsOneWidget);
-      expect(find.text('-5.500'), findsOneWidget);
+      expect(find.text('45.500°N'), findsOneWidget);
+      expect(find.text('5.500°W'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 100));
@@ -244,8 +244,8 @@ void main() {
       }
 
       // Verify the popup displays the correct latitude and longitude
-      expect(find.text('51.234'), findsOneWidget);
-      expect(find.text('-10.567'), findsOneWidget);
+      expect(find.text('51.234°N'), findsOneWidget);
+      expect(find.text('10.567°W'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 100));
