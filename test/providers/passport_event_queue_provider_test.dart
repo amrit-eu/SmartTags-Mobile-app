@@ -26,7 +26,7 @@ class _FixedConnectivity extends ConnectivityStatus {
 PassportEventRequest _sampleRequest() {
   return PassportEventRequest.deployment(
     ptfId: 'PLT-001',
-    deployment: DeploymentEventPayload(latitude: 1, longitude: 2, date: DateTime.utc(2026, 1, 1)),
+    deployment: DeploymentEventPayload(latitude: 1, longitude: 2, date: DateTime.utc(2026)),
   );
 }
 
