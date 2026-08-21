@@ -121,8 +121,7 @@ void main() {
     });
 
     test('leaves ptfId null when missing from the source item', () {
-      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
-      item.remove('ptfId');
+      final item = (jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>)..remove('ptfId');
 
       final companion = GatewayPassportMapper.fromPassportItem(item);
 

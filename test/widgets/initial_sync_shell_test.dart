@@ -4,13 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
-import 'package:smart_tags/models/pending_operation.dart';
-import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import '../helpers/static_initial_sync_notifier.dart';
 import '../helpers/test_main_navigation_pages.dart';
 
@@ -107,6 +107,9 @@ void main() {
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          // Markers already painted: local data was already displayed, so no
+          // "Displaying platforms…" banner is expected either.
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationPages()),
@@ -164,6 +167,7 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.completed),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationPages()),
@@ -203,6 +207,7 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
           mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
           platformsRefreshProvider.overrideWith(() => refreshNotifier),
         ],
@@ -246,6 +251,7 @@ void main() {
             () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
           ),
           platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
           mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
           platformsSyncPhaseProvider.overrideWith(
             () => _PhaseNotifier(PlatformsSyncPhase.downloading),

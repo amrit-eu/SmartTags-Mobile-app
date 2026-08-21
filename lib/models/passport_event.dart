@@ -82,14 +82,12 @@ class RetrievalEventPayload {
 /// Exactly one of [deployment]/[retrieval] is non-null.
 class PassportEventRequest {
   /// Creates a deployment [PassportEventRequest].
-  const PassportEventRequest.deployment({required this.ptfId, required DeploymentEventPayload deployment})
-    : deployment = deployment,
-      retrieval = null;
+  const PassportEventRequest.deployment({required this.ptfId, required DeploymentEventPayload this.deployment})
+    : retrieval = null;
 
   /// Creates a recovery [PassportEventRequest].
-  const PassportEventRequest.retrieval({required this.ptfId, required RetrievalEventPayload retrieval})
-    : retrieval = retrieval,
-      deployment = null;
+  const PassportEventRequest.retrieval({required this.ptfId, required RetrievalEventPayload this.retrieval})
+    : deployment = null;
 
   /// The platform identifier (`Platform.platformRef`).
   final String ptfId;

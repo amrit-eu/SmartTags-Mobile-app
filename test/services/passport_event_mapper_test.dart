@@ -96,7 +96,6 @@ void main() {
           startDate: DateTime.utc(2022, 11, 30),
           shipImoNumber: '',
           shipOvhId: '   ',
-          shipName: null,
         ),
       );
 
