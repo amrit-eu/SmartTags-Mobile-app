@@ -10,9 +10,10 @@ import 'package:smart_tags/database/connection/native.dart' as conn;
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
-import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import '../helpers/static_initial_sync_notifier.dart';
 import '../helpers/test_main_navigation_pages.dart';
 
@@ -45,11 +46,6 @@ Platform _samplePlatform() {
   );
 }
 
-class _PaintedMapMarkersNotifier extends MapMarkersPaintedNotifier {
-  @override
-  bool build() => true;
-}
-
 void main() {
   testWidgets('does not show connectivity snackbar on network changes', (
     WidgetTester tester,
@@ -65,7 +61,7 @@ void main() {
           ),
           databaseProvider.overrideWithValue(mockDatabase),
           platformsStreamProvider.overrideWith((ref) => Stream.value([_samplePlatform()])),
-          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationPages()),

@@ -187,11 +187,11 @@ void main() {
       container = buildContainer(user);
     });
 
-    test('is denied since rank cannot be resolved', () async {
+    test('is treated as program-member since being linked to the program is what matters, not the role code', () async {
       await container.read(authProvider.future);
       final can = container.read(permissionProvider);
 
-      expect(can(Action.create, Resource.deployment, programId: 42), isFalse);
+      expect(can(Action.create, Resource.deployment, programId: 42), isTrue);
     });
   });
 }

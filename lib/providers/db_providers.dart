@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -18,7 +19,7 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 /// Provides an instance of [GatewayRepository] for Gateway passport sync.
 final gatewayRepositoryProvider = Provider<GatewayRepository>((ref) {
-  return GatewayRepository();
+  return GatewayRepository(authService: ref.watch(authServiceProvider));
 });
 
 /// Loads unclosed missions from the Gateway into the local database on startup

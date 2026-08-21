@@ -20,6 +20,7 @@ abstract final class GatewayPassportMapper {
     final reportingStatus = status['reportingStatus'] as Map<String, dynamic>? ?? {};
     final latestObservation = status['latestObservation'] as Map<String, dynamic>? ?? {};
     final deployment = operations['deployment'] as Map<String, dynamic>?;
+    final supervisingProgram = affiliation['supervisingProgram'] as Map<String, dynamic>?;
 
     final observingNetworks = _observingNetworkNames(affiliation);
     final endTimestamp = operations['endTimestamp'] as String?;
@@ -35,6 +36,7 @@ abstract final class GatewayPassportMapper {
 
     return PlatformsCompanion.insert(
       ref: (item['reference'] as String?) ?? (identification['reference'] as String?) ?? 'Unknown',
+      ptfId: Value(_asPtfId(item['ptfId'])),
       model: (assetModel['name'] as String?) ?? 'Unknown',
       network: observingNetworks.isNotEmpty ? observingNetworks.first : 'Unknown',
       lat: latestLat,
@@ -54,6 +56,9 @@ abstract final class GatewayPassportMapper {
       latestOperationDate: Value(
         _parseDateTime(hasEnded ? endTimestamp : deploymentTimestamp),
       ),
+      programId: Value(supervisingProgram?['id'] as int?),
+      programName: Value(supervisingProgram?['name'] as String?),
+      programCode: Value(supervisingProgram?['code'] as String?),
     );
   }
 
@@ -88,6 +93,18 @@ abstract final class GatewayPassportMapper {
   static double? _asDouble(Object? value) {
     if (value is num) {
       return value.toDouble();
+    }
+    return null;
+  }
+
+  /// The Gateway/OceanOPS platform id (`ptfId`) may come through as a number
+  /// or a string depending on the endpoint; normalise to a string.
+  static String? _asPtfId(Object? value) {
+    if (value is num) {
+      return value.toString();
+    }
+    if (value is String && value.isNotEmpty) {
+      return value;
     }
     return null;
   }

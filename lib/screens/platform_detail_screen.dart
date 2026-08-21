@@ -7,6 +7,7 @@ import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
@@ -44,10 +45,19 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final platformAsync = ref.watch(platformByRefStreamProvider(widget.platformRef));
+    final platform = platformAsync.value?.toDomain();
+
+    if (platform == null) {
+      return Scaffold(
+        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    // Permissions
     final userPermissions = ref.watch(permissionProvider);
-    // TODO(eawetchy): Example - Replace with actual programID once included in platform metadata and required permissions
-    final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: 16410);
-    
+    final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: platform.program?.id ?? 0);
+    final isLoggedIn = ref.watch(authProvider).value != null;
+
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
       next.whenData((dbPlatform) {
@@ -57,14 +67,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
         }
       });
     });
-    
-    final platform = platformAsync.value?.toDomain();
-    if (platform == null) {
-      return Scaffold(
-        appBar: TopNavigation(title: const Text('Platform Details'), leading: const BackButton()),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+
     return Scaffold(
       appBar: TopNavigation(
         title: const Text('Platform Details'),
@@ -87,9 +90,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                       options: MapOptions(
                         initialCenter: platform.latestPosition,
                         initialZoom: 10,
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.none
-                        )
+                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                       ),
                       children: [
                         TileLayer(
@@ -170,6 +171,8 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                     value: platform.network,
                   ),
                   const Divider(height: 16),
+                  ContainerRow(label: 'Program', value: platform.program?.name ?? 'Unknown'),
+                  const Divider(height: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -233,11 +236,8 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                   const Divider(height: 16),
                   ContainerRow(
                     label: 'Notes',
-                    value: '${
-                      platform.operationNotes != null && platform.operationNotes!.isNotEmpty
-                      ? platform.operationNotes
-                      : 'No additional notes.'
-                    }',
+                    value:
+                        '${platform.operationNotes != null && platform.operationNotes!.isNotEmpty ? platform.operationNotes : 'No additional notes.'}',
                   ),
                 ],
               ),
@@ -246,32 +246,35 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           ],
         ),
       ),
-      floatingActionButton: 
-        FloatingActionButton.extended(
-          heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
-          onPressed: canEditExamplePlatform
-              ? () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute<DeployPlatformScreen>(
-                      builder: (context) => DeployPlatformScreen(
-                        action: platform.operationalStatus == OperationalStatus.deployed
-                        ? DeployAction.recover
-                        : DeployAction.deploy,
-                        platform: platform,
-                      ),
-                    ),
-                  );
-                }
-              : null,
-          backgroundColor: canEditExamplePlatform ? null : const Color.fromARGB(40, 40, 40, 40),
-          icon: platform.operationalStatus == OperationalStatus.deployed
-          ? const Icon(Icons.repeat)
-          : const Icon(Icons.arrow_circle_up_rounded),
-          label: platform.operationalStatus == OperationalStatus.deployed
-          ? const Text('Recover')
-          : const Text('Deploy'),
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
+        onPressed: () async {
+          if (!canEditExamplePlatform) {
+            final message = isLoggedIn
+                ? "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program."
+                : 'Log in to edit this platform.';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+            return;
+          }
+          await Navigator.push(
+            context,
+            MaterialPageRoute<DeployPlatformScreen>(
+              builder: (context) => DeployPlatformScreen(
+                action: platform.operationalStatus == OperationalStatus.deployed
+                    ? DeployAction.recover
+                    : DeployAction.deploy,
+                platform: platform,
+              ),
+            ),
+          );
+        },
+        icon: platform.operationalStatus == OperationalStatus.deployed
+            ? const Icon(Icons.repeat)
+            : const Icon(Icons.arrow_circle_up_rounded),
+        label: platform.operationalStatus == OperationalStatus.deployed ? const Text('Recover') : const Text('Deploy'),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

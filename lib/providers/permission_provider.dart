@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/program_role.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
@@ -70,7 +71,6 @@ enum Action {
 }
 
 const Map<Resource, Map<Action, Role>> _policy = {
-  // TODO(eawetchy): Add all relevant permissions mappings.
   Resource.deployment: {
     Action.view: Role.anonymous,
     Action.viewSensitive: Role.loggedIn,
@@ -111,6 +111,7 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
     if (user.roles.contains('alert_admin')) return true;
 
     final requiredRole = _policy[resource]?[action];
+    debugPrint('requiredRole :  $requiredRole');
     if (requiredRole == null) return false; // permission not defined (log?)
     if (requiredRole == Role.loggedIn || requiredRole == Role.anonymous) {
       return true; // grant anonymous actions to logged in users
@@ -128,10 +129,12 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
 
     if (programRole == null) return false;
 
-    final userRank = _roleRank[programRole.role.code];
+    // Being linked to the program at all makes the user at least a
+    // program-member, regardless of the actual role code returned by the
+    // API (there is no dedicated "program-member" role server-side).
+    final userRank = _roleRank[programRole.role.code] ?? _roleRank['program-member']!;
     final requiredRank = _roleRank[requiredRole.code];
-
-    if (userRank == null || requiredRank == null) return false;
+    if (requiredRank == null) return false;
 
     return userRank >= requiredRank;
   };

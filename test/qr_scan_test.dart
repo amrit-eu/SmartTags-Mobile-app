@@ -15,6 +15,7 @@ import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
+import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
 import 'helpers/static_initial_sync_notifier.dart';
@@ -37,7 +38,10 @@ void main() {
       return http.Response('{"items":[]}', 200);
     });
     final db = AppDatabase.executor(conn.inMemoryConnection());
-    final gatewayRepo = GatewayRepository(client: client);
+    final gatewayRepo = GatewayRepository(
+      client: client,
+      authService: AuthService(authDao: db.authDao),
+    );
     await tester.pumpWidget(
         ProviderScope(
           overrides: [

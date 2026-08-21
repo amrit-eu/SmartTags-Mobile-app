@@ -190,7 +190,7 @@ void main() {
 
       // Verify the popup is displayed
       expect(find.text('Test Platform Model'), findsOneWidget);
-      expect(find.text('ID: TEST-001'), findsOneWidget);
+      expect(find.text('WMO ID: TEST-001'), findsOneWidget);
       expect(find.text('Latitude'), findsOneWidget);
       expect(find.text('Longitude'), findsOneWidget);
       expect(find.text('45.500'), findsOneWidget);
@@ -381,9 +381,12 @@ void main() {
       // Note that now we have clustering, this test relies on the two
       // platforms being sufficiently far apart to not cluster, and at
       // the same time be close enough together to be rendered on the
-      // viewport at the same time. The longitudes of -3 and -30 seem to
-      // satisfy this requirement. But if this test fails unexpectedly in the
-      // future, check to see whether unintentional clustering is the cause.
+      // viewport at the same time, while also not being covered by the
+      // fixed top-left popup (top:20, left:16, maxWidth 240) once the
+      // first marker is selected. The coordinates below satisfy this
+      // requirement. But if this test fails unexpectedly in the future,
+      // check to see whether unintentional clustering, or the second
+      // marker rendering underneath the popup, is the cause.
       await db
           .into(db.platforms)
           .insert(
@@ -407,10 +410,10 @@ void main() {
               ref: 'TEST-007',
               model: 'Second Platform',
               network: 'Test Network',
-              lat: 42,
-              lon: -30,
-              operationLat: 43,
-              operationLon: -7,
+              lat: 20,
+              lon: 20,
+              operationLat: 21,
+              operationLon: 19,
               status: 'OPERATIONAL',
               operationalStatus: 'Deployed',
               lastUpdated: DateTime.now(),
@@ -438,7 +441,7 @@ void main() {
 
       // Verify first platform is shown
       expect(find.text('First Platform'), findsOneWidget);
-      expect(find.text('ID: TEST-006'), findsOneWidget);
+      expect(find.text('WMO ID: TEST-006'), findsOneWidget);
 
       // Tap second marker
       await tester.tap(find.byIcon(Icons.location_on).at(1));
@@ -448,7 +451,7 @@ void main() {
 
       // Verify popup updates to second platform
       expect(find.text('Second Platform'), findsOneWidget);
-      expect(find.text('ID: TEST-007'), findsOneWidget);
+      expect(find.text('WMO ID: TEST-007'), findsOneWidget);
       expect(find.text('First Platform'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
