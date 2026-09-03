@@ -35,6 +35,7 @@ Platform _samplePlatform() {
     lastUpdated: DateTime.utc(2025),
     operationLat: 0,
     operationLon: 0,
+    hasLatestObservation: false,
   );
 }
 

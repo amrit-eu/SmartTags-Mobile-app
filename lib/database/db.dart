@@ -64,6 +64,13 @@ class Platforms extends Table {
 
   /// Latest operation date from passport (#99).
   DateTimeColumn get latestOperationDate => dateTime().nullable()();
+
+  /// Passport ending cause id for recovery status (#100).
+  IntColumn get endingCauseId => integer().nullable()();
+
+  /// Whether passport includes a GTS latest observation (#100).
+  BoolColumn get hasLatestObservation =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// The local SQLite database using Drift ORM.
@@ -76,7 +83,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -90,6 +97,10 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(platforms, platforms.observingNetwork);
         await m.addColumn(platforms, platforms.latestOperationType);
         await m.addColumn(platforms, platforms.latestOperationDate);
+      }
+      if (from < 3) {
+        await m.addColumn(platforms, platforms.endingCauseId);
+        await m.addColumn(platforms, platforms.hasLatestObservation);
       }
     },
   );

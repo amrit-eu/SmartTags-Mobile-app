@@ -7,6 +7,7 @@ import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
+import 'package:smart_tags/helpers/latest_operation_status.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
@@ -142,42 +143,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             _PlatformSummaryCard(platform: platform),
             const SizedBox(height: 16),
 
-            // Latest Operation Section
-            SectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Latest Operation',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Divider(height: 24),
-                  ContainerRow(
-                    label: 'Last updated',
-                    value:
-                        '${DateFormat(
-                          'MMM dd, yyyy, hh:mm a',
-                        ).format(platform.lastUpdated)} UTC',
-                  ),
-                  const Divider(height: 16),
-                  ContainerRow(
-                    label: 'Position',
-                    value: formatLatLng(platform.operationLocation),
-                  ),
-                  const Divider(height: 16),
-                  ContainerRow(
-                    label: 'Notes',
-                    value: '${
-                      platform.operationNotes != null && platform.operationNotes!.isNotEmpty
-                      ? platform.operationNotes
-                      : 'No additional notes.'
-                    }',
-                  ),
-                ],
-              ),
-            ),
+            _LatestOperationCard(platform: platform),
             const SizedBox(height: 72),
           ],
         ),
@@ -285,6 +251,90 @@ class _PlatformSummaryCard extends StatelessWidget {
             label: 'Observing network',
             value: _dash(platform.observingNetwork ?? platform.network),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Latest operation card with planned/completed status (#99, #100).
+class _LatestOperationCard extends StatelessWidget {
+  const _LatestOperationCard({required this.platform});
+
+  final Platform platform;
+
+  static String _dash(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '-';
+    }
+    return value.trim();
+  }
+
+  static String _operationLabel(Platform platform) {
+    final type = platform.latestOperationType?.trim();
+    if (type != null && type.isNotEmpty) {
+      return type;
+    }
+    return platform.operationalStatus == OperationalStatus.recovered
+        ? 'Recovery'
+        : 'Deployment';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final completionStatus = resolveOperationCompletionStatus(platform);
+    final completionStyle = operationCompletionStyle(completionStatus);
+    final operationDate = platform.latestOperationDate;
+
+    return SectionContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Latest Operation',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Divider(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _operationLabel(platform),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (completionStatus != OperationCompletionStatus.unknown)
+                StatusBadge.fromStyle(
+                  style: completionStyle,
+                  showLeadingDot: true,
+                ),
+            ],
+          ),
+          const Divider(height: 16),
+          ContainerRow(
+            label: 'Date',
+            value: operationDate == null
+                ? '-'
+                : '${DateFormat('MMM dd, yyyy, hh:mm a').format(operationDate)} UTC',
+          ),
+          const Divider(height: 16),
+          ContainerRow(
+            label: 'Location',
+            value: formatLatLng(platform.operationLocation),
+          ),
+          if (platform.operationNotes != null &&
+              platform.operationNotes!.trim().isNotEmpty) ...[
+            const Divider(height: 16),
+            ContainerRow(
+              label: 'Notes',
+              value: _dash(platform.operationNotes),
+            ),
+          ],
         ],
       ),
     );
