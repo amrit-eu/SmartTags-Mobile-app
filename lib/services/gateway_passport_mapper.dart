@@ -19,6 +19,7 @@ abstract final class GatewayPassportMapper {
 
     final reportingStatus = status['reportingStatus'] as Map<String, dynamic>? ?? {};
     final latestObservation = status['latestObservation'] as Map<String, dynamic>? ?? {};
+    final endingCause = status['endingCause'] as Map<String, dynamic>? ?? {};
     final deployment = operations['deployment'] as Map<String, dynamic>?;
 
     final observingNetworks = _observingNetworkNames(affiliation);
@@ -32,6 +33,8 @@ abstract final class GatewayPassportMapper {
 
     final latestObsTimestamp = latestObservation['timestamp'] as String?;
     final deploymentTimestamp = deployment?['timestamp'] as String?;
+    final hasLatestObservation =
+        latestObsTimestamp != null && latestObsTimestamp.isNotEmpty;
 
     return PlatformsCompanion.insert(
       ref: (item['reference'] as String?) ?? (identification['reference'] as String?) ?? 'Unknown',
@@ -54,6 +57,8 @@ abstract final class GatewayPassportMapper {
       latestOperationDate: Value(
         _parseDateTime(hasEnded ? endTimestamp : deploymentTimestamp),
       ),
+      endingCauseId: Value(_asInt(endingCause['id'])),
+      hasLatestObservation: Value(hasLatestObservation),
     );
   }
 
@@ -88,6 +93,16 @@ abstract final class GatewayPassportMapper {
   static double? _asDouble(Object? value) {
     if (value is num) {
       return value.toDouble();
+    }
+    return null;
+  }
+
+  static int? _asInt(Object? value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
     }
     return null;
   }
