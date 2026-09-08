@@ -9,6 +9,7 @@ import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
+import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
@@ -332,12 +333,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               const SizedBox(height: 12),
               _buildPopupInfoRow(
                 'Latitude',
-                platform.latestPosition.latitude.toStringAsFixed(3),
+                formatLatitude(platform.latestPosition.latitude),
               ),
               const SizedBox(height: 8),
               _buildPopupInfoRow(
                 'Longitude',
-                platform.latestPosition.longitude.toStringAsFixed(3),
+                formatLongitude(platform.latestPosition.longitude),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -368,7 +369,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   /// Helper method to build a row in the popup info.
   Widget _buildPopupInfoRow(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
@@ -376,10 +376,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             color: Colors.grey,
           ),
         ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w500,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],

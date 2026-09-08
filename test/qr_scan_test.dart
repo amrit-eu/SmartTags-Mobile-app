@@ -118,7 +118,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(PlatformDetailScreen), findsOneWidget);
-    expect(find.text(mockPlatformRef), findsOneWidget);
+    expect(find.text('Model A'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     // Allow the widget tree to process disposal and cancel streams.
