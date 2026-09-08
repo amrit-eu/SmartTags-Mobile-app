@@ -155,6 +155,8 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
+        backgroundColor: canEditExamplePlatform ? null : Theme.of(context).disabledColor,
+        foregroundColor: canEditExamplePlatform ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         onPressed: () async {
           if (!canEditExamplePlatform) {
             final message = isLoggedIn
