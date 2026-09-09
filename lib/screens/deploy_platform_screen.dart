@@ -241,6 +241,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           operationLat: Value(latitude),
           operationLon: Value(longitude),
           operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
+          latestOperationType: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
           status: Value(widget.platform.status.apiName),
           operationNotes: Value(_notesController.text),
         ),
