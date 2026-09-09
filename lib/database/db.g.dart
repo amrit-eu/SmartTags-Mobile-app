@@ -224,6 +224,31 @@ class $PlatformsTable extends Platforms
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _endingCauseIdMeta = const VerificationMeta(
+    'endingCauseId',
+  );
+  @override
+  late final GeneratedColumn<int> endingCauseId = GeneratedColumn<int>(
+    'ending_cause_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hasLatestObservationMeta =
+      const VerificationMeta('hasLatestObservation');
+  @override
+  late final GeneratedColumn<bool> hasLatestObservation = GeneratedColumn<bool>(
+    'has_latest_observation',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_latest_observation" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -246,6 +271,8 @@ class $PlatformsTable extends Platforms
     observingNetwork,
     latestOperationType,
     latestOperationDate,
+    endingCauseId,
+    hasLatestObservation,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -426,6 +453,24 @@ class $PlatformsTable extends Platforms
         ),
       );
     }
+    if (data.containsKey('ending_cause_id')) {
+      context.handle(
+        _endingCauseIdMeta,
+        endingCauseId.isAcceptableOrUnknown(
+          data['ending_cause_id']!,
+          _endingCauseIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_latest_observation')) {
+      context.handle(
+        _hasLatestObservationMeta,
+        hasLatestObservation.isAcceptableOrUnknown(
+          data['has_latest_observation']!,
+          _hasLatestObservationMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -515,6 +560,14 @@ class $PlatformsTable extends Platforms
         DriftSqlType.dateTime,
         data['${effectivePrefix}latest_operation_date'],
       ),
+      endingCauseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ending_cause_id'],
+      ),
+      hasLatestObservation: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_latest_observation'],
+      )!,
     );
   }
 
@@ -584,6 +637,12 @@ class Platform extends DataClass implements Insertable<Platform> {
 
   /// Latest operation date from passport (#99).
   final DateTime? latestOperationDate;
+
+  /// Passport ending cause id for recovery status (#100).
+  final int? endingCauseId;
+
+  /// Whether passport includes a GTS latest observation (#100).
+  final bool hasLatestObservation;
   const Platform({
     required this.id,
     required this.ref,
@@ -605,6 +664,8 @@ class Platform extends DataClass implements Insertable<Platform> {
     this.observingNetwork,
     this.latestOperationType,
     this.latestOperationDate,
+    this.endingCauseId,
+    required this.hasLatestObservation,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -647,6 +708,10 @@ class Platform extends DataClass implements Insertable<Platform> {
     if (!nullToAbsent || latestOperationDate != null) {
       map['latest_operation_date'] = Variable<DateTime>(latestOperationDate);
     }
+    if (!nullToAbsent || endingCauseId != null) {
+      map['ending_cause_id'] = Variable<int>(endingCauseId);
+    }
+    map['has_latest_observation'] = Variable<bool>(hasLatestObservation);
     return map;
   }
 
@@ -690,6 +755,10 @@ class Platform extends DataClass implements Insertable<Platform> {
       latestOperationDate: latestOperationDate == null && nullToAbsent
           ? const Value.absent()
           : Value(latestOperationDate),
+      endingCauseId: endingCauseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endingCauseId),
+      hasLatestObservation: Value(hasLatestObservation),
     );
   }
 
@@ -723,6 +792,10 @@ class Platform extends DataClass implements Insertable<Platform> {
       latestOperationDate: serializer.fromJson<DateTime?>(
         json['latestOperationDate'],
       ),
+      endingCauseId: serializer.fromJson<int?>(json['endingCauseId']),
+      hasLatestObservation: serializer.fromJson<bool>(
+        json['hasLatestObservation'],
+      ),
     );
   }
   @override
@@ -749,6 +822,8 @@ class Platform extends DataClass implements Insertable<Platform> {
       'observingNetwork': serializer.toJson<String?>(observingNetwork),
       'latestOperationType': serializer.toJson<String?>(latestOperationType),
       'latestOperationDate': serializer.toJson<DateTime?>(latestOperationDate),
+      'endingCauseId': serializer.toJson<int?>(endingCauseId),
+      'hasLatestObservation': serializer.toJson<bool>(hasLatestObservation),
     };
   }
 
@@ -773,6 +848,8 @@ class Platform extends DataClass implements Insertable<Platform> {
     Value<String?> observingNetwork = const Value.absent(),
     Value<String?> latestOperationType = const Value.absent(),
     Value<DateTime?> latestOperationDate = const Value.absent(),
+    Value<int?> endingCauseId = const Value.absent(),
+    bool? hasLatestObservation,
   }) => Platform(
     id: id ?? this.id,
     ref: ref ?? this.ref,
@@ -806,6 +883,10 @@ class Platform extends DataClass implements Insertable<Platform> {
     latestOperationDate: latestOperationDate.present
         ? latestOperationDate.value
         : this.latestOperationDate,
+    endingCauseId: endingCauseId.present
+        ? endingCauseId.value
+        : this.endingCauseId,
+    hasLatestObservation: hasLatestObservation ?? this.hasLatestObservation,
   );
   Platform copyWithCompanion(PlatformsCompanion data) {
     return Platform(
@@ -849,6 +930,12 @@ class Platform extends DataClass implements Insertable<Platform> {
       latestOperationDate: data.latestOperationDate.present
           ? data.latestOperationDate.value
           : this.latestOperationDate,
+      endingCauseId: data.endingCauseId.present
+          ? data.endingCauseId.value
+          : this.endingCauseId,
+      hasLatestObservation: data.hasLatestObservation.present
+          ? data.hasLatestObservation.value
+          : this.hasLatestObservation,
     );
   }
 
@@ -874,13 +961,15 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('reportingStatus: $reportingStatus, ')
           ..write('observingNetwork: $observingNetwork, ')
           ..write('latestOperationType: $latestOperationType, ')
-          ..write('latestOperationDate: $latestOperationDate')
+          ..write('latestOperationDate: $latestOperationDate, ')
+          ..write('endingCauseId: $endingCauseId, ')
+          ..write('hasLatestObservation: $hasLatestObservation')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     ref,
     model,
@@ -901,7 +990,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     observingNetwork,
     latestOperationType,
     latestOperationDate,
-  );
+    endingCauseId,
+    hasLatestObservation,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -925,7 +1016,9 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.reportingStatus == this.reportingStatus &&
           other.observingNetwork == this.observingNetwork &&
           other.latestOperationType == this.latestOperationType &&
-          other.latestOperationDate == this.latestOperationDate);
+          other.latestOperationDate == this.latestOperationDate &&
+          other.endingCauseId == this.endingCauseId &&
+          other.hasLatestObservation == this.hasLatestObservation);
 }
 
 class PlatformsCompanion extends UpdateCompanion<Platform> {
@@ -949,6 +1042,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<String?> observingNetwork;
   final Value<String?> latestOperationType;
   final Value<DateTime?> latestOperationDate;
+  final Value<int?> endingCauseId;
+  final Value<bool> hasLatestObservation;
   const PlatformsCompanion({
     this.id = const Value.absent(),
     this.ref = const Value.absent(),
@@ -970,6 +1065,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.observingNetwork = const Value.absent(),
     this.latestOperationType = const Value.absent(),
     this.latestOperationDate = const Value.absent(),
+    this.endingCauseId = const Value.absent(),
+    this.hasLatestObservation = const Value.absent(),
   });
   PlatformsCompanion.insert({
     this.id = const Value.absent(),
@@ -992,6 +1089,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.observingNetwork = const Value.absent(),
     this.latestOperationType = const Value.absent(),
     this.latestOperationDate = const Value.absent(),
+    this.endingCauseId = const Value.absent(),
+    this.hasLatestObservation = const Value.absent(),
   }) : ref = Value(ref),
        model = Value(model),
        network = Value(network),
@@ -1023,6 +1122,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<String>? observingNetwork,
     Expression<String>? latestOperationType,
     Expression<DateTime>? latestOperationDate,
+    Expression<int>? endingCauseId,
+    Expression<bool>? hasLatestObservation,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1047,6 +1148,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
         'latest_operation_type': latestOperationType,
       if (latestOperationDate != null)
         'latest_operation_date': latestOperationDate,
+      if (endingCauseId != null) 'ending_cause_id': endingCauseId,
+      if (hasLatestObservation != null)
+        'has_latest_observation': hasLatestObservation,
     });
   }
 
@@ -1071,6 +1175,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<String?>? observingNetwork,
     Value<String?>? latestOperationType,
     Value<DateTime?>? latestOperationDate,
+    Value<int?>? endingCauseId,
+    Value<bool>? hasLatestObservation,
   }) {
     return PlatformsCompanion(
       id: id ?? this.id,
@@ -1093,6 +1199,8 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       observingNetwork: observingNetwork ?? this.observingNetwork,
       latestOperationType: latestOperationType ?? this.latestOperationType,
       latestOperationDate: latestOperationDate ?? this.latestOperationDate,
+      endingCauseId: endingCauseId ?? this.endingCauseId,
+      hasLatestObservation: hasLatestObservation ?? this.hasLatestObservation,
     );
   }
 
@@ -1163,6 +1271,14 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
         latestOperationDate.value,
       );
     }
+    if (endingCauseId.present) {
+      map['ending_cause_id'] = Variable<int>(endingCauseId.value);
+    }
+    if (hasLatestObservation.present) {
+      map['has_latest_observation'] = Variable<bool>(
+        hasLatestObservation.value,
+      );
+    }
     return map;
   }
 
@@ -1188,7 +1304,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('reportingStatus: $reportingStatus, ')
           ..write('observingNetwork: $observingNetwork, ')
           ..write('latestOperationType: $latestOperationType, ')
-          ..write('latestOperationDate: $latestOperationDate')
+          ..write('latestOperationDate: $latestOperationDate, ')
+          ..write('endingCauseId: $endingCauseId, ')
+          ..write('hasLatestObservation: $hasLatestObservation')
           ..write(')'))
         .toString();
   }
@@ -3042,6 +3160,8 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       Value<String?> observingNetwork,
       Value<String?> latestOperationType,
       Value<DateTime?> latestOperationDate,
+      Value<int?> endingCauseId,
+      Value<bool> hasLatestObservation,
     });
 typedef $$PlatformsTableUpdateCompanionBuilder =
     PlatformsCompanion Function({
@@ -3065,6 +3185,8 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> observingNetwork,
       Value<String?> latestOperationType,
       Value<DateTime?> latestOperationDate,
+      Value<int?> endingCauseId,
+      Value<bool> hasLatestObservation,
     });
 
 class $$PlatformsTableFilterComposer
@@ -3173,6 +3295,16 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<DateTime> get latestOperationDate => $composableBuilder(
     column: $table.latestOperationDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endingCauseId => $composableBuilder(
+    column: $table.endingCauseId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasLatestObservation => $composableBuilder(
+    column: $table.hasLatestObservation,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3285,6 +3417,16 @@ class $$PlatformsTableOrderingComposer
     column: $table.latestOperationDate,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get endingCauseId => $composableBuilder(
+    column: $table.endingCauseId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasLatestObservation => $composableBuilder(
+    column: $table.hasLatestObservation,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PlatformsTableAnnotationComposer
@@ -3375,6 +3517,16 @@ class $$PlatformsTableAnnotationComposer
     column: $table.latestOperationDate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get endingCauseId => $composableBuilder(
+    column: $table.endingCauseId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasLatestObservation => $composableBuilder(
+    column: $table.hasLatestObservation,
+    builder: (column) => column,
+  );
 }
 
 class $$PlatformsTableTableManager
@@ -3425,6 +3577,8 @@ class $$PlatformsTableTableManager
                 Value<String?> observingNetwork = const Value.absent(),
                 Value<String?> latestOperationType = const Value.absent(),
                 Value<DateTime?> latestOperationDate = const Value.absent(),
+                Value<int?> endingCauseId = const Value.absent(),
+                Value<bool> hasLatestObservation = const Value.absent(),
               }) => PlatformsCompanion(
                 id: id,
                 ref: ref,
@@ -3446,6 +3600,8 @@ class $$PlatformsTableTableManager
                 observingNetwork: observingNetwork,
                 latestOperationType: latestOperationType,
                 latestOperationDate: latestOperationDate,
+                endingCauseId: endingCauseId,
+                hasLatestObservation: hasLatestObservation,
               ),
           createCompanionCallback:
               ({
@@ -3469,6 +3625,8 @@ class $$PlatformsTableTableManager
                 Value<String?> observingNetwork = const Value.absent(),
                 Value<String?> latestOperationType = const Value.absent(),
                 Value<DateTime?> latestOperationDate = const Value.absent(),
+                Value<int?> endingCauseId = const Value.absent(),
+                Value<bool> hasLatestObservation = const Value.absent(),
               }) => PlatformsCompanion.insert(
                 id: id,
                 ref: ref,
@@ -3490,6 +3648,8 @@ class $$PlatformsTableTableManager
                 observingNetwork: observingNetwork,
                 latestOperationType: latestOperationType,
                 latestOperationDate: latestOperationDate,
+                endingCauseId: endingCauseId,
+                hasLatestObservation: hasLatestObservation,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

@@ -22,6 +22,8 @@ extension PlatformMapper on Platform {
       latestOperationType: latestOperationType,
       latestOperationDate: latestOperationDate,
       wigosId: wigosId,
+      endingCauseId: endingCauseId,
+      hasLatestObservation: hasLatestObservation,
     );
   }
 }

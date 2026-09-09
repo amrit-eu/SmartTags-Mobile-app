@@ -109,6 +109,8 @@ class Platform {
     this.latestOperationType,
     this.latestOperationDate,
     this.wigosId,
+    this.endingCauseId,
+    this.hasLatestObservation = false,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -155,4 +157,10 @@ class Platform {
 
   /// WIGOS identifier when available.
   final String? wigosId;
+
+  /// Passport ending cause id when recovered (#100).
+  final int? endingCauseId;
+
+  /// True when passport includes a latest GTS observation (#100).
+  final bool hasLatestObservation;
 }

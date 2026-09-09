@@ -73,6 +73,35 @@ void main() {
       expect(companion.operationalStatus.value, 'Deployed');
       expect(companion.lat.value, 33.815);
       expect(companion.lon.value, 149.765);
+      expect(companion.hasLatestObservation.value, isTrue);
+    });
+
+    test('maps ending cause and observation flag for recovery (#100)', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      final passport = item['passport'] as Map<String, dynamic>;
+      passport['status'] = {
+        'reportingStatus': {'name': 'INACTIVE'},
+        'latestObservation': {
+          'latitude': 1,
+          'longitude': 2,
+          'timestamp': '2002-06-08T23:54:33Z',
+        },
+        'endingCause': {'id': 25, 'code': 'voluntary-recovery-of-the-platform'},
+      };
+      passport['operations'] = {
+        'deployment': {
+          'latitude': 1,
+          'longitude': 2,
+          'timestamp': '2001-10-12T00:00:00Z',
+        },
+        'endTimestamp': '2002-06-08T23:54:33Z',
+      };
+
+      final companion = GatewayPassportMapper.fromPassportItem(item);
+
+      expect(companion.latestOperationType.value, 'Recovery');
+      expect(companion.endingCauseId.value, 25);
+      expect(companion.hasLatestObservation.value, isTrue);
     });
 
     test('maps ended missions to Recovery', () {

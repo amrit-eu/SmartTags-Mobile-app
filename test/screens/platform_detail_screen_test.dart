@@ -21,6 +21,7 @@ final testDbPlatform = Platform(
   lastUpdated: DateTime.utc(2025, 6, 8, 23, 54, 33),
   operationLat: 0,
   operationLon: 0,
+  hasLatestObservation: false,
 );
 
 final testDbPlatformPassport = Platform(
@@ -38,6 +39,25 @@ final testDbPlatformPassport = Platform(
   platformCategory: 'Float',
   wigosId: '2900314',
   observingNetwork: 'Argo',
+  latestOperationType: 'Deployment',
+  latestOperationDate: DateTime.utc(2001, 10, 12),
+  hasLatestObservation: true,
+);
+
+final testDbPlatformPlanned = Platform(
+  id: 1,
+  ref: testRef,
+  model: 'Model 1',
+  network: 'Network 1',
+  lat: 12.345,
+  lon: 67.89,
+  status: 'CONFIRMED',
+  operationalStatus: 'Deployed',
+  lastUpdated: DateTime.utc(2025, 6, 8, 23, 54, 33),
+  operationLat: 0,
+  operationLon: 0,
+  latestOperationType: 'Deployment',
+  hasLatestObservation: false,
 );
 
 /// Builds a [ProviderScope] with [platformByRefStreamProvider] overridden
@@ -102,5 +122,23 @@ void main() {
 
     expect(find.text('WIGOS ID'), findsOneWidget);
     expect(find.text('-'), findsWidgets);
+  });
+
+  testWidgets('Latest operation shows completed status for deployment (#100)', (tester) async {
+    await tester.pumpWidget(buildTestWidget(platform: testDbPlatformPassport));
+    await tester.pump();
+
+    expect(find.text('Latest Operation'), findsOneWidget);
+    expect(find.text('Deployment'), findsOneWidget);
+    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Location'), findsOneWidget);
+    expect(find.text('33.999°N, 143.993°E'), findsOneWidget);
+  });
+
+  testWidgets('Latest operation shows planned status (#100)', (tester) async {
+    await tester.pumpWidget(buildTestWidget(platform: testDbPlatformPlanned));
+    await tester.pump();
+
+    expect(find.text('Planned'), findsOneWidget);
   });
 }

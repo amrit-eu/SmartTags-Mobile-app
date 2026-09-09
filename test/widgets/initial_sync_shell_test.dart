@@ -93,6 +93,7 @@ void main() {
       lastUpdated: DateTime.utc(2025),
       operationLat: 0,
       operationLon: 0,
+      hasLatestObservation: false,
     );
 
     await tester.pumpWidget(
@@ -130,6 +131,7 @@ void main() {
       lastUpdated: DateTime.utc(2025),
       operationLat: 0,
       operationLon: 0,
+      hasLatestObservation: false,
     );
 
     await tester.pumpWidget(
@@ -190,6 +192,7 @@ void main() {
       lastUpdated: DateTime.utc(2025),
       operationLat: 0,
       operationLon: 0,
+      hasLatestObservation: false,
     );
 
     await tester.pumpWidget(
@@ -233,6 +236,7 @@ void main() {
       lastUpdated: DateTime.utc(2025),
       operationLat: 0,
       operationLon: 0,
+      hasLatestObservation: false,
     );
 
     await tester.pumpWidget(
