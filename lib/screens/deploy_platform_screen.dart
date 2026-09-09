@@ -16,7 +16,6 @@ import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
-import 'package:smart_tags/widgets/common/collapsible_section.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -458,7 +457,11 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       controller: _notesController,
                       maxLines: 3,
                     ),
-                    CollapsibleSection(title: 'Other fields', children: _buildOtherFields()),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Other fields', style: Theme.of(context).textTheme.titleMedium),
+                    ),
+                    ..._buildOtherFields(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       spacing: 16,
