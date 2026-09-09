@@ -21,6 +21,7 @@ abstract final class GatewayPassportMapper {
     final latestObservation = status['latestObservation'] as Map<String, dynamic>? ?? {};
     final endingCause = status['endingCause'] as Map<String, dynamic>? ?? {};
     final deployment = operations['deployment'] as Map<String, dynamic>?;
+    final supervisingProgram = affiliation['supervisingProgram'] as Map<String, dynamic>?;
 
     final observingNetworks = _observingNetworkNames(affiliation);
     final endTimestamp = operations['endTimestamp'] as String?;
@@ -33,11 +34,11 @@ abstract final class GatewayPassportMapper {
 
     final latestObsTimestamp = latestObservation['timestamp'] as String?;
     final deploymentTimestamp = deployment?['timestamp'] as String?;
-    final hasLatestObservation =
-        latestObsTimestamp != null && latestObsTimestamp.isNotEmpty;
+    final hasLatestObservation = latestObsTimestamp != null && latestObsTimestamp.isNotEmpty;
 
     return PlatformsCompanion.insert(
       ref: (item['reference'] as String?) ?? (identification['reference'] as String?) ?? 'Unknown',
+      ptfId: Value(_asPtfId(item['ptfId'])),
       model: (assetModel['name'] as String?) ?? 'Unknown',
       network: observingNetworks.isNotEmpty ? observingNetworks.first : 'Unknown',
       lat: latestLat,
@@ -59,6 +60,9 @@ abstract final class GatewayPassportMapper {
       ),
       endingCauseId: Value(_asInt(endingCause['id'])),
       hasLatestObservation: Value(hasLatestObservation),
+      programId: Value(supervisingProgram?['id'] as int?),
+      programName: Value(supervisingProgram?['name'] as String?),
+      programCode: Value(supervisingProgram?['code'] as String?),
     );
   }
 
@@ -103,6 +107,18 @@ abstract final class GatewayPassportMapper {
     }
     if (value is num) {
       return value.toInt();
+    }
+    return null;
+  }
+
+  /// The Gateway/OceanOPS platform id (`ptfId`) may come through as a number
+  /// or a string depending on the endpoint; normalise to a string.
+  static String? _asPtfId(Object? value) {
+    if (value is num) {
+      return value.toString();
+    }
+    if (value is String && value.isNotEmpty) {
+      return value;
     }
     return null;
   }

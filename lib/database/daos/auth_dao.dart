@@ -21,6 +21,10 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
   /// Write information about current user to DB
   Future<void> saveProfile(User profile) async {
     await transaction(() async {
+      // Remove any existing row(s) for this user first. `id` is the internal
+      // DB primary key (never set here) while `ref` is the external user id.
+      await (delete(userProfiles)..where((t) => t.ref.equals(profile.id))).go();
+
       await into(userProfiles).insertOnConflictUpdate(
         UserProfilesCompanion.insert(
           ref: profile.id,
@@ -98,7 +102,7 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
 
   /// Retrieve current user profile from the DB.
   Future<User?> loadProfile(int userId) async {
-    final profileRow = await (select(userProfiles)..where((t) => t.id.equals(userId))).getSingleOrNull();
+    final profileRow = await (select(userProfiles)..where((t) => t.ref.equals(userId))).getSingleOrNull();
     if (profileRow == null) return null;
 
     // Join userProgramRoles -> programs / roles to rebuild ProgramRole objects.
@@ -152,14 +156,6 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
   /// Remove the cached profile for [userRef] and its associated program-role and role rows.
   Future<void> clearProfile(int userRef) async {
     await transaction(() async {
-      final userProfile = await (select(userProfiles)..where((t) => t.ref.equals(userRef))).getSingleOrNull();
-
-      if (userProfile == null) {
-        // Nothing to clear.
-        return;
-      }
-      final userId = userProfile.id;
-
       // Capture which programs this user was linked to, before removing
       // the join rows, so we know what to check for orphaning.
       final programIds =
@@ -171,7 +167,9 @@ class AuthDao extends DatabaseAccessor<AppDatabase> with _$AuthDaoMixin {
 
       await (delete(userProgramRoles)..where((t) => t.userId.equals(userRef))).go();
       await (delete(userRoles)..where((t) => t.userId.equals(userRef))).go();
-      await (delete(userProfiles)..where((t) => t.id.equals(userId))).go();
+      // Delete by `ref` (not the internal `id`) so this is correct even if
+      // duplicate rows for this user ever exist locally.
+      await (delete(userProfiles)..where((t) => t.ref.equals(userRef))).go();
       await (delete(programs)..where((t) => t.id.isIn(programIds))).go();
     });
   }

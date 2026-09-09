@@ -10,6 +10,8 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
+import '../helpers/fake_auth_service.dart';
+
 class _FixedConnectivity extends ConnectivityStatus {
   _FixedConnectivity(this.result);
 
@@ -35,7 +37,7 @@ PlatformsCompanion _samplePlatform({String ref = 'PLT-001'}) {
 }
 
 class _FakeGatewayRepository extends GatewayRepository {
-  _FakeGatewayRepository(this.platforms);
+  _FakeGatewayRepository(this.platforms) : super(authService: NoOpAuthService());
 
   final List<PlatformsCompanion> platforms;
 
@@ -44,6 +46,8 @@ class _FakeGatewayRepository extends GatewayRepository {
 }
 
 class _ThrowingGatewayRepository extends GatewayRepository {
+  _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
+
   @override
   Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
     throw Exception('Network error');

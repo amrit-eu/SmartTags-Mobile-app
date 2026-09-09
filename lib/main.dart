@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
@@ -11,6 +12,7 @@ import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/theme.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/initial_sync_shell.dart';
+import 'package:smart_tags/widgets/pending_operations_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +29,8 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref
       ..watch(initialSyncProvider)
-      ..watch(initialSyncLifecycleProvider);
+      ..watch(initialSyncLifecycleProvider)
+      ..watch(passportEventQueueLifecycleProvider);
     return MaterialApp(
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
@@ -59,7 +62,8 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   @override
   void initState() {
     super.initState();
-    _pages = widget.pages ??
+    _pages =
+        widget.pages ??
         <Widget>[
           const MapScreen(),
           const CatalogueScreen(),
@@ -100,6 +104,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
           children: [
             const InitialSyncShell(),
             const ConnectivityBanner(),
+            const PendingOperationsBanner(),
             Expanded(child: _pages[_selectedIndex]),
           ],
         ),

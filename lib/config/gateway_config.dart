@@ -17,4 +17,7 @@ abstract final class GatewayConfig {
 
   /// refresh endpoint for mobile authentication.
   static Uri get refreshUri => apiUri('oceanops/data/auth/refresh');
+
+  /// Deploy/recover passport event submission endpoint.
+  static Uri get goosPassportEventsUri => apiUri('oceanops/data/goos-passport-events');
 }

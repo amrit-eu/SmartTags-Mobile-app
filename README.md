@@ -108,10 +108,7 @@ Requires [adb](https://developer.android.com/tools/adb) and a connected emulator
 **WSL experimental (one-command cold start):** devs can try launching the emulator on Windows from WSL:
 
 ```bash
-WSL_LAUNCH_EMULATOR=1 \
-ANDROID_AVD=Pixel_7_API_34 \
-WINDOWS_ANDROID_SDK=/mnt/c/Users/you/AppData/Local/Android/Sdk \
-./scripts/smartrun-android.sh
+WSL_LAUNCH_EMULATOR=1 ANDROID_AVD=Pixel_8_API_35 WINDOWS_ANDROID_SDK=/mnt/c/Users/you/AppData/Local/Android/Sdk ./scripts/smartrun-android.sh
 ```
 
 Or uncomment the block marked `WSL experimental` in `scripts/boot-android-emulator.sh`. Paths and AVD names vary — feedback welcome.

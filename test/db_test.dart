@@ -109,4 +109,45 @@ void main() {
       await db.close();
     });
   });
+
+  group('PendingOperations queue', () {
+    test('enqueue, watch (FIFO order), and delete', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+
+      final firstId = await db.enqueuePendingOperation(
+        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+      );
+      final secondId = await db.enqueuePendingOperation(
+        PendingOperationsCompanion.insert(platformRef: 'PLT-002', action: 'recover', payloadJson: '{"b":2}'),
+      );
+
+      final ordered = await db.getPendingOperationsOrdered();
+      expect(ordered.map((row) => row.id).toList(), [firstId, secondId]);
+      expect(ordered.first.status, 'pending');
+      expect(ordered.first.attempts, 0);
+
+      await db.deletePendingOperation(firstId);
+      final afterDelete = await db.getPendingOperationsOrdered();
+      expect(afterDelete.map((row) => row.id).toList(), [secondId]);
+
+      await db.close();
+    });
+
+    test('markPendingOperationFailed records the error and attempt count', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+
+      final id = await db.enqueuePendingOperation(
+        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{}'),
+      );
+
+      await db.markPendingOperationFailed(id, error: 'Server rejected', attempts: 1);
+
+      final row = await db.getPendingOperationById(id);
+      expect(row!.status, 'failed');
+      expect(row.lastError, 'Server rejected');
+      expect(row.attempts, 1);
+
+      await db.close();
+    });
+  });
 }
