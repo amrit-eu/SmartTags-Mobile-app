@@ -261,8 +261,6 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.addColumn(platforms, platforms.ptfId);
-      }
-      if (from < 5) {
         await m.addColumn(platforms, platforms.programId);
         await m.addColumn(platforms, platforms.programName);
         await m.addColumn(platforms, platforms.programCode);
