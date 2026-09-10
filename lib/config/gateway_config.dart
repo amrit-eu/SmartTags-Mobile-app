@@ -9,6 +9,9 @@ abstract final class GatewayConfig {
   /// Enriched passport export for unclosed missions (#111).
   static Uri get unclosedPassportsUri => apiUri('oceanops/data/enriched-goos-passport-not-closed');
 
+  /// Enriched passport export search
+  static Uri get passportsSearchUri => apiUri('oceanops/data/enriched-goos-passport/search');
+
   /// Login endpoint for mobile authentication.
   static Uri get loginUri => apiUri('oceanops/data/auth/login');
 
