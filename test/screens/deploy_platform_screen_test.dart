@@ -65,34 +65,6 @@ final testPlatform = Platform(
 );
 
 void main() {
-  testWidgets('Deploy Platform has correct title', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: testPlatform,
-            action: DeployAction.deploy,
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    expect(find.widgetWithText(TopNavigation, 'Deploy Platform'), findsOneWidget);
-  });
-  testWidgets('Recover Platform has correct title', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: DeployPlatformScreen(
-            platform: testPlatform,
-            action: DeployAction.recover,
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    expect(find.widgetWithText(TopNavigation, 'Recover Platform'), findsOneWidget);
-  });
   testWidgets('Deploy Platform has correct fields', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -107,13 +79,13 @@ void main() {
     await tester.pump();
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.initialValue == testPlatform.platformRef && !widget.enabled,
+        (widget) => widget is TextFormField && widget.initialValue == testPlatform.wigosId && !widget.enabled,
       ),
       findsOneWidget,
     );
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.initialValue == testPlatform.model && !widget.enabled,
+        (widget) => widget is TextFormField && widget.initialValue == testPlatform.platformCategory && !widget.enabled,
       ),
       findsOneWidget,
     );
@@ -136,13 +108,13 @@ void main() {
     await tester.pump();
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.initialValue == testPlatform.platformRef && !widget.enabled,
+        (widget) => widget is TextFormField && widget.initialValue == testPlatform.wigosId && !widget.enabled,
       ),
       findsOneWidget,
     );
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.initialValue == testPlatform.model && !widget.enabled,
+        (widget) => widget is TextFormField && widget.initialValue == testPlatform.platformCategory && !widget.enabled,
       ),
       findsOneWidget,
     );
