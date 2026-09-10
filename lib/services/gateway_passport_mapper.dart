@@ -48,7 +48,7 @@ abstract final class GatewayPassportMapper {
       lastUpdated: _parseDateTime(latestObsTimestamp) ?? DateTime.now(),
       operationLat: operationLat,
       operationLon: operationLon,
-      wigosId: Value(_wigosId(asset, affiliation)),
+      wigosId: Value(identification['passportId'] as String?),
       platformCategory: Value(assetType['name'] as String?),
       reportingStatus: Value(reportingStatus['name'] as String?),
       observingNetwork: Value(observingNetworks.join(', ')),
@@ -74,24 +74,6 @@ abstract final class GatewayPassportMapper {
         .whereType<String>()
         .where((name) => name.isNotEmpty)
         .toList();
-  }
-
-  static String? _wigosId(Map<String, dynamic> asset, Map<String, dynamic> affiliation) {
-    final wmo = asset['wmo'] as String?;
-    if (wmo != null && wmo.isNotEmpty) {
-      return wmo;
-    }
-
-    final networks = affiliation['goosObservingNetworks'] as List<dynamic>? ?? [];
-    for (final network in networks) {
-      if (network is Map<String, dynamic>) {
-        final wigosCode = network['wigosCode'] as String?;
-        if (wigosCode != null && wigosCode.isNotEmpty) {
-          return wigosCode;
-        }
-      }
-    }
-    return null;
   }
 
   static double? _asDouble(Object? value) {

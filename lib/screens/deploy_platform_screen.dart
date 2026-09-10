@@ -330,7 +330,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _connectivityState = ref.watch(checkConnectionProvider).value ?? ConnectivityResult.none;
 
     return Scaffold(
-      appBar: TopNavigation(title: Text('${widget.action.name.capitalize()} Platform'), leading: const BackButton()),
+      appBar: TopNavigation(title: const Text('Record Operation'), leading: const BackButton()),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -344,13 +344,13 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                   spacing: 16,
                   children: [
                     TextFormField(
-                      decoration: const InputDecoration(labelText: 'Platform ID'),
-                      initialValue: widget.platform.platformRef,
-                      enabled: false, // Platform ID is not editable.
+                      decoration: const InputDecoration(labelText: 'Wigos ID'),
+                      initialValue: widget.platform.wigosId,
+                      enabled: false, // Wigos ID is not editable.
                     ),
                     TextFormField(
-                      decoration: const InputDecoration(labelText: 'Platform Model'),
-                      initialValue: widget.platform.model,
+                      decoration: const InputDecoration(labelText: 'Platform Category'),
+                      initialValue: widget.platform.platformCategory,
                       enabled: false, // Platform Model is not editable.
                     ),
                     Row(
