@@ -3848,6 +3848,227 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   }
 }
 
+class $SyncMetadataTable extends SyncMetadata
+    with TableInfo<$SyncMetadataTable, SyncMetadataData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncMetadataTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastPlatformsRefreshMeta =
+      const VerificationMeta('lastPlatformsRefresh');
+  @override
+  late final GeneratedColumn<DateTime> lastPlatformsRefresh =
+      GeneratedColumn<DateTime>(
+        'last_platforms_refresh',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [id, lastPlatformsRefresh];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_metadata';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncMetadataData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('last_platforms_refresh')) {
+      context.handle(
+        _lastPlatformsRefreshMeta,
+        lastPlatformsRefresh.isAcceptableOrUnknown(
+          data['last_platforms_refresh']!,
+          _lastPlatformsRefreshMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncMetadataData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncMetadataData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      lastPlatformsRefresh: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_platforms_refresh'],
+      ),
+    );
+  }
+
+  @override
+  $SyncMetadataTable createAlias(String alias) {
+    return $SyncMetadataTable(attachedDatabase, alias);
+  }
+}
+
+class SyncMetadataData extends DataClass
+    implements Insertable<SyncMetadataData> {
+  /// Fixed row id — this table only ever holds a single row (`1`).
+  final int id;
+
+  /// Timestamp of the last successful platforms refresh (pull-to-refresh).
+  final DateTime? lastPlatformsRefresh;
+  const SyncMetadataData({required this.id, this.lastPlatformsRefresh});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || lastPlatformsRefresh != null) {
+      map['last_platforms_refresh'] = Variable<DateTime>(lastPlatformsRefresh);
+    }
+    return map;
+  }
+
+  SyncMetadataCompanion toCompanion(bool nullToAbsent) {
+    return SyncMetadataCompanion(
+      id: Value(id),
+      lastPlatformsRefresh: lastPlatformsRefresh == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastPlatformsRefresh),
+    );
+  }
+
+  factory SyncMetadataData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncMetadataData(
+      id: serializer.fromJson<int>(json['id']),
+      lastPlatformsRefresh: serializer.fromJson<DateTime?>(
+        json['lastPlatformsRefresh'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'lastPlatformsRefresh': serializer.toJson<DateTime?>(
+        lastPlatformsRefresh,
+      ),
+    };
+  }
+
+  SyncMetadataData copyWith({
+    int? id,
+    Value<DateTime?> lastPlatformsRefresh = const Value.absent(),
+  }) => SyncMetadataData(
+    id: id ?? this.id,
+    lastPlatformsRefresh: lastPlatformsRefresh.present
+        ? lastPlatformsRefresh.value
+        : this.lastPlatformsRefresh,
+  );
+  SyncMetadataData copyWithCompanion(SyncMetadataCompanion data) {
+    return SyncMetadataData(
+      id: data.id.present ? data.id.value : this.id,
+      lastPlatformsRefresh: data.lastPlatformsRefresh.present
+          ? data.lastPlatformsRefresh.value
+          : this.lastPlatformsRefresh,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncMetadataData(')
+          ..write('id: $id, ')
+          ..write('lastPlatformsRefresh: $lastPlatformsRefresh')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, lastPlatformsRefresh);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncMetadataData &&
+          other.id == this.id &&
+          other.lastPlatformsRefresh == this.lastPlatformsRefresh);
+}
+
+class SyncMetadataCompanion extends UpdateCompanion<SyncMetadataData> {
+  final Value<int> id;
+  final Value<DateTime?> lastPlatformsRefresh;
+  const SyncMetadataCompanion({
+    this.id = const Value.absent(),
+    this.lastPlatformsRefresh = const Value.absent(),
+  });
+  SyncMetadataCompanion.insert({
+    this.id = const Value.absent(),
+    this.lastPlatformsRefresh = const Value.absent(),
+  });
+  static Insertable<SyncMetadataData> custom({
+    Expression<int>? id,
+    Expression<DateTime>? lastPlatformsRefresh,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (lastPlatformsRefresh != null)
+        'last_platforms_refresh': lastPlatformsRefresh,
+    });
+  }
+
+  SyncMetadataCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime?>? lastPlatformsRefresh,
+  }) {
+    return SyncMetadataCompanion(
+      id: id ?? this.id,
+      lastPlatformsRefresh: lastPlatformsRefresh ?? this.lastPlatformsRefresh,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (lastPlatformsRefresh.present) {
+      map['last_platforms_refresh'] = Variable<DateTime>(
+        lastPlatformsRefresh.value,
+      );
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncMetadataCompanion(')
+          ..write('id: $id, ')
+          ..write('lastPlatformsRefresh: $lastPlatformsRefresh')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3861,6 +4082,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $UserRolesTable userRoles = $UserRolesTable(this);
   late final $PendingOperationsTable pendingOperations =
       $PendingOperationsTable(this);
+  late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
+  late final Index idxPlatformsRef = Index(
+    'idx_platforms_ref',
+    'CREATE UNIQUE INDEX idx_platforms_ref ON platforms (ref)',
+  );
   late final AuthDao authDao = AuthDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -3874,6 +4100,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userProgramRoles,
     userRoles,
     pendingOperations,
+    syncMetadata,
+    idxPlatformsRef,
   ];
 }
 
@@ -6567,6 +6795,145 @@ typedef $$PendingOperationsTableProcessedTableManager =
       PendingOperation,
       PrefetchHooks Function()
     >;
+typedef $$SyncMetadataTableCreateCompanionBuilder =
+    SyncMetadataCompanion Function({
+      Value<int> id,
+      Value<DateTime?> lastPlatformsRefresh,
+    });
+typedef $$SyncMetadataTableUpdateCompanionBuilder =
+    SyncMetadataCompanion Function({
+      Value<int> id,
+      Value<DateTime?> lastPlatformsRefresh,
+    });
+
+class $$SyncMetadataTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncMetadataTable> {
+  $$SyncMetadataTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastPlatformsRefresh => $composableBuilder(
+    column: $table.lastPlatformsRefresh,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SyncMetadataTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncMetadataTable> {
+  $$SyncMetadataTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastPlatformsRefresh => $composableBuilder(
+    column: $table.lastPlatformsRefresh,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SyncMetadataTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncMetadataTable> {
+  $$SyncMetadataTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastPlatformsRefresh => $composableBuilder(
+    column: $table.lastPlatformsRefresh,
+    builder: (column) => column,
+  );
+}
+
+class $$SyncMetadataTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncMetadataTable,
+          SyncMetadataData,
+          $$SyncMetadataTableFilterComposer,
+          $$SyncMetadataTableOrderingComposer,
+          $$SyncMetadataTableAnnotationComposer,
+          $$SyncMetadataTableCreateCompanionBuilder,
+          $$SyncMetadataTableUpdateCompanionBuilder,
+          (
+            SyncMetadataData,
+            BaseReferences<_$AppDatabase, $SyncMetadataTable, SyncMetadataData>,
+          ),
+          SyncMetadataData,
+          PrefetchHooks Function()
+        > {
+  $$SyncMetadataTableTableManager(_$AppDatabase db, $SyncMetadataTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncMetadataTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncMetadataTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncMetadataTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime?> lastPlatformsRefresh = const Value.absent(),
+              }) => SyncMetadataCompanion(
+                id: id,
+                lastPlatformsRefresh: lastPlatformsRefresh,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime?> lastPlatformsRefresh = const Value.absent(),
+              }) => SyncMetadataCompanion.insert(
+                id: id,
+                lastPlatformsRefresh: lastPlatformsRefresh,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SyncMetadataTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncMetadataTable,
+      SyncMetadataData,
+      $$SyncMetadataTableFilterComposer,
+      $$SyncMetadataTableOrderingComposer,
+      $$SyncMetadataTableAnnotationComposer,
+      $$SyncMetadataTableCreateCompanionBuilder,
+      $$SyncMetadataTableUpdateCompanionBuilder,
+      (
+        SyncMetadataData,
+        BaseReferences<_$AppDatabase, $SyncMetadataTable, SyncMetadataData>,
+      ),
+      SyncMetadataData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6585,4 +6952,6 @@ class $AppDatabaseManager {
       $$UserRolesTableTableManager(_db, _db.userRoles);
   $$PendingOperationsTableTableManager get pendingOperations =>
       $$PendingOperationsTableTableManager(_db, _db.pendingOperations);
+  $$SyncMetadataTableTableManager get syncMetadata =>
+      $$SyncMetadataTableTableManager(_db, _db.syncMetadata);
 }
