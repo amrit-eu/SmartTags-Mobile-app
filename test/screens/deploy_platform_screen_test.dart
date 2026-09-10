@@ -14,7 +14,6 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/deploy_platform_screen.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
-import 'package:smart_tags/widgets/top_navigation.dart';
 
 import '../helpers/fake_auth_service.dart';
 
