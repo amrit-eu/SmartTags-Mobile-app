@@ -1,8 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
@@ -15,14 +15,16 @@ final platformsRefreshProvider =
   PlatformsRefreshNotifier.new,
 );
 
-/// Reloads unclosed missions from the Gateway into Drift.
+/// Syncs passports from the Gateway search endpoint into Drift, filtered by
+/// `updatedSince` (the last successful refresh) so only changed platforms
+/// are re-fetched and upserted locally.
 class PlatformsRefreshNotifier extends AsyncNotifier<void> {
   Future<void>? _ongoingRefresh;
 
   @override
   Future<void> build() async {}
 
-  /// Fetches passport data and replaces local platforms when online.
+  /// Fetches changed passport data and upserts local platforms when online.
   Future<void> refresh() async {
     final ongoing = _ongoingRefresh;
     if (ongoing != null) {
@@ -52,20 +54,31 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
     final phase = ref.read(platformsSyncPhaseProvider.notifier);
     state = const AsyncValue.loading();
     phase.setDownloading();
-    if (kDebugMode) {
-      debugPrint(
-        'Platforms refresh: fetching ${GatewayConfig.unclosedPassportsUri} '
-        '(connectivity=${connectivity?.name})',
-      );
-    }
+
+    final db = ref.read(databaseProvider);
+    // Captured before the network call so a change that happens while the
+    // request is in flight isn't missed by the next delta refresh.
+    final now = DateTime.now().toUtc();
 
     try {
+      final lastRefresh = await db.getLastPlatformsRefresh();
+      final filters = <String, dynamic>{
+        if (lastRefresh != null) 'updatedSince': lastRefresh.toUtc().toIso8601String(),
+      };
+      if (kDebugMode) {
+        debugPrint(
+          'Platforms refresh: searching passports with filters=$filters '
+          '(connectivity=${connectivity?.name})',
+        );
+      }
+
       final repository = ref.read(gatewayRepositoryProvider);
-      final platforms = await repository.fetchUnclosedMissions();
+      final platforms = await repository.searchPassports(
+        PassportFilterDto(filters: filters),
+      );
       if (platforms.isNotEmpty) {
         phase.setSaving();
-        final db = ref.read(databaseProvider);
-        await db.syncPlatforms(platforms);
+        await db.upsertPlatforms(platforms);
         if (kDebugMode) {
           debugPrint('Platforms refresh: synced ${platforms.length} platforms');
         }
@@ -74,6 +87,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
           'Platforms refresh: gateway returned 0 platforms (local DB unchanged)',
         );
       }
+      await db.setLastPlatformsRefresh(now);
       state = const AsyncValue.data(null);
     } on Object catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
