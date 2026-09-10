@@ -86,7 +86,7 @@ void main() {
       expect(companion.platformCategory.value, 'Float');
       expect(companion.reportingStatus.value, 'OPERATIONAL');
       expect(companion.observingNetwork.value, 'Argo');
-      expect(companion.wigosId.value, '2900314');
+      expect(companion.wigosId.value, '0-22000-0-2900314');
       expect(companion.status.value, 'OPERATIONAL');
       expect(companion.latestOperationType.value, 'Deployment');
       expect(companion.operationalStatus.value, 'Deployed');

@@ -73,7 +73,17 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   bool useLiveLocation = false; // Default to false to save battery.
   DateTime? _selectedDateTime;
 
-  String get _eventType => widget.action == DeployAction.deploy ? 'Deployment' : 'Recovery';
+  /// The currently selected operation type, editable via the segmented control.
+  /// Seeded from [DeployPlatformScreen.action] but can be overridden in-form.
+  late DeployAction _selectedAction;
+
+  String get _eventType => _selectedAction == DeployAction.deploy ? 'Deployment' : 'Recovery';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedAction = widget.action;
+  }
 
   void setUseLiveLocation({required bool enabled}) {
     setState(() {
@@ -195,7 +205,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
     final latitude = double.parse(_latitudeController.text);
     final longitude = double.parse(_longitudeController.text);
-    final request = widget.action == DeployAction.deploy
+    final request = _selectedAction == DeployAction.deploy
         ? PassportEventRequest.deployment(
             ptfId: ptfId,
             deployment: DeploymentEventPayload(
@@ -225,7 +235,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
     final outcome = await ref
         .read(passportEventQueueProvider.notifier)
-        .enqueueOrSend(platformRef: widget.platform.platformRef, action: widget.action, request: request);
+        .enqueueOrSend(platformRef: widget.platform.platformRef, action: _selectedAction, request: request);
 
     // The event was sent (or queued for later sync) successfully; reflect
     // the new state in the local database so the UI updates immediately.
@@ -239,8 +249,8 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           lastUpdated: Value(_selectedDateTime!),
           operationLat: Value(latitude),
           operationLon: Value(longitude),
-          operationalStatus: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
-          latestOperationType: Value(widget.action == DeployAction.deploy ? 'Deployed' : 'Recovered'),
+          operationalStatus: Value(_selectedAction == DeployAction.deploy ? 'Deployed' : 'Recovered'),
+          latestOperationType: Value(_selectedAction == DeployAction.deploy ? 'Deployed' : 'Recovered'),
           status: Value(widget.platform.status.apiName),
           operationNotes: Value(_notesController.text),
         ),
@@ -287,7 +297,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       ),
     ];
 
-    if (widget.action == DeployAction.deploy) {
+    if (_selectedAction == DeployAction.deploy) {
       return [
         DropdownButtonFormField<String>(
           initialValue: _selectedMethodCode,
@@ -330,7 +340,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _connectivityState = ref.watch(checkConnectionProvider).value ?? ConnectivityResult.none;
 
     return Scaffold(
-      appBar: TopNavigation(title: Text('${widget.action.name.capitalize()} Platform'), leading: const BackButton()),
+      appBar: TopNavigation(title: const Text('Record Operation'), leading: const BackButton()),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -343,14 +353,26 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                 child: Column(
                   spacing: 16,
                   children: [
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Platform ID'),
-                      initialValue: widget.platform.platformRef,
-                      enabled: false, // Platform ID is not editable.
+                    Center(
+                      child: SegmentedButton<DeployAction>(
+                        segments: const [
+                          ButtonSegment(value: DeployAction.deploy, label: Text('Deploy')),
+                          ButtonSegment(value: DeployAction.recover, label: Text('Recover')),
+                        ],
+                        selected: {_selectedAction},
+                        onSelectionChanged: (newSelection) {
+                          setState(() => _selectedAction = newSelection.first);
+                        },
+                      ),
                     ),
                     TextFormField(
-                      decoration: const InputDecoration(labelText: 'Platform Model'),
-                      initialValue: widget.platform.model,
+                      decoration: const InputDecoration(labelText: 'Wigos ID'),
+                      initialValue: widget.platform.wigosId,
+                      enabled: false, // Wigos ID is not editable.
+                    ),
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Platform Category'),
+                      initialValue: widget.platform.platformCategory,
                       enabled: false, // Platform Model is not editable.
                     ),
                     Row(
@@ -471,7 +493,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                           ),
-                          child: Text('${widget.action.name.capitalize()} Platform'),
+                          child: Text('${_selectedAction.name.capitalize()} Platform'),
                         ),
                         ElevatedButton(onPressed: () => {Navigator.pop(context)}, child: const Text('Cancel')),
                       ],
