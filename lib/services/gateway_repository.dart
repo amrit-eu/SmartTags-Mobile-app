@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/passport_event.dart';
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
@@ -70,6 +71,52 @@ class GatewayRepository {
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Gateway fetchUnclosedMissions error: $e\n$st');
+      }
+      rethrow;
+    }
+  }
+
+  /// Searches passports on the Gateway enriched passport search endpoint.
+  ///
+  /// When [searchDto] is null, delegates to [fetchUnclosedMissions] instead
+  /// of issuing a search request.
+  Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
+    if (searchDto == null) {
+      return fetchUnclosedMissions();
+    }
+
+    final uri = GatewayConfig.passportsSearchUri;
+    try {
+      final body = jsonEncode(searchDto.toJson());
+      if (kDebugMode) {
+        debugPrint('Gateway POST $uri body=$body');
+      }
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to search passports '
+          '(Status ${response.statusCode}, body=${_truncate(response.body)})',
+        );
+      }
+
+      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+      final items = (jsonResponse['items'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(GatewayPassportMapper.fromPassportItem)
+          .toList();
+
+      if (kDebugMode) {
+        debugPrint('Gateway returned ${items.length} passports');
+      }
+      return items;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Gateway searchPassports error: $e\n$st');
       }
       rethrow;
     }
