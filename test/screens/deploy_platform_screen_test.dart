@@ -155,6 +155,228 @@ void main() {
     expect(find.widgetWithText(ElevatedButton, 'Cancel'), findsOneWidget);
   });
 
+  testWidgets('Segmented control is visible above the position row with Deploy and Recover options', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(SegmentedButton<DeployAction>), findsOneWidget);
+    final segmentedButton = find.byType(SegmentedButton<DeployAction>);
+    expect(find.descendant(of: segmentedButton, matching: find.text('Deploy')), findsOneWidget);
+    expect(find.descendant(of: segmentedButton, matching: find.text('Recover')), findsOneWidget);
+
+    // The segmented control must appear above the Latitude/Longitude row.
+    final controlY = tester.getTopLeft(segmentedButton).dy;
+    final latitudeY = tester.getTopLeft(find.widgetWithText(TextFormField, 'Latitude')).dy;
+    expect(controlY, lessThan(latitudeY));
+  });
+
+  testWidgets('Toggling the segmented control flips the save button label', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.widgetWithText(ElevatedButton, 'Deploy Platform'), findsOneWidget);
+
+    final segmentedButton = find.byType(SegmentedButton<DeployAction>);
+    await tester.tap(find.descendant(of: segmentedButton, matching: find.text('Recover')));
+    await tester.pump();
+
+    expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Deploy Platform'), findsNothing);
+
+    await tester.tap(find.descendant(of: segmentedButton, matching: find.text('Deploy')));
+    await tester.pump();
+
+    expect(find.widgetWithText(ElevatedButton, 'Deploy Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsNothing);
+  });
+
+  testWidgets('Toggling the segmented control flips the visible other fields', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.widgetWithText(DropdownButtonFormField<String>, 'Method'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Max Water Depth (m)'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Elevation (m)'), findsOneWidget);
+    expect(find.widgetWithText(DropdownButtonFormField<String>, 'Ending Cause'), findsNothing);
+    expect(find.widgetWithText(TextFormField, 'Ship IMO Number'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(of: find.byType(SegmentedButton<DeployAction>), matching: find.text('Recover')),
+    );
+    await tester.pump();
+
+    expect(find.widgetWithText(DropdownButtonFormField<String>, 'Method'), findsNothing);
+    expect(find.widgetWithText(TextFormField, 'Max Water Depth (m)'), findsNothing);
+    expect(find.widgetWithText(TextFormField, 'Elevation (m)'), findsNothing);
+    expect(find.widgetWithText(DropdownButtonFormField<String>, 'Ending Cause'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Ship IMO Number'), findsOneWidget);
+  });
+
+  testWidgets('Toggling the segmented control flips the event-type wording', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: DeployPlatformScreen(
+            platform: testPlatform,
+            action: DeployAction.deploy,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.widgetWithText(TextFormField, 'Deployment Time (UTC)'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(of: find.byType(SegmentedButton<DeployAction>), matching: find.text('Recover')),
+    );
+    await tester.pump();
+
+    expect(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Deployment Time (UTC)'), findsNothing);
+  });
+
+  testWidgets('Submitting after toggling to Recover uses the newly selected action, not the original one', (
+    tester,
+  ) async {
+    final platform = Platform(
+      ptfId: '123',
+      platformRef: 'TEST-001',
+      model: 'Model 1',
+      network: 'Network 1',
+      latestPosition: const LatLng(0, 0),
+      operationLocation: const LatLng(0, 0),
+      status: PlatformStatus.operational,
+      operationalStatus: OperationalStatus.deployed,
+      lastUpdated: DateTime(2025),
+    );
+
+    // Set up platform-aware in-memory database
+    final db = AppDatabase.executor(conn.inMemoryConnection());
+    await db
+        .into(db.platforms)
+        .insert(
+          PlatformsCompanion.insert(
+            ref: platform.platformRef,
+            model: platform.model,
+            network: platform.network,
+            lat: platform.latestPosition.latitude,
+            lon: platform.latestPosition.longitude,
+            status: platform.status.apiName,
+            operationalStatus: platform.operationalStatus == OperationalStatus.deployed ? 'Deployed' : 'Recovered',
+            lastUpdated: platform.lastUpdated,
+            operationLat: platform.operationLocation.latitude,
+            operationLon: platform.operationLocation.longitude,
+          ),
+        );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(
+            _WifiConnectivityStatus.new,
+          ),
+          gatewayRepositoryProvider.overrideWith((ref) => _SucceedingGatewayRepository()),
+        ],
+        child: MaterialApp(
+          home: Navigator(
+            pages: [
+              MaterialPage(child: Scaffold(body: Container())),
+              MaterialPage(
+                // Screen is opened for a Deploy, but the operator will toggle it to Recover in-form.
+                child: DeployPlatformScreen(
+                  platform: platform,
+                  action: DeployAction.deploy,
+                ),
+              ),
+            ],
+            onDidRemovePage: (page) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Toggle from Deploy to Recover before filling in the form.
+    await tester.tap(
+      find.descendant(of: find.byType(SegmentedButton<DeployAction>), matching: find.text('Recover')),
+    );
+    await tester.pump();
+
+    // Fill in the form fields
+    await tester.enterText(find.widgetWithText(TextFormField, 'Latitude'), '12.345');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Longitude'), '67.890');
+
+    // Use datepicker for Recovery Time
+    await tester.tap(find.widgetWithText(TextFormField, 'Recovery Time (UTC)'));
+    await tester.pumpAndSettle();
+    // Select date
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    // Confirm date picker (OK button)
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    // use .last to get the time picker's input field
+    await tester.enterText(find.byType(TextField).last, '12:00');
+    await tester.pumpAndSettle();
+    // use .last to get the dialog's OK button
+    await tester.tap(find.text('OK').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'Notes'), 'Recovered successfully');
+
+    // The save button label must reflect the toggled action, not the constructor-provided one.
+    expect(find.widgetWithText(ElevatedButton, 'Recover Platform'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Deploy Platform'), findsNothing);
+
+    // Tap the submit button
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Recover Platform'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Recover Platform'));
+    await tester.pumpAndSettle();
+
+    // Verify that the success SnackBar reflects the toggled action.
+    expect(find.text('Recovery successful! Changes have been saved and synced.'), findsOneWidget);
+
+    // Verify that the platform record in the database was updated as a recovery, not a deployment.
+    final updatedPlatform = await (db.select(
+      db.platforms,
+    )..where((tbl) => tbl.ref.equals(platform.platformRef))).getSingle();
+
+    expect(updatedPlatform.operationalStatus, 'Recovered');
+    expect(updatedPlatform.latestOperationType, 'Recovered');
+
+    // Clean up the database
+    await db.close();
+  });
+
   testWidgets('Submitting the form updates the corresponding platform record in the database (online)', (tester) async {
     final platform = Platform(
       ptfId: '123',
