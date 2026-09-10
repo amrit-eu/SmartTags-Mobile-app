@@ -55,6 +55,8 @@ class _NoConnectivityStatus extends ConnectivityStatus {
 /// A fake Platform to use in tests.
 final testPlatform = Platform(
   platformRef: 'TEST-001',
+  wigosId: 'test-0001-wigosid',
+  platformCategory: 'test-category',
   model: 'Model 1',
   network: 'Network 1',
   latestPosition: const LatLng(0, 0),
