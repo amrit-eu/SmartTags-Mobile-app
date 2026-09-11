@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
@@ -30,7 +31,8 @@ class MyApp extends ConsumerWidget {
     ref
       ..watch(initialSyncProvider)
       ..watch(initialSyncLifecycleProvider)
-      ..watch(passportEventQueueLifecycleProvider);
+      ..watch(passportEventQueueLifecycleProvider)
+      ..watch(platformsRefreshLifecycleProvider);
     return MaterialApp(
       title: 'SmartTags',
       theme: AppTheme.lightTheme,

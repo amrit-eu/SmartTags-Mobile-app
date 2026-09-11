@@ -108,6 +108,99 @@ void main() {
 
       await db.close();
     });
+
+    test('Test upsertPlatforms inserts new rows and updates existing ones by ref', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+      final now = DateTime.now();
+
+      PlatformsCompanion platform({required String ref, required String model, required double lat}) {
+        return PlatformsCompanion.insert(
+          ref: ref,
+          model: model,
+          network: 'Net',
+          lat: lat,
+          lon: lat,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: now,
+          operationLat: lat,
+          operationLon: lat,
+        );
+      }
+
+      await db.insertPlatforms([platform(ref: 'PLT-001', model: 'Model A', lat: 1)]);
+
+      // Delta refresh: PLT-001 changed, PLT-002 is new. Any local platform
+      // absent from this list (there is none here) must stay untouched.
+      await db.upsertPlatforms([
+        platform(ref: 'PLT-001', model: 'Model A Updated', lat: 1),
+        platform(ref: 'PLT-002', model: 'Model B', lat: 2),
+      ]);
+
+      final results = await db.select(db.platforms).get();
+      expect(results, hasLength(2));
+      expect(results.firstWhere((r) => r.ref == 'PLT-001').model, 'Model A Updated');
+      expect(results.firstWhere((r) => r.ref == 'PLT-002').model, 'Model B');
+
+      await db.close();
+    });
+
+    test('Test upsertPlatforms leaves platforms absent from the batch untouched', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+      final now = DateTime.now();
+
+      await db.insertPlatforms([
+        PlatformsCompanion.insert(
+          ref: 'PLT-001',
+          model: 'Model A',
+          network: 'Net',
+          lat: 1,
+          lon: 1,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: now,
+          operationLat: 1,
+          operationLon: 1,
+        ),
+      ]);
+
+      await db.upsertPlatforms([
+        PlatformsCompanion.insert(
+          ref: 'PLT-002',
+          model: 'Model B',
+          network: 'Net',
+          lat: 2,
+          lon: 2,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: now,
+          operationLat: 2,
+          operationLon: 2,
+        ),
+      ]);
+
+      final results = await db.select(db.platforms).get();
+      expect(results.map((r) => r.ref), containsAll(['PLT-001', 'PLT-002']));
+      expect(results, hasLength(2));
+
+      await db.close();
+    });
+
+    test('Test getLastPlatformsRefresh/setLastPlatformsRefresh persist the timestamp', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+
+      expect(await db.getLastPlatformsRefresh(), null);
+
+      final when = DateTime.utc(2026, 7);
+      await db.setLastPlatformsRefresh(when);
+      expect((await db.getLastPlatformsRefresh())!.isAtSameMomentAs(when), isTrue);
+
+      final later = DateTime.utc(2026, 7, 2);
+      await db.setLastPlatformsRefresh(later);
+      expect((await db.getLastPlatformsRefresh())!.isAtSameMomentAs(later), isTrue);
+
+      await db.close();
+    });
   });
 
   group('PendingOperations queue', () {

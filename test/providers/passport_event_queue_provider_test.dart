@@ -50,6 +50,22 @@ class _ScriptedGatewayRepository extends GatewayRepository {
   }
 }
 
+/// Fake repository whose single submission blocks on [gate] before
+/// resolving — used to prove a second concurrent `processQueue()` call
+/// joins the first in-flight run rather than starting its own pass.
+class _GatedGatewayRepository extends GatewayRepository {
+  _GatedGatewayRepository(this.gate) : super(authService: NoOpAuthService());
+
+  final Future<void> gate;
+  int callCount = 0;
+
+  @override
+  Future<void> submitPassportEventJson(String body) async {
+    callCount++;
+    await gate;
+  }
+}
+
 void main() {
   group('PassportEventQueueNotifier', () {
     late AppDatabase db;
@@ -172,6 +188,40 @@ void main() {
       expect(remaining.single.status, 'failed');
       expect(remaining.single.lastError, isNotNull);
       expect(repository.sentBodies, hasLength(3));
+    });
+
+    test('processQueue: a second concurrent call joins the first instead of starting a new pass', () async {
+      await db.enqueuePendingOperation(
+        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+      );
+
+      final gate = Completer<void>();
+      final repository = _GatedGatewayRepository(gate.future);
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
+          gatewayRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(passportEventQueueProvider.notifier);
+      final first = notifier.processQueue();
+      final second = notifier.processQueue();
+
+      // Neither call has resolved yet, so the row must still be pending.
+      await Future<void>.delayed(Duration.zero);
+      expect(await db.getPendingOperationsOrdered(), hasLength(1));
+
+      gate.complete();
+      await first;
+      await second;
+
+      expect(await db.getPendingOperationsOrdered(), isEmpty);
+      // Exactly one submission attempt — the second call joined the first
+      // run rather than starting its own pass.
+      expect(repository.callCount, 1);
     });
 
     test('retryFailed resends a single row and removes it on success', () async {
