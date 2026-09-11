@@ -96,12 +96,18 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     final repository = ref.read(gatewayRepositoryProvider);
     final phase = ref.read(platformsSyncPhaseProvider.notifier)
       ..setDownloading();
+    // Captured before the network call so a change that happens while the
+    // request is in flight isn't missed by the first delta refresh.
+    final now = DateTime.now().toUtc();
     try {
       final platforms = await repository.fetchUnclosedMissions();
       if (platforms.isNotEmpty) {
         phase.setSaving();
         await db.syncPlatforms(platforms);
       }
+      // Establishes the baseline `updatedSince` for the next (delta)
+      // platforms refresh, so it doesn't have to re-fetch everything.
+      await db.setLastPlatformsRefresh(now);
       return InitialSyncStatus.completed;
     } finally {
       phase.setIdle();
