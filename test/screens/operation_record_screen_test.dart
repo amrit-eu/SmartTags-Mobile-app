@@ -11,7 +11,8 @@ import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
-import 'package:smart_tags/screens/deploy_platform_screen.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -32,8 +33,19 @@ class MockErrorDatabase extends AppDatabase {
 class _SucceedingGatewayRepository extends GatewayRepository {
   _SucceedingGatewayRepository() : super(authService: NoOpAuthService());
 
+  int fetchUnclosedMissionsCallCount = 0;
+
   @override
   Future<void> submitPassportEventJson(String body) async {}
+
+  // Called by the post-submit delayed platforms refresh (no stored
+  // `cachedSince` baseline yet in these tests' fresh in-memory DB, so it
+  // falls back to this bounded fetch rather than an unfiltered search).
+  @override
+  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+    fetchUnclosedMissionsCallCount++;
+    return [];
+  }
 }
 
 /// A test notifier that simulates Wifi connectivity.
@@ -214,6 +226,7 @@ void main() {
           ),
         );
 
+    final gatewayRepository = _SucceedingGatewayRepository();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -221,7 +234,9 @@ void main() {
           checkConnectionProvider.overrideWith(
             _WifiConnectivityStatus.new,
           ),
-          gatewayRepositoryProvider.overrideWith((ref) => _SucceedingGatewayRepository()),
+          gatewayRepositoryProvider.overrideWith((ref) => gatewayRepository),
+          // Avoid a real 3s wait for the post-submit delayed refresh.
+          platformsRefreshDelayProvider.overrideWithValue(Duration.zero),
         ],
         child: MaterialApp(
           home: Navigator(
@@ -287,6 +302,12 @@ void main() {
     expect(updatedPlatform.operationLon, 67.890);
     expect(updatedPlatform.operationalStatus, 'Recovered');
     expect(updatedPlatform.operationNotes, 'Recovered successfully');
+
+    // The event was sent immediately (outcome == sent), so a delayed
+    // platforms refresh was fired-and-forgotten; with a zero delay it
+    // should have completed by now.
+    expect(gatewayRepository.fetchUnclosedMissionsCallCount, 1);
+    expect(await db.getLastPlatformsRefresh(), isNotNull);
 
     // Clean up the database
     await db.close();

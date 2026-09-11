@@ -16,6 +16,7 @@ import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -226,6 +227,13 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     final outcome = await ref
         .read(passportEventQueueProvider.notifier)
         .enqueueOrSend(platformRef: widget.platform.platformRef, action: widget.action, request: request);
+
+    if (outcome == PassportEventSubmitOutcome.sent) {
+      // The event was actually sent to the Gateway now, so schedule a
+      // delayed refresh to pick up the server-side change once it's had
+      // time to propagate. Fire-and-forget and deliberately not awaited
+      unawaited(ref.read(platformsRefreshProvider.notifier).refreshAfterDelay());
+    }
 
     // The event was sent (or queued for later sync) successfully; reflect
     // the new state in the local database so the UI updates immediately.
