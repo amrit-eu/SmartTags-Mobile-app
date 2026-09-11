@@ -38,22 +38,41 @@ PlatformsCompanion _samplePlatform({String ref = 'PLT-001'}) {
 }
 
 class _FakeGatewayRepository extends GatewayRepository {
-  _FakeGatewayRepository(this.platforms) : super(authService: NoOpAuthService());
+  _FakeGatewayRepository({this.unclosedMissions = const [], this.searchResults = const []})
+    : super(authService: NoOpAuthService());
 
-  final List<PlatformsCompanion> platforms;
+  /// Returned by [fetchUnclosedMissions] — used as the fallback fetch when
+  /// there's no stored `cachedSince` baseline yet.
+  final List<PlatformsCompanion> unclosedMissions;
 
-  /// The `filters` map passed to [searchPassports] on each call, in order.
-  final List<Map<String, dynamic>?> capturedFilters = [];
+  /// Returned by [searchPassports] once a baseline is stored.
+  final List<PlatformsCompanion> searchResults;
+
+  int fetchUnclosedMissionsCallCount = 0;
+
+  /// The DTO passed to [searchPassports] on each call, in order.
+  final List<PassportFilterDto?> capturedSearchDtos = [];
+
+  @override
+  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+    fetchUnclosedMissionsCallCount++;
+    return unclosedMissions;
+  }
 
   @override
   Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
-    capturedFilters.add(searchDto?.filters);
-    return platforms;
+    capturedSearchDtos.add(searchDto);
+    return searchResults;
   }
 }
 
 class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
+
+  @override
+  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+    throw Exception('Network error');
+  }
 
   @override
   Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
@@ -73,10 +92,12 @@ void main() {
       await db.close();
     });
 
-    test('refreshes platforms when online, upserting without touching untouched rows', () async {
+    test('first refresh (no stored baseline) fetches unclosed missions instead of an unfiltered search', () async {
       await db.insertPlatforms([_samplePlatform()]); // PLT-001, pre-existing local row.
 
-      final fakeRepository = _FakeGatewayRepository([_samplePlatform(ref: 'PLT-002')]);
+      final fakeRepository = _FakeGatewayRepository(
+        unclosedMissions: [_samplePlatform(ref: 'PLT-002')],
+      );
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -94,19 +115,23 @@ void main() {
       await container.read(platformsRefreshProvider.notifier).refresh();
 
       expect(container.read(platformsRefreshProvider).hasError, isFalse);
+      // No baseline yet -> falls back to fetchUnclosedMissions (bounded,
+      // not an unfiltered search) and replaces local platforms with it,
+      // same as the initial sync.
+      expect(fakeRepository.fetchUnclosedMissionsCallCount, 1);
+      expect(fakeRepository.capturedSearchDtos, isEmpty);
       final rows = await db.select(db.platforms).get();
-      // Delta result (PLT-002) is upserted; the pre-existing PLT-001 (absent
-      // from the delta response) is left untouched, not deleted.
-      expect(rows.map((r) => r.ref), containsAll(['PLT-001', 'PLT-002']));
-      expect(rows, hasLength(2));
+      expect(rows.map((r) => r.ref), ['PLT-002']);
 
-      // No refresh had run yet, so the first search is unfiltered.
-      expect(fakeRepository.capturedFilters.single, isEmpty);
+      // The baseline is now stamped for the next refresh.
       expect(await db.getLastPlatformsRefresh(), isNotNull);
     });
 
-    test('sends updatedSince from the previous refresh on the next refresh', () async {
-      final fakeRepository = _FakeGatewayRepository([_samplePlatform(ref: 'PLT-002')]);
+    test('subsequent refresh sends cachedSince/paginationEnabled and upserts without touching untouched rows', () async {
+      final fakeRepository = _FakeGatewayRepository(
+        unclosedMissions: [_samplePlatform()],
+        searchResults: [_samplePlatform(ref: 'PLT-002')],
+      );
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -121,13 +146,25 @@ void main() {
       container.listen(platformsRefreshProvider, (_, _) {});
       await container.read(platformsRefreshProvider.future);
 
+      // First refresh: no baseline yet -> fetchUnclosedMissions, seeds PLT-001.
       await container.read(platformsRefreshProvider.notifier).refresh();
       final firstRefresh = await db.getLastPlatformsRefresh();
+
+      // Second refresh: baseline present -> delta search + upsert.
       await container.read(platformsRefreshProvider.notifier).refresh();
 
-      expect(fakeRepository.capturedFilters, hasLength(2));
-      expect(fakeRepository.capturedFilters[0], isEmpty);
-      expect(fakeRepository.capturedFilters[1], {'updatedSince': firstRefresh!.toUtc().toIso8601String()});
+      expect(fakeRepository.fetchUnclosedMissionsCallCount, 1);
+      expect(fakeRepository.capturedSearchDtos, hasLength(1));
+      final searchDto = fakeRepository.capturedSearchDtos.single!;
+      expect(searchDto.cachedSince, firstRefresh!.toUtc().toIso8601String());
+      expect(searchDto.paginationEnabled, isFalse);
+      expect(searchDto.filters, isNull);
+
+      // The delta result (PLT-002) is upserted; PLT-001 (absent from the
+      // delta response) is left untouched, not deleted.
+      final rows = await db.select(db.platforms).get();
+      expect(rows.map((r) => r.ref), containsAll(['PLT-001', 'PLT-002']));
+      expect(rows, hasLength(2));
     });
 
     test('errors when offline', () async {

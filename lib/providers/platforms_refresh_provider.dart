@@ -16,7 +16,7 @@ final platformsRefreshProvider =
 );
 
 /// Syncs passports from the Gateway search endpoint into Drift, filtered by
-/// `updatedSince` (the last successful refresh) so only changed platforms
+/// `cachedSince` (the last successful refresh) so only changed platforms
 /// are re-fetched and upserted locally.
 class PlatformsRefreshNotifier extends AsyncNotifier<void> {
   Future<void>? _ongoingRefresh;
@@ -62,19 +62,43 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
 
     try {
       final lastRefresh = await db.getLastPlatformsRefresh();
-      final filters = <String, dynamic>{
-        if (lastRefresh != null) 'updatedSince': lastRefresh.toUtc().toIso8601String(),
-      };
+      final repository = ref.read(gatewayRepositoryProvider);
+
+      if (lastRefresh == null) {
+        // No baseline yet (e.g. an install that predates this feature, so
+        // the initial sync never stamped one). Searching without
+        // `cachedSince` would re-fetch the entire dataset, so fall back to
+        // the bounded unclosed-missions fetch instead — same as the initial
+        // sync — and use it to establish the baseline for the next refresh.
+        if (kDebugMode) {
+          debugPrint(
+            'Platforms refresh: no stored cachedSince yet — fetching '
+            'unclosed missions instead of an unfiltered search',
+          );
+        }
+        final platforms = await repository.fetchUnclosedMissions();
+        if (platforms.isNotEmpty) {
+          phase.setSaving();
+          await db.syncPlatforms(platforms);
+          if (kDebugMode) {
+            debugPrint('Platforms refresh: synced ${platforms.length} platforms');
+          }
+        }
+        await db.setLastPlatformsRefresh(now);
+        state = const AsyncValue.data(null);
+        return;
+      }
+
+      final cachedSince = lastRefresh.toUtc().toIso8601String();
       if (kDebugMode) {
         debugPrint(
-          'Platforms refresh: searching passports with filters=$filters '
+          'Platforms refresh: searching passports with cachedSince=$cachedSince '
           '(connectivity=${connectivity?.name})',
         );
       }
 
-      final repository = ref.read(gatewayRepositoryProvider);
       final platforms = await repository.searchPassports(
-        PassportFilterDto(filters: filters),
+        PassportFilterDto(cachedSince: cachedSince, paginationEnabled: false),
       );
       if (platforms.isNotEmpty) {
         phase.setSaving();

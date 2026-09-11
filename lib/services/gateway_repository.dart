@@ -51,7 +51,7 @@ class GatewayRepository {
       }
       final response = await _client.get(uri);
 
-      if (response.statusCode != 200) {
+      if (!_isSuccess(response.statusCode)) {
         throw Exception(
           'Failed to load unclosed missions '
           '(Status ${response.statusCode}, body=${_truncate(response.body)})',
@@ -97,7 +97,7 @@ class GatewayRepository {
         body: body,
       );
 
-      if (response.statusCode != 200) {
+      if (!_isSuccess(response.statusCode)) {
         throw Exception(
           'Failed to search passports '
           '(Status ${response.statusCode}, body=${_truncate(response.body)})',
@@ -121,6 +121,10 @@ class GatewayRepository {
       rethrow;
     }
   }
+
+  /// The Gateway returns `201 Created` for some POST endpoints (e.g. the
+  /// passport search) rather than `200 OK`, so any 2xx status is accepted.
+  bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 
   String _truncate(String value, {int max = 200}) {
     if (value.length <= max) {

@@ -7,6 +7,7 @@ import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -185,6 +186,84 @@ void main() {
       final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
 
       expect(repository.fetchUnclosedMissions, throwsException);
+    });
+
+    test('searchPassports posts the filters and returns mapped platforms on 200', () async {
+      final mockResponse = {
+        'items': [_samplePassportItem],
+        'total': 1,
+      };
+
+      final client = MockClient((request) async {
+        expect(request.method, 'POST');
+        expect(request.url, GatewayConfig.passportsSearchUri);
+        expect(request.headers['Content-Type'], 'application/json');
+        expect(
+          json.decode(request.body),
+          {
+            'filters': {'updatedSince': '2026-07-01T00:00:00.000Z'},
+          },
+        );
+        return http.Response(json.encode(mockResponse), 200);
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+      final platforms = await repository.searchPassports(
+        const PassportFilterDto(
+          filters: {'updatedSince': '2026-07-01T00:00:00.000Z'},
+        ),
+      );
+
+      expect(platforms.length, 1);
+      expect(platforms.first.ref.value, '2900314');
+    });
+
+    test('searchPassports accepts a 201 response (Gateway returns Created on this endpoint)', () async {
+      final mockResponse = {
+        'items': [_samplePassportItem],
+        'total': 1,
+      };
+
+      final client = MockClient((request) async {
+        return http.Response(json.encode(mockResponse), 201);
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+      final platforms = await repository.searchPassports(const PassportFilterDto(filters: {}));
+
+      expect(platforms.length, 1);
+      expect(platforms.first.ref.value, '2900314');
+    });
+
+    test('searchPassports throws on error response', () async {
+      final client = MockClient((request) async {
+        return http.Response('Bad request', 400);
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+
+      expect(
+        () => repository.searchPassports(const PassportFilterDto(filters: {})),
+        throwsException,
+      );
+    });
+
+    test('searchPassports delegates to fetchUnclosedMissions when searchDto is null', () async {
+      final mockResponse = {
+        'items': [_samplePassportItem],
+        'total': 1,
+      };
+
+      final client = MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url, GatewayConfig.unclosedPassportsUri);
+        return http.Response(json.encode(mockResponse), 200);
+      });
+
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+      final platforms = await repository.searchPassports(null);
+
+      expect(platforms.length, 1);
     });
   });
 
