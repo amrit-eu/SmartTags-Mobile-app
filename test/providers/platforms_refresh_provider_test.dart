@@ -206,5 +206,58 @@ void main() {
 
       expect(container.read(platformsRefreshProvider).hasError, isTrue);
     });
+
+    test('platformsRefreshDelayProvider defaults to 3 seconds', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      expect(container.read(platformsRefreshDelayProvider), const Duration(seconds: 3));
+    });
+
+    test('refreshAfterDelay waits for platformsRefreshDelayProvider before refreshing', () async {
+      final fakeRepository = _FakeGatewayRepository(unclosedMissions: [_samplePlatform()]);
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(
+            () => _FixedConnectivity(ConnectivityResult.wifi),
+          ),
+          gatewayRepositoryProvider.overrideWithValue(fakeRepository),
+          platformsRefreshDelayProvider.overrideWithValue(const Duration(milliseconds: 30)),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(platformsRefreshProvider, (_, _) {});
+      await container.read(platformsRefreshProvider.future);
+
+      final done = container.read(platformsRefreshProvider.notifier).refreshAfterDelay();
+
+      // Shortly after calling, the refresh must not have happened yet.
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      expect(fakeRepository.fetchUnclosedMissionsCallCount, 0);
+
+      await done;
+      expect(fakeRepository.fetchUnclosedMissionsCallCount, 1);
+    });
+
+    test('refreshAfterDelay with Duration.zero refreshes without waiting', () async {
+      final fakeRepository = _FakeGatewayRepository(unclosedMissions: [_samplePlatform()]);
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(
+            () => _FixedConnectivity(ConnectivityResult.wifi),
+          ),
+          gatewayRepositoryProvider.overrideWithValue(fakeRepository),
+          platformsRefreshDelayProvider.overrideWithValue(Duration.zero),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(platformsRefreshProvider, (_, _) {});
+      await container.read(platformsRefreshProvider.future);
+
+      await container.read(platformsRefreshProvider.notifier).refreshAfterDelay();
+
+      expect(fakeRepository.fetchUnclosedMissionsCallCount, 1);
+    });
   });
 }

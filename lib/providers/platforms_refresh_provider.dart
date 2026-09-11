@@ -5,15 +5,23 @@ import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 
 /// Manual / pull-to-refresh Gateway → local platforms sync.
 ///
 /// Separate from [initialSyncProvider], which only runs when the DB is empty.
-final platformsRefreshProvider =
-    AsyncNotifierProvider<PlatformsRefreshNotifier, void>(
+final platformsRefreshProvider = AsyncNotifierProvider<PlatformsRefreshNotifier, void>(
   PlatformsRefreshNotifier.new,
 );
+
+/// Delay before [PlatformsRefreshNotifier.refreshAfterDelay] (and
+/// [platformsRefreshLifecycleProvider]'s post-drain refresh) actually
+/// triggers the refresh — gives the Back-end time to finish processing a
+/// just-submitted (or just-drained) deploy/recover event before we
+/// re-fetch. Overridable in tests (e.g. to `Duration.zero`) to avoid real
+/// multi-second waits.
+final platformsRefreshDelayProvider = Provider<Duration>((ref) => const Duration(seconds: 3));
 
 /// Syncs passports from the Gateway search endpoint into Drift, filtered by
 /// `cachedSince` (the last successful refresh) so only changed platforms
@@ -40,6 +48,20 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         _ongoingRefresh = null;
       }
     }
+  }
+
+  /// Waits [platformsRefreshDelayProvider] (3s by default) then calls
+  /// [refresh]. Runs entirely against this notifier's own long-lived `ref`
+  /// rather than a caller's, so it's safe to invoke from a widget right
+  /// before it disposes (e.g. right after `Navigator.pop`). Never throws —
+  /// [refresh] already swallows and surfaces its own errors via provider
+  /// state.
+  Future<void> refreshAfterDelay() async {
+    final delay = ref.read(platformsRefreshDelayProvider);
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+    }
+    await refresh();
   }
 
   Future<void> _performRefresh() async {
@@ -145,11 +167,48 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
       return null;
     }
     try {
-      return await ref
-          .read(checkConnectionProvider.future)
-          .timeout(const Duration(seconds: 5));
+      return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
     } on Object {
       return null;
     }
   }
 }
+
+/// Refreshes platforms after connectivity is regained (offline → online).
+///
+/// If the offline queue had pending deploy/recover events at the moment
+/// connectivity returned, this waits for the queue to finish draining
+/// (joining whichever caller — this listener or
+/// `passportEventQueueLifecycleProvider`'s own listener — starts the drain
+/// first; see `PassportEventQueueNotifier.processQueue`), then waits the
+/// same [platformsRefreshDelayProvider] delay used by
+/// [PlatformsRefreshNotifier.refreshAfterDelay] before refreshing. If
+/// nothing was queued, refreshes immediately — the delay only exists to let
+/// a just-submitted event propagate server-side, so it would be pointless
+/// to apply it when nothing was queued.
+///
+/// Mirrors `initialSyncLifecycleProvider` / `passportEventQueueLifecycleProvider`;
+/// must be `ref.watch`'d at the app root.
+final platformsRefreshLifecycleProvider = Provider<void>((ref) {
+  ref.listen(
+    checkConnectionProvider.select((async) => async.value),
+    (previous, next) async {
+      if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
+        final db = ref.read(databaseProvider);
+        final hadPending = (await db.getPendingOperationsOrdered()).any((row) => row.status == 'pending');
+
+        // No-op (fast) if there was nothing queued; joins the in-flight
+        // drain if `passportEventQueueLifecycleProvider`'s own listener
+        // already started one for this same transition.
+        await ref.read(passportEventQueueProvider.notifier).processQueue();
+
+        final notifier = ref.read(platformsRefreshProvider.notifier);
+        if (hadPending) {
+          await notifier.refreshAfterDelay();
+        } else {
+          await notifier.refresh();
+        }
+      }
+    },
+  );
+});

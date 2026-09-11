@@ -12,7 +12,7 @@ import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
-import 'package:smart_tags/screens/deploy_platform_screen.dart';
+import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -156,7 +156,9 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',
         backgroundColor: canEditExamplePlatform ? null : Theme.of(context).disabledColor,
-        foregroundColor: canEditExamplePlatform ? null : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+        foregroundColor: canEditExamplePlatform
+            ? null
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         onPressed: () async {
           if (!canEditExamplePlatform) {
             final message = isLoggedIn
