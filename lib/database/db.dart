@@ -263,39 +263,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 1;
 
+  // TODO(ylubac): Once the app's first version has been published, schema
+  // changes will need a real onUpgrade migration strategy (bumping
+  // schemaVersion and migrating step by step). Until then, devs just
+  // uninstall/reinstall the app, so onCreate is enough.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
     },
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        await m.addColumn(platforms, platforms.platformCategory);
-        await m.addColumn(platforms, platforms.reportingStatus);
-        await m.addColumn(platforms, platforms.observingNetwork);
-        await m.addColumn(platforms, platforms.latestOperationType);
-        await m.addColumn(platforms, platforms.latestOperationDate);
-      }
-      if (from < 3) {
-        await m.addColumn(platforms, platforms.endingCauseId);
-        await m.addColumn(platforms, platforms.hasLatestObservation);
-        await m.createTable(pendingOperations);
-      }
-      if (from < 4) {
-        await m.addColumn(platforms, platforms.ptfId);
-        await m.addColumn(platforms, platforms.programId);
-        await m.addColumn(platforms, platforms.programName);
-        await m.addColumn(platforms, platforms.programCode);
-      }
-      if (from < 5) {
-        await m.createTable(syncMetadata);
-        await m.database.customStatement(
-          'CREATE UNIQUE INDEX IF NOT EXISTS idx_platforms_ref ON platforms (ref)',
-        );
-      }
-    },
+    // onUpgrade: (Migrator m, int from, int to) async {
+    //   if (from < 2) {
+    //     // here migrations inscructions
+    //     // await m.addColumn(platforms, platforms.platformCategory);
+    //   }
+    // },
   );
 
   /// Returns true when no platform rows exist locally.
