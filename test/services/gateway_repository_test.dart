@@ -114,7 +114,11 @@ void main() {
           'longitude': 2,
           'timestamp': '2001-10-12T00:00:00Z',
         },
-        'endTimestamp': '2002-06-08T23:54:33Z',
+        'retrieval': {
+          'latitude': 1,
+          'longitude': 2,
+          'startTimestamp': '2002-06-08T23:54:33Z',
+        },
       };
 
       final companion = GatewayPassportMapper.fromPassportItem(item);
@@ -132,13 +136,40 @@ void main() {
           'longitude': 2,
           'timestamp': '2001-10-12T00:00:00Z',
         },
-        'endTimestamp': '2002-06-08T23:54:33Z',
+        'retrieval': {
+          'latitude': 1,
+          'longitude': 2,
+          'startTimestamp': '2002-06-08T23:54:33Z',
+        },
       };
 
       final companion = GatewayPassportMapper.fromPassportItem(item);
 
       expect(companion.latestOperationType.value, 'Recovery');
       expect(companion.operationalStatus.value, 'Recovered');
+    });
+
+    test('maps a redeployment after recovery back to Deployment', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      (item['passport'] as Map<String, dynamic>)['operations'] = {
+        'retrieval': {
+          'latitude': 1,
+          'longitude': 2,
+          'startTimestamp': '2001-10-12T00:00:00Z',
+        },
+        'deployment': {
+          'latitude': 3,
+          'longitude': 4,
+          'timestamp': '2002-06-08T23:54:33Z',
+        },
+      };
+
+      final companion = GatewayPassportMapper.fromPassportItem(item);
+
+      expect(companion.latestOperationType.value, 'Deployment');
+      expect(companion.operationalStatus.value, 'Deployed');
+      expect(companion.operationLat.value, 3);
+      expect(companion.operationLon.value, 4);
     });
 
     test('accepts a string ptfId and normalizes it', () {
