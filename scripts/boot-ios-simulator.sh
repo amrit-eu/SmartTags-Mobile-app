@@ -41,6 +41,15 @@ if [[ "$state" != "Booted" ]]; then
   xcrun simctl boot "$device_id"
 fi
 
-open -a Simulator
+# Xcode 27+ ships Device Hub instead of the standalone Simulator.app.
+XCODE_APP="$(dirname "$(dirname "$(xcode-select -p)")")"
+if [[ -d "$XCODE_APP/Contents/Developer/Applications/Simulator.app" ]]; then
+  open -a Simulator
+elif [[ -d "$XCODE_APP/Contents/Applications/DeviceHub.app" ]]; then
+  open -b com.apple.dt.Devices
+else
+  echo "Could not find Simulator.app or DeviceHub.app under $XCODE_APP" >&2
+  exit 1
+fi
 
 echo "Simulator ready: $TARGET ($device_id)"
