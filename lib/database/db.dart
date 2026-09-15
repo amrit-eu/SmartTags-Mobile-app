@@ -5,6 +5,7 @@ import 'package:smart_tags/database/db_connection.dart';
 part 'db.g.dart';
 
 /// Table definition for platforms metadata.
+@TableIndex(name: 'idx_platforms_ref', columns: {#ref}, unique: true)
 class Platforms extends Table {
   /// Primary key identifying the record.
   IntColumn get id => integer().autoIncrement()();
@@ -226,9 +227,32 @@ class PendingOperations extends Table {
   IntColumn get attempts => integer().withDefault(const Constant(0))();
 }
 
+/// Single-row table storing small pieces of app-level sync metadata
+/// (currently just the last successful platforms refresh timestamp, used as
+/// the `updatedSince` filter for the next delta search).
+class SyncMetadata extends Table {
+  /// Fixed row id — this table only ever holds a single row (`1`).
+  IntColumn get id => integer()();
+
+  /// Timestamp of the last successful platforms refresh (pull-to-refresh).
+  DateTimeColumn get lastPlatformsRefresh => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// The local SQLite database using Drift ORM.
 @DriftDatabase(
-  tables: [Platforms, UserProfiles, Programs, Roles, UserProgramRoles, UserRoles, PendingOperations],
+  tables: [
+    Platforms,
+    UserProfiles,
+    Programs,
+    Roles,
+    UserProgramRoles,
+    UserRoles,
+    PendingOperations,
+    SyncMetadata,
+  ],
   daos: [AuthDao],
 )
 class AppDatabase extends _$AppDatabase {
@@ -239,33 +263,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 1;
 
+  // TODO(ylubac): Once the app's first version has been published, schema
+  // changes will need a real onUpgrade migration strategy (bumping
+  // schemaVersion and migrating step by step). Until then, devs just
+  // uninstall/reinstall the app, so onCreate is enough.
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
     },
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        await m.addColumn(platforms, platforms.platformCategory);
-        await m.addColumn(platforms, platforms.reportingStatus);
-        await m.addColumn(platforms, platforms.observingNetwork);
-        await m.addColumn(platforms, platforms.latestOperationType);
-        await m.addColumn(platforms, platforms.latestOperationDate);
-      }
-      if (from < 3) {
-        await m.addColumn(platforms, platforms.endingCauseId);
-        await m.addColumn(platforms, platforms.hasLatestObservation);
-        await m.createTable(pendingOperations);
-      }
-      if (from < 4) {
-        await m.addColumn(platforms, platforms.ptfId);
-        await m.addColumn(platforms, platforms.programId);
-        await m.addColumn(platforms, platforms.programName);
-        await m.addColumn(platforms, platforms.programCode);
-      }
-    },
+    // onUpgrade: (Migrator m, int from, int to) async {
+    //   if (from < 2) {
+    //     // here migrations inscructions
+    //     // await m.addColumn(platforms, platforms.platformCategory);
+    //   }
+    // },
   );
 
   /// Returns true when no platform rows exist locally.
@@ -299,6 +313,35 @@ class AppDatabase extends _$AppDatabase {
         batch.insertAll(platforms, companions);
       });
     });
+  }
+
+  /// Inserts or replaces the given platforms (matched by `ref`), without
+  /// touching local platforms absent from [companions]. Used by the
+  /// delta refresh (`updatedSince`). Requires the unique index on
+  /// `platforms.ref`.
+  Future<void> upsertPlatforms(List<PlatformsCompanion> companions) async {
+    await batch((batch) {
+      batch.insertAll(platforms, companions, mode: InsertMode.insertOrReplace);
+    });
+  }
+
+  /// Returns the timestamp of the last successful platforms refresh, or
+  /// `null` if a refresh has never completed successfully.
+  Future<DateTime?> getLastPlatformsRefresh() async {
+    final row = await (select(
+      syncMetadata,
+    )..where((t) => t.id.equals(1))).getSingleOrNull();
+    return row?.lastPlatformsRefresh;
+  }
+
+  /// Persists [when] as the last successful platforms refresh timestamp.
+  Future<void> setLastPlatformsRefresh(DateTime when) async {
+    await into(syncMetadata).insertOnConflictUpdate(
+      SyncMetadataCompanion.insert(
+        id: const Value(1),
+        lastPlatformsRefresh: Value(when),
+      ),
+    );
   }
 
   /// Watches all platforms, optionally filtered by a search query.

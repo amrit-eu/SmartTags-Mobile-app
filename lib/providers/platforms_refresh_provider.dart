@@ -1,28 +1,38 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 
 /// Manual / pull-to-refresh Gateway → local platforms sync.
 ///
 /// Separate from [initialSyncProvider], which only runs when the DB is empty.
-final platformsRefreshProvider =
-    AsyncNotifierProvider<PlatformsRefreshNotifier, void>(
+final platformsRefreshProvider = AsyncNotifierProvider<PlatformsRefreshNotifier, void>(
   PlatformsRefreshNotifier.new,
 );
 
-/// Reloads unclosed missions from the Gateway into Drift.
+/// Delay before [PlatformsRefreshNotifier.refreshAfterDelay] (and
+/// [platformsRefreshLifecycleProvider]'s post-drain refresh) actually
+/// triggers the refresh — gives the Back-end time to finish processing a
+/// just-submitted (or just-drained) deploy/recover event before we
+/// re-fetch. Overridable in tests (e.g. to `Duration.zero`) to avoid real
+/// multi-second waits.
+final platformsRefreshDelayProvider = Provider<Duration>((ref) => const Duration(seconds: 3));
+
+/// Syncs passports from the Gateway search endpoint into Drift, filtered by
+/// `cachedSince` (the last successful refresh) so only changed platforms
+/// are re-fetched and upserted locally.
 class PlatformsRefreshNotifier extends AsyncNotifier<void> {
   Future<void>? _ongoingRefresh;
 
   @override
   Future<void> build() async {}
 
-  /// Fetches passport data and replaces local platforms when online.
+  /// Fetches changed passport data and upserts local platforms when online.
   Future<void> refresh() async {
     final ongoing = _ongoingRefresh;
     if (ongoing != null) {
@@ -40,6 +50,20 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
     }
   }
 
+  /// Waits [platformsRefreshDelayProvider] (3s by default) then calls
+  /// [refresh]. Runs entirely against this notifier's own long-lived `ref`
+  /// rather than a caller's, so it's safe to invoke from a widget right
+  /// before it disposes (e.g. right after `Navigator.pop`). Never throws —
+  /// [refresh] already swallows and surfaces its own errors via provider
+  /// state.
+  Future<void> refreshAfterDelay() async {
+    final delay = ref.read(platformsRefreshDelayProvider);
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+    }
+    await refresh();
+  }
+
   Future<void> _performRefresh() async {
     final connectivity = await _currentConnectivity();
     if (!isDeviceOnline(connectivity)) {
@@ -52,20 +76,55 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
     final phase = ref.read(platformsSyncPhaseProvider.notifier);
     state = const AsyncValue.loading();
     phase.setDownloading();
-    if (kDebugMode) {
-      debugPrint(
-        'Platforms refresh: fetching ${GatewayConfig.unclosedPassportsUri} '
-        '(connectivity=${connectivity?.name})',
-      );
-    }
+
+    final db = ref.read(databaseProvider);
+    // Captured before the network call so a change that happens while the
+    // request is in flight isn't missed by the next delta refresh.
+    final now = DateTime.now().toUtc();
 
     try {
+      final lastRefresh = await db.getLastPlatformsRefresh();
       final repository = ref.read(gatewayRepositoryProvider);
-      final platforms = await repository.fetchUnclosedMissions();
+
+      if (lastRefresh == null) {
+        // No baseline yet (e.g. an install that predates this feature, so
+        // the initial sync never stamped one). Searching without
+        // `cachedSince` would re-fetch the entire dataset, so fall back to
+        // the bounded unclosed-missions fetch instead — same as the initial
+        // sync — and use it to establish the baseline for the next refresh.
+        if (kDebugMode) {
+          debugPrint(
+            'Platforms refresh: no stored cachedSince yet — fetching '
+            'unclosed missions instead of an unfiltered search',
+          );
+        }
+        final platforms = await repository.fetchUnclosedMissions();
+        if (platforms.isNotEmpty) {
+          phase.setSaving();
+          await db.syncPlatforms(platforms);
+          if (kDebugMode) {
+            debugPrint('Platforms refresh: synced ${platforms.length} platforms');
+          }
+        }
+        await db.setLastPlatformsRefresh(now);
+        state = const AsyncValue.data(null);
+        return;
+      }
+
+      final cachedSince = lastRefresh.toUtc().toIso8601String();
+      if (kDebugMode) {
+        debugPrint(
+          'Platforms refresh: searching passports with cachedSince=$cachedSince '
+          '(connectivity=${connectivity?.name})',
+        );
+      }
+
+      final platforms = await repository.searchPassports(
+        PassportFilterDto(cachedSince: cachedSince, paginationEnabled: false),
+      );
       if (platforms.isNotEmpty) {
         phase.setSaving();
-        final db = ref.read(databaseProvider);
-        await db.syncPlatforms(platforms);
+        await db.upsertPlatforms(platforms);
         if (kDebugMode) {
           debugPrint('Platforms refresh: synced ${platforms.length} platforms');
         }
@@ -74,6 +133,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
           'Platforms refresh: gateway returned 0 platforms (local DB unchanged)',
         );
       }
+      await db.setLastPlatformsRefresh(now);
       state = const AsyncValue.data(null);
     } on Object catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
@@ -107,11 +167,48 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
       return null;
     }
     try {
-      return await ref
-          .read(checkConnectionProvider.future)
-          .timeout(const Duration(seconds: 5));
+      return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
     } on Object {
       return null;
     }
   }
 }
+
+/// Refreshes platforms after connectivity is regained (offline → online).
+///
+/// If the offline queue had pending deploy/recover events at the moment
+/// connectivity returned, this waits for the queue to finish draining
+/// (joining whichever caller — this listener or
+/// `passportEventQueueLifecycleProvider`'s own listener — starts the drain
+/// first; see `PassportEventQueueNotifier.processQueue`), then waits the
+/// same [platformsRefreshDelayProvider] delay used by
+/// [PlatformsRefreshNotifier.refreshAfterDelay] before refreshing. If
+/// nothing was queued, refreshes immediately — the delay only exists to let
+/// a just-submitted event propagate server-side, so it would be pointless
+/// to apply it when nothing was queued.
+///
+/// Mirrors `initialSyncLifecycleProvider` / `passportEventQueueLifecycleProvider`;
+/// must be `ref.watch`'d at the app root.
+final platformsRefreshLifecycleProvider = Provider<void>((ref) {
+  ref.listen(
+    checkConnectionProvider.select((async) => async.value),
+    (previous, next) async {
+      if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
+        final db = ref.read(databaseProvider);
+        final hadPending = (await db.getPendingOperationsOrdered()).any((row) => row.status == 'pending');
+
+        // No-op (fast) if there was nothing queued; joins the in-flight
+        // drain if `passportEventQueueLifecycleProvider`'s own listener
+        // already started one for this same transition.
+        await ref.read(passportEventQueueProvider.notifier).processQueue();
+
+        final notifier = ref.read(platformsRefreshProvider.notifier);
+        if (hadPending) {
+          await notifier.refreshAfterDelay();
+        } else {
+          await notifier.refresh();
+        }
+      }
+    },
+  );
+});

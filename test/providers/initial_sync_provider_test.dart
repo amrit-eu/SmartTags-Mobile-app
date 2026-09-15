@@ -90,6 +90,8 @@ void main() {
       final status = await container.read(initialSyncProvider.future);
       expect(status, InitialSyncStatus.completed);
       expect(await db.isEmpty(), isFalse);
+      // Stamps a baseline so the first manual refresh can go delta.
+      expect(await db.getLastPlatformsRefresh(), isNotNull);
     });
 
     test('surfaces errors when sync fails while online', () async {
