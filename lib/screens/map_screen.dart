@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,7 +62,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late final MapController _mapController;
   late AnimationController _pulseController;
   late AnimationController _popupAnimationController;
-  String? _selectedPlatformRef;
+  late final ValueNotifier<model.Platform?> _selectedPlatformNotifier;
+  late final ValueNotifier<bool> _isSelectingPlatformNotifier;
+
+  /// Cached platform markers — rebuilt only when the platforms list changes.
+  List<Platform>? _markersCacheSource;
+  List<Marker> _platformMarkers = const [];
+  ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
   static const LatLng _defaultCenter = LatLng(45, -5);
@@ -107,8 +115,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 350),
     );
+    _selectedPlatformNotifier = ValueNotifier<model.Platform?>(null);
+    _isSelectingPlatformNotifier = ValueNotifier<bool>(false);
   }
 
   @override
@@ -116,6 +126,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _mapSkeletonTimeoutTimer?.cancel();
     _pulseController.dispose();
     _popupAnimationController.dispose();
+    _selectedPlatformSubscription?.close();
+    _selectedPlatformNotifier.dispose();
+    _isSelectingPlatformNotifier.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -176,9 +189,17 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
-  void _selectPlatformMarker(String platformRef, LatLng position) {
-    setState(() {
-      _selectedPlatformRef = platformRef;
+  void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
+    if (_isSelectingPlatformNotifier.value) {
+      return;
+    }
+    _isSelectingPlatformNotifier.value = true;
+    _selectedPlatformNotifier.value = dbPlatform.toDomain();
+    _watchSelectedPlatform(dbPlatform.ref);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _isSelectingPlatformNotifier.value = false;
+      }
     });
     // Reset and play animation
     if (mounted) {
@@ -193,11 +214,65 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     });
   }
 
+  void _dezoomAtOffset(Offset localPosition) {
+    final camera = _mapController.camera;
+    final minZoom = camera.minZoom ?? 0;
+    final maxZoom = camera.maxZoom ?? 18;
+    final newZoom = (camera.zoom - 1).clamp(minZoom, maxZoom);
+    if (newZoom >= camera.zoom) {
+      return;
+    }
+
+    final newCenter = camera.focusedZoomCenter(localPosition, newZoom);
+    _mapController.move(newCenter, newZoom);
+  }
+
+  bool _hasDezoomModifier() {
+    final keyboard = HardwareKeyboard.instance;
+    return keyboard.isControlPressed ||
+        keyboard.isShiftPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isAltPressed;
+  }
+
+  void _handleMapPointerDown(PointerDownEvent event) {
+    final isSecondary = (event.buttons & kSecondaryMouseButton) != 0;
+    final isPrimary = (event.buttons & kPrimaryMouseButton) != 0;
+
+    // Right-click / Option+click (iOS Simulator) → dezoom immediately.
+    if (isSecondary) {
+      _dezoomAtOffset(event.localPosition);
+      return;
+    }
+
+    // Shift/Ctrl/⌥/⌘ + left-click → dezoom (macOS trackpad fallback).
+    if (isPrimary && _hasDezoomModifier()) {
+      _dezoomAtOffset(event.localPosition);
+    }
+  }
+
+  void _watchSelectedPlatform(String platformRef) {
+    _selectedPlatformSubscription?.close();
+    _selectedPlatformSubscription = ref.listenManual(
+      platformByRefStreamProvider(platformRef),
+      (previous, next) {
+        next.whenData((platform) {
+          if (platform != null && mounted) {
+            _selectedPlatformNotifier.value = platform.toDomain();
+            final newPosition = LatLng(platform.lat, platform.lon);
+            _mapController.move(newPosition, _mapController.camera.zoom);
+          }
+        });
+      },
+    );
+  }
+
   /// Clears the selected platform.
   void _clearSelection() {
-    setState(() {
-      _selectedPlatformRef = null;
-    });
+    _selectedPlatformSubscription?.close();
+    _selectedPlatformSubscription = null;
+    _selectedPlatformNotifier.value = null;
+    _isSelectingPlatformNotifier.value = false;
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
@@ -389,6 +464,44 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
+  List<Marker> _platformMarkersFor(List<Platform> databasePlatforms) {
+    if (!identical(_markersCacheSource, databasePlatforms)) {
+      _markersCacheSource = databasePlatforms;
+      _platformMarkers = databasePlatforms
+          .map((dbPlatform) {
+            final point = LatLng(dbPlatform.lat, dbPlatform.lon);
+            return Marker(
+              point: point,
+              child: GestureDetector(
+                onTap: () => _selectPlatformMarker(dbPlatform, point),
+                child: Icon(
+                  Icons.location_on,
+                  color: PlatformStatusPalette.resolve(dbPlatform.status).backgroundColor,
+                  size: 30,
+                ),
+              ),
+            );
+          })
+          .toList(growable: false);
+    }
+    return _platformMarkers;
+  }
+
+  Marker _buildSelectedPlatformMarker(model.Platform platform) {
+    return Marker(
+      width: 40,
+      height: 40,
+      point: platform.latestPosition,
+      child: IgnorePointer(
+        child: Icon(
+          Icons.location_on,
+          color: const Color.fromARGB(255, 2, 0, 101),
+          size: 40,
+        ),
+      ),
+    );
+  }
+
   List<Marker> _buildMarkers(List<Platform> databasePlatforms) {
     final markers = <Marker>[];
 
@@ -404,30 +517,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       );
     }
 
-    // Use platforms from the database
-    for (final dbPlatform in databasePlatforms) {
-      final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-
-      markers.add(
-        Marker(
-          point: point,
-          child: GestureDetector(
-            onTap: () {
-              _selectPlatformMarker(dbPlatform.ref, point);
-            },
-            child: Icon(
-              Icons.location_on,
-              // Color depends on status and selection.
-              color: _selectedPlatformRef == dbPlatform.ref
-                  ? const Color.fromARGB(255, 2, 0, 101)
-                  : PlatformStatusPalette.resolve(dbPlatform.status).backgroundColor,
-              // Size increases if this marker is selected.
-              size: _selectedPlatformRef == dbPlatform.ref ? 40 : 30,
-            ),
-          ),
-        ),
-      );
-    }
+    markers.addAll(_platformMarkersFor(databasePlatforms));
 
     return markers;
   }
@@ -435,18 +525,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final platformsAsync = ref.watch(platformsStreamProvider);
-
-    // Listen for position updates of the selected platform and auto-center map
-    if (_selectedPlatformRef != null) {
-      ref.listen(platformByRefStreamProvider(_selectedPlatformRef!), (previous, next) {
-        next.whenData((platform) {
-          if (platform != null && mounted) {
-            final newPosition = LatLng(platform.lat, platform.lon);
-            _mapController.move(newPosition, _mapController.camera.zoom);
-          }
-        });
-      });
-    }
 
     final platforms = platformsAsync.value ?? [];
 
@@ -489,26 +567,38 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
     return Stack(
       children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: const MapOptions(initialCenter: _defaultCenter, initialZoom: _defaultZoom),
-          children: [
-            GestureDetector(
-              onTap: _selectedPlatformRef != null ? _clearSelection : null,
-              behavior: HitTestBehavior.opaque,
-              child: Stack(
-                children: [
-                  TileLayer(
-                    urlTemplate: MapConfig.oceanBaseTileUrl,
-                    userAgentPackageName: MapConfig.userAgentPackageName,
-                    tileBuilder: _baseTileBuilder,
-                  ),
-                  TileLayer(
-                    urlTemplate: MapConfig.oceanReferenceTileUrl,
-                    userAgentPackageName: MapConfig.userAgentPackageName,
-                  ),
-                ],
+        Positioned.fill(
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: _handleMapPointerDown,
+            child: FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialCenter: _defaultCenter,
+                initialZoom: _defaultZoom,
               ),
+              children: [
+            ValueListenableBuilder<model.Platform?>(
+              valueListenable: _selectedPlatformNotifier,
+              builder: (context, selectedPlatform, _) {
+                return GestureDetector(
+                  onTap: selectedPlatform != null ? _clearSelection : null,
+                  behavior: HitTestBehavior.opaque,
+                  child: Stack(
+                    children: [
+                      TileLayer(
+                        urlTemplate: MapConfig.oceanBaseTileUrl,
+                        userAgentPackageName: MapConfig.userAgentPackageName,
+                        tileBuilder: _baseTileBuilder,
+                      ),
+                      TileLayer(
+                        urlTemplate: MapConfig.oceanReferenceTileUrl,
+                        userAgentPackageName: MapConfig.userAgentPackageName,
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             MarkerClusterLayerWidget(
               options: MarkerClusterLayerOptions(
@@ -534,31 +624,76 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 },
               ),
             ),
-          ],
+            ValueListenableBuilder<model.Platform?>(
+              valueListenable: _selectedPlatformNotifier,
+              builder: (context, selectedPlatform, _) {
+                if (selectedPlatform == null) {
+                  return const SizedBox.shrink();
+                }
+                return MarkerLayer(
+                  markers: [_buildSelectedPlatformMarker(selectedPlatform)],
+                );
+              },
+            ),
+              ],
+            ),
+          ),
         ),
-        if (_selectedPlatformRef != null) ...[
-          Builder(
-            builder: (context) {
-              final platformAsync = ref.watch(platformByRefStreamProvider(_selectedPlatformRef!));
-              final selectedPlatform = platformAsync.value?.toDomain();
-              if (selectedPlatform == null) return const SizedBox.shrink();
-              return Positioned(
-                top: 20,
-                left: 16,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.5, end: 1).animate(
-                    CurvedAnimation(parent: _popupAnimationController, curve: Curves.elasticOut),
-                  ),
-                  alignment: Alignment.topLeft,
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: _buildPopup(context, selectedPlatform),
+        ValueListenableBuilder<model.Platform?>(
+          valueListenable: _selectedPlatformNotifier,
+          builder: (context, selectedPlatform, _) {
+            if (selectedPlatform == null) {
+              return const SizedBox.shrink();
+            }
+            return Positioned(
+              top: 20,
+              left: 16,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.92, end: 1).animate(
+                  CurvedAnimation(parent: _popupAnimationController, curve: Curves.easeOutCubic),
+                ),
+                alignment: Alignment.topLeft,
+                child: GestureDetector(
+                  onTap: () {},
+                  child: _buildPopup(context, selectedPlatform),
+                ),
+              ),
+            );
+          },
+        ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _isSelectingPlatformNotifier,
+          builder: (context, isSelectingPlatform, _) {
+            if (!isSelectingPlatform) {
+              return const SizedBox.shrink();
+            }
+            return Positioned.fill(
+              child: AbsorbPointer(
+                child: ColoredBox(
+                  color: Colors.black.withAlpha(38),
+                  child: Center(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Loading platform…',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              );
-            },
-          ),
-        ],
+              ),
+            );
+          },
+        ),
         if (_mapSkeletonMounted)
           Positioned.fill(
             child: IgnorePointer(
