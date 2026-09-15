@@ -317,6 +317,8 @@ void main() {
             _WifiConnectivityStatus.new,
           ),
           gatewayRepositoryProvider.overrideWith((ref) => _SucceedingGatewayRepository()),
+          // Avoid a real 3s wait for the post-submit delayed refresh.
+          platformsRefreshDelayProvider.overrideWithValue(Duration.zero),
         ],
         child: MaterialApp(
           home: Navigator(
