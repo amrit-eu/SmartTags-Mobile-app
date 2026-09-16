@@ -100,10 +100,11 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     // request is in flight isn't missed by the first delta refresh.
     final now = DateTime.now().toUtc();
     try {
-      final platforms = await repository.fetchUnclosedMissions();
-      if (platforms.isNotEmpty) {
+      final result = await repository.fetchUnclosedMissions();
+      if (result.platforms.isNotEmpty) {
         phase.setSaving();
-        await db.syncPlatforms(platforms);
+        await db.syncPlatforms(result.platforms);
+        await db.syncAlerts(result.alerts);
       }
       // Establishes the baseline `updatedSince` for the next (delta)
       // platforms refresh, so it doesn't have to re-fetch everything.

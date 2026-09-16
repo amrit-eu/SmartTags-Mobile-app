@@ -90,6 +90,28 @@ class Platforms extends Table {
   TextColumn get programCode => text().nullable()();
 }
 
+@DataClassName('AlertEntity')
+// Table definition for alerts linked to platform
+class Alerts extends Table {
+  // the alert id (unique identifier on Notification Center / Alerta side)
+  TextColumn get id => text()();
+
+  // the alert resource identifier (= platform ref attribute)
+  TextColumn get resource => text().references(Platforms, #ref, onDelete: KeyAction.cascade)();
+
+  // Alert's event name
+  TextColumn get event => text()();
+
+  // Alerts's severity
+  TextColumn get severity => text()();
+
+  //Alerts's status
+  TextColumn get status => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DataClassName('UserEntity')
 /// Table definition for user profile data.
 class UserProfiles extends Table {
@@ -245,6 +267,7 @@ class SyncMetadata extends Table {
 @DriftDatabase(
   tables: [
     Platforms,
+    Alerts,
     UserProfiles,
     Programs,
     Roles,
@@ -273,6 +296,11 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
+    },
+    // SQLite ignores foreign key constraints (and ON DELETE CASCADE) unless
+    // this pragma is enabled on every connection.
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
     },
     // onUpgrade: (Migrator m, int from, int to) async {
     //   if (from < 2) {
@@ -322,6 +350,26 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertPlatforms(List<PlatformsCompanion> companions) async {
     await batch((batch) {
       batch.insertAll(platforms, companions, mode: InsertMode.insertOrReplace);
+    });
+  }
+
+  /// Helper to sync alerts to database.
+  /// Currently empties and re-inserts, but could be optimized to do upserts in the future.
+  Future<void> syncAlerts(List<AlertsCompanion> companions) async {
+    await transaction(() async {
+      await delete(alerts).go();
+      await batch((batch) {
+        batch.insertAll(alerts, companions);
+      });
+    });
+  }
+
+  /// Inserts or replaces the given alerts (matched by `id`), without
+  /// touching local alerts absent from [companions]. Used by the
+  /// delta refresh (`updatedSince`).
+  Future<void> upsertAlerts(List<AlertsCompanion> companions) async {
+    await batch((batch) {
+      batch.insertAll(alerts, companions, mode: InsertMode.insertOrReplace);
     });
   }
 
