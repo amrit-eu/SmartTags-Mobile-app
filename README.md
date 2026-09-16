@@ -128,9 +128,9 @@ Optional: `ANDROID_AVD`, `ANDROID_PACKAGE` (default `com.example.flutter_amrit`)
 Requires [adb](https://developer.android.com/tools/adb) on `PATH` and a connected emulator or device (debug build). Run from `cmd.exe` or PowerShell:
 
 ```bat
-scripts\link-android-db.bat            :: pull only
-scripts\smartrun-android.bat           :: boot/connect emulator + pull + flutter run
-scripts\smartrun-android.bat -d emulator-5554
+scripts/link-android-db.bat            :: pull only
+scripts/smartrun-android.bat           :: boot/connect emulator + pull + flutter run
+scripts/smartrun-android.bat -d emulator-5554
 ```
 
 `smartrun-android.bat` pulls the DB to `.dev\db.sqlite` before launch, then keeps re-pulling in a background window while `flutter run` is active (reinstall / first sync can replace the on-device DB after the first pull) — the background watcher is closed automatically when `flutter run` exits.

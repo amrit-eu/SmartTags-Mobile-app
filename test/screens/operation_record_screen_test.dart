@@ -13,6 +13,7 @@ import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
+import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 
@@ -83,9 +84,9 @@ class _SucceedingGatewayRepository extends GatewayRepository {
   // `cachedSince` baseline yet in these tests' fresh in-memory DB, so it
   // falls back to this bounded fetch rather than an unfiltered search).
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     fetchUnclosedMissionsCallCount++;
-    return [];
+    return const GatewayPassportsResult(platforms: [], alerts: []);
   }
 }
 
