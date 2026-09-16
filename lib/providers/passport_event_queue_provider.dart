@@ -47,7 +47,7 @@ final passportEventQueueProvider = NotifierProvider<PassportEventQueueNotifier, 
 
 /// Notifier managing the offline queue of deploy/recover passport events.
 class PassportEventQueueNotifier extends Notifier<void> {
-  bool _replaying = false;
+  Future<void>? _ongoingProcessQueue;
 
   @override
   void build() {}
@@ -87,36 +87,51 @@ class PassportEventQueueNotifier extends Notifier<void> {
 
   /// Replays all `pending` rows in FIFO order. Skip-and-continue: a failed
   /// row is marked `failed` with [PendingOperation.lastError] and left in
-  /// place; the loop still tries every later row. Safe to call repeatedly.
-  Future<void> processQueue() async {
-    if (_replaying) return;
-    _replaying = true;
-    try {
-      final db = ref.read(databaseProvider);
-      final repository = ref.read(gatewayRepositoryProvider);
-      final rows = (await db.getPendingOperationsOrdered()).where((row) => row.status == 'pending');
+  /// place; the loop still tries every later row.
+  ///
+  /// Safe to call repeatedly and concurrently: a second call while a replay
+  /// is already running joins that same in-flight run instead of starting a
+  /// duplicate one, so every caller's `await` resolves only once the drain
+  /// has actually finished (mirrors `PlatformsRefreshNotifier`'s
+  /// `_ongoingRefresh` / `InitialSyncNotifier`'s `_ongoingSync`).
+  Future<void> processQueue() {
+    final ongoing = _ongoingProcessQueue;
+    if (ongoing != null) {
+      return ongoing;
+    }
 
-      var failedCount = 0;
-      for (final row in rows) {
-        try {
-          await repository.submitPassportEventJson(row.payloadJson);
-          await db.deletePendingOperation(row.id);
-        } on Object catch (e) {
-          await db.markPendingOperationFailed(row.id, error: e.toString(), attempts: row.attempts + 1);
-          failedCount++;
-        }
+    final run = _performProcessQueue();
+    _ongoingProcessQueue = run;
+    return run.whenComplete(() {
+      if (identical(_ongoingProcessQueue, run)) {
+        _ongoingProcessQueue = null;
       }
-      if (failedCount > 0) {
-        ref
-            .read(errorNotificationProvider.notifier)
-            .setError(
-              '$failedCount queued operation${failedCount == 1 ? '' : 's'} failed to sync and '
-              '${failedCount == 1 ? 'needs' : 'need'} manual retry.',
-              type: 'queue_sync_failed',
-            );
+    });
+  }
+
+  Future<void> _performProcessQueue() async {
+    final db = ref.read(databaseProvider);
+    final repository = ref.read(gatewayRepositoryProvider);
+    final rows = (await db.getPendingOperationsOrdered()).where((row) => row.status == 'pending');
+
+    var failedCount = 0;
+    for (final row in rows) {
+      try {
+        await repository.submitPassportEventJson(row.payloadJson);
+        await db.deletePendingOperation(row.id);
+      } on Object catch (e) {
+        await db.markPendingOperationFailed(row.id, error: e.toString(), attempts: row.attempts + 1);
+        failedCount++;
       }
-    } finally {
-      _replaying = false;
+    }
+    if (failedCount > 0) {
+      ref
+          .read(errorNotificationProvider.notifier)
+          .setError(
+            '$failedCount queued operation${failedCount == 1 ? '' : 's'} failed to sync and '
+            '${failedCount == 1 ? 'needs' : 'need'} manual retry.',
+            type: 'queue_sync_failed',
+          );
     }
   }
 

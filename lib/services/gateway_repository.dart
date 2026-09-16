@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/passport_event.dart';
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
@@ -50,7 +51,7 @@ class GatewayRepository {
       }
       final response = await _client.get(uri);
 
-      if (response.statusCode != 200) {
+      if (!_isSuccess(response.statusCode)) {
         throw Exception(
           'Failed to load unclosed missions '
           '(Status ${response.statusCode}, body=${_truncate(response.body)})',
@@ -74,6 +75,56 @@ class GatewayRepository {
       rethrow;
     }
   }
+
+  /// Searches passports on the Gateway enriched passport search endpoint.
+  ///
+  /// When [searchDto] is null, delegates to [fetchUnclosedMissions] instead
+  /// of issuing a search request.
+  Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
+    if (searchDto == null) {
+      return fetchUnclosedMissions();
+    }
+
+    final uri = GatewayConfig.passportsSearchUri;
+    try {
+      final body = jsonEncode(searchDto.toJson());
+      if (kDebugMode) {
+        debugPrint('Gateway POST $uri body=$body');
+      }
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (!_isSuccess(response.statusCode)) {
+        throw Exception(
+          'Failed to search passports '
+          '(Status ${response.statusCode}, body=${_truncate(response.body)})',
+        );
+      }
+
+      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+      final items = (jsonResponse['items'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(GatewayPassportMapper.fromPassportItem)
+          .toList();
+
+      if (kDebugMode) {
+        debugPrint('Gateway returned ${items.length} passports');
+      }
+      return items;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Gateway searchPassports error: $e\n$st');
+      }
+      rethrow;
+    }
+  }
+
+  /// The Gateway returns `201 Created` for some POST endpoints (e.g. the
+  /// passport search) rather than `200 OK`, so any 2xx status is accepted.
+  bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 
   String _truncate(String value, {int max = 200}) {
     if (value.length <= max) {

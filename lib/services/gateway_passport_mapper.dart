@@ -20,20 +20,17 @@ abstract final class GatewayPassportMapper {
     final reportingStatus = status['reportingStatus'] as Map<String, dynamic>? ?? {};
     final latestObservation = status['latestObservation'] as Map<String, dynamic>? ?? {};
     final endingCause = status['endingCause'] as Map<String, dynamic>? ?? {};
-    final deployment = operations['deployment'] as Map<String, dynamic>?;
     final supervisingProgram = affiliation['supervisingProgram'] as Map<String, dynamic>?;
 
     final observingNetworks = _observingNetworkNames(affiliation);
-    final endTimestamp = operations['endTimestamp'] as String?;
-    final hasEnded = endTimestamp != null && endTimestamp.isNotEmpty;
+    final latestOperation = _resolveLatestOperation(operations);
 
     final latestLat = _asDouble(latestObservation['latitude']) ?? 0.0;
     final latestLon = _asDouble(latestObservation['longitude']) ?? 0.0;
-    final operationLat = _asDouble(deployment?['latitude']) ?? latestLat;
-    final operationLon = _asDouble(deployment?['longitude']) ?? latestLon;
+    final operationLat = latestOperation?.lat ?? latestLat;
+    final operationLon = latestOperation?.lon ?? latestLon;
 
     final latestObsTimestamp = latestObservation['timestamp'] as String?;
-    final deploymentTimestamp = deployment?['timestamp'] as String?;
     final hasLatestObservation = latestObsTimestamp != null && latestObsTimestamp.isNotEmpty;
 
     return PlatformsCompanion.insert(
@@ -44,7 +41,7 @@ abstract final class GatewayPassportMapper {
       lat: latestLat,
       lon: latestLon,
       status: (reportingStatus['name'] as String?) ?? 'Unknown',
-      operationalStatus: hasEnded ? 'Recovered' : 'Deployed',
+      operationalStatus: latestOperation?.type == 'Recovery' ? 'Recovered' : 'Deployed',
       lastUpdated: _parseDateTime(latestObsTimestamp) ?? DateTime.now(),
       operationLat: operationLat,
       operationLon: operationLon,
@@ -52,18 +49,43 @@ abstract final class GatewayPassportMapper {
       platformCategory: Value(assetType['name'] as String?),
       reportingStatus: Value(reportingStatus['name'] as String?),
       observingNetwork: Value(observingNetworks.join(', ')),
-      latestOperationType: Value(
-        hasEnded ? 'Recovery' : (deployment != null ? 'Deployment' : null),
-      ),
-      latestOperationDate: Value(
-        _parseDateTime(hasEnded ? endTimestamp : deploymentTimestamp),
-      ),
+      latestOperationType: Value(latestOperation?.type),
+      latestOperationDate: Value(latestOperation?.date),
       endingCauseId: Value(_asInt(endingCause['id'])),
       hasLatestObservation: Value(hasLatestObservation),
       programId: Value(supervisingProgram?['id'] as int?),
       programName: Value(supervisingProgram?['name'] as String?),
       programCode: Value(supervisingProgram?['code'] as String?),
     );
+  }
+
+  /// Picks whichever of `operations.deployment` / `operations.retrieval`
+  /// actually happened last, comparing their dates rather than assuming
+  /// retrieval always wins — a platform can be redeployed after recovery.
+  static _OperationEntry? _resolveLatestOperation(Map<String, dynamic> operations) {
+    final deployment = operations['deployment'] as Map<String, dynamic>?;
+    final retrieval = operations['retrieval'] as Map<String, dynamic>?;
+
+    final candidates = <_OperationEntry>[
+      if (_parseDateTime(deployment?['timestamp'] as String?) case final date?)
+        _OperationEntry(
+          type: 'Deployment',
+          date: date,
+          lat: _asDouble(deployment?['latitude']),
+          lon: _asDouble(deployment?['longitude']),
+        ),
+      if (_parseDateTime(retrieval?['startTimestamp'] as String?) case final date?)
+        _OperationEntry(
+          type: 'Recovery',
+          date: date,
+          lat: _asDouble(retrieval?['latitude']),
+          lon: _asDouble(retrieval?['longitude']),
+        ),
+    ];
+    if (candidates.isEmpty) {
+      return null;
+    }
+    return candidates.reduce((a, b) => b.date.isAfter(a.date) ? b : a);
   }
 
   static List<String> _observingNetworkNames(Map<String, dynamic> affiliation) {
@@ -111,4 +133,17 @@ abstract final class GatewayPassportMapper {
     }
     return DateTime.tryParse(value);
   }
+}
+
+/// A single dated entry from `operations` (`deployment` or `retrieval`),
+/// normalised so [GatewayPassportMapper._resolveLatestOperation] can compare
+/// them by date regardless of which field name each one uses.
+class _OperationEntry {
+  const _OperationEntry({required this.type, required this.date, this.lat, this.lon});
+
+  /// `'Deployment'` or `'Recovery'`.
+  final String type;
+  final DateTime date;
+  final double? lat;
+  final double? lon;
 }
