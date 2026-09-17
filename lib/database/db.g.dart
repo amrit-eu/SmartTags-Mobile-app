@@ -1553,7 +1553,7 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES platforms (ref) ON DELETE CASCADE',
+      'REFERENCES platforms (ref)',
     ),
   );
   static const VerificationMeta _eventMeta = const VerificationMeta('event');
@@ -4459,16 +4459,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncMetadata,
     idxPlatformsRef,
   ];
-  @override
-  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'platforms',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('alerts', kind: UpdateKind.delete)],
-    ),
-  ]);
 }
 
 typedef $$PlatformsTableCreateCompanionBuilder =
