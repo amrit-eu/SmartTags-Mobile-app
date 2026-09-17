@@ -107,7 +107,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
-    unawaited(_pulseController.repeat(reverse: true));
+    _pulseController.repeat(reverse: true);
 
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
@@ -200,7 +200,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     });
     // Reset and play animation
     if (mounted) {
-      unawaited(_popupAnimationController.forward(from: 0));
+      _popupAnimationController.forward(from: 0);
     }
     // Center map on the selected marker.
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -309,15 +309,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     setState(() {
       _mapSkeletonVisible = false;
     });
-    unawaited(
-      Future<void>.delayed(const Duration(milliseconds: 350), () {
-        if (mounted) {
-          setState(() {
-            _mapSkeletonMounted = false;
-          });
-        }
-      }),
-    );
+    Future<void>.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        setState(() {
+          _mapSkeletonMounted = false;
+        });
+      }
+    });
   }
 
   Widget _baseTileBuilder(
@@ -413,11 +411,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
-                        ),
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
                       ),
                     );
                   },
