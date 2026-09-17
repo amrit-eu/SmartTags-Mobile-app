@@ -354,7 +354,7 @@ void main() {
       // Verify the popup is shown
       expect(find.text('Outside Tap Test'), findsOneWidget);
 
-      // Tap on the map outside the popup
+      // Tap on the map tiles outside the popup (bottom-right; marker sits near map center)
       final mapTapTarget = find.byWidgetPredicate(
         (widget) => widget is GestureDetector && widget.behavior == HitTestBehavior.opaque && widget.onTap != null,
       );
