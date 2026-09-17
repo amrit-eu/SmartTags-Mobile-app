@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -280,43 +278,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     // Popup and map pan run together — no loading overlay (data is already local).
     _popupAnimationController.forward(from: 0);
     _animateMapToPoint(position);
-  }
-
-  void _dezoomAtOffset(Offset localPosition) {
-    final camera = _mapController.camera;
-    final minZoom = camera.minZoom ?? 0;
-    final maxZoom = camera.maxZoom ?? 18;
-    final newZoom = (camera.zoom - 1).clamp(minZoom, maxZoom);
-    if (newZoom >= camera.zoom) {
-      return;
-    }
-
-    final newCenter = camera.focusedZoomCenter(localPosition, newZoom);
-    _mapController.move(newCenter, newZoom);
-  }
-
-  bool _hasDezoomModifier() {
-    final keyboard = HardwareKeyboard.instance;
-    return keyboard.isControlPressed ||
-        keyboard.isShiftPressed ||
-        keyboard.isMetaPressed ||
-        keyboard.isAltPressed;
-  }
-
-  void _handleMapPointerDown(PointerDownEvent event) {
-    final isSecondary = (event.buttons & kSecondaryMouseButton) != 0;
-    final isPrimary = (event.buttons & kPrimaryMouseButton) != 0;
-
-    // Right-click / Option+click (iOS Simulator) → dezoom immediately.
-    if (isSecondary) {
-      _dezoomAtOffset(event.localPosition);
-      return;
-    }
-
-    // Shift/Ctrl/⌥/⌘ + left-click → dezoom (macOS trackpad fallback).
-    if (isPrimary && _hasDezoomModifier()) {
-      _dezoomAtOffset(event.localPosition);
-    }
   }
 
   void _watchSelectedPlatform(String platformRef) {
@@ -641,35 +602,41 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     return Stack(
       children: [
         Positioned.fill(
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: _handleMapPointerDown,
-            child: FlutterMap(
-              mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: _defaultCenter,
-                initialZoom: _defaultZoom,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: const MapOptions(
+              initialCenter: _defaultCenter,
+              initialZoom: _defaultZoom,
+              interactionOptions: InteractionOptions(
+                keyboardOptions: KeyboardOptions(
+                  enableRFZooming: true,
+                ),
               ),
-              children: [
+            ),
+            children: [
             ValueListenableBuilder<model.Platform?>(
               valueListenable: _selectedPlatformNotifier,
               builder: (context, selectedPlatform, _) {
+                final tiles = Stack(
+                  children: [
+                    TileLayer(
+                      urlTemplate: MapConfig.oceanBaseTileUrl,
+                      userAgentPackageName: MapConfig.userAgentPackageName,
+                      tileBuilder: _baseTileBuilder,
+                    ),
+                    TileLayer(
+                      urlTemplate: MapConfig.oceanReferenceTileUrl,
+                      userAgentPackageName: MapConfig.userAgentPackageName,
+                    ),
+                  ],
+                );
+                if (selectedPlatform == null) {
+                  return tiles;
+                }
                 return GestureDetector(
-                  onTap: selectedPlatform != null ? _clearSelection : null,
+                  onTap: _clearSelection,
                   behavior: HitTestBehavior.opaque,
-                  child: Stack(
-                    children: [
-                      TileLayer(
-                        urlTemplate: MapConfig.oceanBaseTileUrl,
-                        userAgentPackageName: MapConfig.userAgentPackageName,
-                        tileBuilder: _baseTileBuilder,
-                      ),
-                      TileLayer(
-                        urlTemplate: MapConfig.oceanReferenceTileUrl,
-                        userAgentPackageName: MapConfig.userAgentPackageName,
-                      ),
-                    ],
-                  ),
+                  child: tiles,
                 );
               },
             ),
@@ -708,8 +675,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 );
               },
             ),
-              ],
-            ),
+            ],
           ),
         ),
         ValueListenableBuilder<model.Platform?>(
