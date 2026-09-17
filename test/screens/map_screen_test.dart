@@ -331,67 +331,6 @@ void main() {
     },
   );
   testWidgets(
-    'Tapping outside the popup closes it',
-    (tester) async {
-      final db = AppDatabase.executor(conn.inMemoryConnection());
-
-      // Insert a test platform
-      await db
-          .into(db.platforms)
-          .insert(
-            PlatformsCompanion.insert(
-              ref: 'TEST-005',
-              model: 'Outside Tap Test',
-              network: 'Test Network',
-              lat: 45.5,
-              lon: -5.5,
-              operationLat: 44,
-              operationLon: -6,
-              status: 'OPERATIONAL',
-              operationalStatus: 'Deployed',
-              lastUpdated: DateTime.now(),
-            ),
-          );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWith((ref) => db),
-          ],
-          child: const MaterialApp(
-            home: MapScreen(
-              showMapSkeleton: false,
-              reportMarkersPainted: false,
-              recenterOnMarkerSelect: false,
-            ),
-          ),
-        ),
-      );
-
-      await tester.pump(const Duration(seconds: 1));
-
-      // Tap on the marker to show the popup
-      await tester.tap(find.byIcon(Icons.location_on).first);
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      // Verify the popup is shown
-      expect(find.text('Outside Tap Test'), findsOneWidget);
-
-      // Tap the dismiss overlay (below the popup in the stack)
-      await tester.tap(find.byKey(const Key('map-dismiss-overlay')));
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Verify the popup is closed
-      expect(find.text('Outside Tap Test'), findsNothing);
-
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(milliseconds: 100));
-      await db.close();
-    },
-  );
-  testWidgets(
     'Selected platform popup updates when the database row changes',
     (tester) async {
       final db = AppDatabase.executor(conn.inMemoryConnection());

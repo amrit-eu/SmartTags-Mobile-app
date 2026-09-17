@@ -303,6 +303,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
+  void _onMapBackgroundTap(TapPosition tapPosition, LatLng point) {
+    if (_selectedPlatformNotifier.value != null) {
+      _clearSelection();
+    }
+  }
+
   /// Clears the selected platform.
   void _clearSelection() {
     _stopMapPanAnimation();
@@ -604,14 +610,15 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         Positioned.fill(
           child: FlutterMap(
             mapController: _mapController,
-            options: const MapOptions(
+            options: MapOptions(
               initialCenter: _defaultCenter,
               initialZoom: _defaultZoom,
-              interactionOptions: InteractionOptions(
+              interactionOptions: const InteractionOptions(
                 keyboardOptions: KeyboardOptions(
                   enableRFZooming: true,
                 ),
               ),
+              onTap: _onMapBackgroundTap,
             ),
             children: [
             TileLayer(
@@ -660,22 +667,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             ),
             ],
           ),
-        ),
-        ValueListenableBuilder<model.Platform?>(
-          valueListenable: _selectedPlatformNotifier,
-          builder: (context, selectedPlatform, _) {
-            if (selectedPlatform == null) {
-              return const SizedBox.shrink();
-            }
-            return Positioned.fill(
-              child: GestureDetector(
-                key: const Key('map-dismiss-overlay'),
-                onTap: _clearSelection,
-                behavior: HitTestBehavior.translucent,
-                child: const SizedBox.expand(),
-              ),
-            );
-          },
         ),
         ValueListenableBuilder<model.Platform?>(
           valueListenable: _selectedPlatformNotifier,
