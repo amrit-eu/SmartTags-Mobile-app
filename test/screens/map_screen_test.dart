@@ -379,13 +379,8 @@ void main() {
       // Verify the popup is shown
       expect(find.text('Outside Tap Test'), findsOneWidget);
 
-      // Tap on the map tiles outside the popup (bottom-right; marker sits near map center)
-      final mapTapTarget = find.byWidgetPredicate(
-        (widget) => widget is GestureDetector && widget.behavior == HitTestBehavior.opaque && widget.onTap != null,
-      );
-      for (final element in mapTapTarget.evaluate()) {
-        tester.widget<GestureDetector>(find.byWidget(element.widget)).onTap?.call();
-      }
+      // Tap the dismiss overlay (below the popup in the stack)
+      await tester.tap(find.byKey(const Key('map-dismiss-overlay')));
       await tester.pump(const Duration(milliseconds: 500));
 
       // Verify the popup is closed

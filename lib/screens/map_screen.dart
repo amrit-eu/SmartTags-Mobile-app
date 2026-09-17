@@ -614,31 +614,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               ),
             ),
             children: [
-            ValueListenableBuilder<model.Platform?>(
-              valueListenable: _selectedPlatformNotifier,
-              builder: (context, selectedPlatform, _) {
-                final tiles = Stack(
-                  children: [
-                    TileLayer(
-                      urlTemplate: MapConfig.oceanBaseTileUrl,
-                      userAgentPackageName: MapConfig.userAgentPackageName,
-                      tileBuilder: _baseTileBuilder,
-                    ),
-                    TileLayer(
-                      urlTemplate: MapConfig.oceanReferenceTileUrl,
-                      userAgentPackageName: MapConfig.userAgentPackageName,
-                    ),
-                  ],
-                );
-                if (selectedPlatform == null) {
-                  return tiles;
-                }
-                return GestureDetector(
-                  onTap: _clearSelection,
-                  behavior: HitTestBehavior.opaque,
-                  child: tiles,
-                );
-              },
+            TileLayer(
+              urlTemplate: MapConfig.oceanBaseTileUrl,
+              userAgentPackageName: MapConfig.userAgentPackageName,
+              tileBuilder: _baseTileBuilder,
+            ),
+            TileLayer(
+              urlTemplate: MapConfig.oceanReferenceTileUrl,
+              userAgentPackageName: MapConfig.userAgentPackageName,
             ),
             MarkerClusterLayerWidget(
               options: MarkerClusterLayerOptions(
@@ -677,6 +660,22 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             ),
             ],
           ),
+        ),
+        ValueListenableBuilder<model.Platform?>(
+          valueListenable: _selectedPlatformNotifier,
+          builder: (context, selectedPlatform, _) {
+            if (selectedPlatform == null) {
+              return const SizedBox.shrink();
+            }
+            return Positioned.fill(
+              child: GestureDetector(
+                key: const Key('map-dismiss-overlay'),
+                onTap: _clearSelection,
+                behavior: HitTestBehavior.translucent,
+                child: const SizedBox.expand(),
+              ),
+            );
+          },
         ),
         ValueListenableBuilder<model.Platform?>(
           valueListenable: _selectedPlatformNotifier,
