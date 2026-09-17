@@ -97,7 +97,7 @@ class Alerts extends Table {
   TextColumn get id => text()();
 
   // the alert resource identifier (= platform ref attribute)
-  TextColumn get resource => text().references(Platforms, #ref, onDelete: KeyAction.cascade)();
+  TextColumn get resource => text().references(Platforms, #ref)();
 
   // Alert's event name
   TextColumn get event => text()();
@@ -296,11 +296,6 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
-    },
-    // SQLite ignores foreign key constraints (and ON DELETE CASCADE) unless
-    // this pragma is enabled on every connection.
-    beforeOpen: (details) async {
-      await customStatement('PRAGMA foreign_keys = ON');
     },
     // onUpgrade: (Migrator m, int from, int to) async {
     //   if (from < 2) {
