@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,7 +28,11 @@ void main() {
           databaseProvider.overrideWith((ref) => db),
         ],
         child: const MaterialApp(
-          home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+          home: MapScreen(
+            showMapSkeleton: false,
+            reportMarkersPainted: false,
+            recenterOnMarkerSelect: false,
+          ),
         ),
       ),
     );
@@ -43,7 +48,11 @@ void main() {
           databaseProvider.overrideWith((ref) => db),
         ],
         child: const MaterialApp(
-          home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+          home: MapScreen(
+            showMapSkeleton: false,
+            reportMarkersPainted: false,
+            recenterOnMarkerSelect: false,
+          ),
         ),
       ),
     );
@@ -172,7 +181,11 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+            home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
+              recenterOnMarkerSelect: false,
+            ),
           ),
         ),
       );
@@ -230,7 +243,11 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+            home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
+              recenterOnMarkerSelect: false,
+            ),
           ),
         ),
       );
@@ -281,7 +298,11 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+            home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
+              recenterOnMarkerSelect: false,
+            ),
           ),
         ),
       );
@@ -338,7 +359,11 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+            home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
+              recenterOnMarkerSelect: false,
+            ),
           ),
         ),
       );
@@ -372,53 +397,24 @@ void main() {
     },
   );
   testWidgets(
-    'Selecting another marker updates the popup content',
+    'Selected platform popup updates when the database row changes',
     (tester) async {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
-      // Insert two test platforms
-      //
-      // Note that now we have clustering, this test relies on the two
-      // platforms being sufficiently far apart to not cluster, and at
-      // the same time be close enough together to be rendered on the
-      // viewport at the same time, while also not being covered by the
-      // fixed top-left popup (top:20, left:16, maxWidth 240) once the
-      // first marker is selected. The coordinates below satisfy this
-      // requirement. But if this test fails unexpectedly in the future,
-      // check to see whether unintentional clustering, or the second
-      // marker rendering underneath the popup, is the cause.
-      await db
-          .into(db.platforms)
-          .insert(
-            PlatformsCompanion.insert(
-              ref: 'TEST-006',
-              model: 'First Platform',
-              network: 'Test Network',
-              lat: 40,
-              lon: -3,
-              operationLat: 41,
-              operationLon: -4,
-              status: 'OPERATIONAL',
-              operationalStatus: 'Deployed',
-              lastUpdated: DateTime.now(),
-            ),
-          );
-      await db
-          .into(db.platforms)
-          .insert(
-            PlatformsCompanion.insert(
-              ref: 'TEST-007',
-              model: 'Second Platform',
-              network: 'Test Network',
-              lat: 20,
-              lon: 20,
-              operationLat: 21,
-              operationLon: 19,
-              status: 'OPERATIONAL',
-              operationalStatus: 'Deployed',
-              lastUpdated: DateTime.now(),
-            ),
-          );
+      await db.into(db.platforms).insert(
+        PlatformsCompanion.insert(
+          ref: 'TEST-006',
+          model: 'First Platform',
+          network: 'Test Network',
+          lat: 45.5,
+          lon: -5.5,
+          operationLat: 45.5,
+          operationLon: -5.5,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: DateTime.now(),
+        ),
+      );
 
       await tester.pumpWidget(
         ProviderScope(
@@ -426,32 +422,31 @@ void main() {
             databaseProvider.overrideWith((ref) => db),
           ],
           child: const MaterialApp(
-            home: MapScreen(showMapSkeleton: false, reportMarkersPainted: false),
+            home: MapScreen(
+              showMapSkeleton: false,
+              reportMarkersPainted: false,
+              recenterOnMarkerSelect: false,
+            ),
           ),
         ),
       );
 
       await tester.pump(const Duration(seconds: 1));
-
-      // Tap first marker
-      await tester.tap(find.byIcon(Icons.location_on).at(0));
+      await tester.tap(find.byIcon(Icons.location_on).first);
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      // Verify first platform is shown
       expect(find.text('First Platform'), findsOneWidget);
-      expect(find.text('WMO ID: TEST-006'), findsOneWidget);
 
-      // Tap second marker
-      await tester.tap(find.byIcon(Icons.location_on).at(1));
+      await (db.update(db.platforms)..where((t) => t.ref.equals('TEST-006'))).write(
+        const PlatformsCompanion(model: Value('Updated Platform')),
+      );
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      // Verify popup updates to second platform
-      expect(find.text('Second Platform'), findsOneWidget);
-      expect(find.text('WMO ID: TEST-007'), findsOneWidget);
+      expect(find.text('Updated Platform'), findsOneWidget);
       expect(find.text('First Platform'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());

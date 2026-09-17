@@ -35,6 +35,7 @@ class MapScreen extends ConsumerStatefulWidget {
     this.onLocationCentered,
     this.showMapSkeleton = true,
     this.reportMarkersPainted = true,
+    this.recenterOnMarkerSelect = true,
   });
 
   /// Optional test / injection hook to provide a LocationFetcher
@@ -53,6 +54,10 @@ class MapScreen extends ConsumerStatefulWidget {
   @visibleForTesting
   final bool reportMarkersPainted;
 
+  /// Whether selecting a marker pans the map to keep it clear of the popup.
+  @visibleForTesting
+  final bool recenterOnMarkerSelect;
+
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
@@ -62,8 +67,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late final MapController _mapController;
   late AnimationController _pulseController;
   late AnimationController _popupAnimationController;
+  AnimationController? _mapPanAnimationController;
   late final ValueNotifier<model.Platform?> _selectedPlatformNotifier;
-  late final ValueNotifier<bool> _isSelectingPlatformNotifier;
 
   /// Cached platform markers — rebuilt only when the platforms list changes.
   List<Platform>? _markersCacheSource;
@@ -76,6 +81,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   static const int _minBaseTilesBeforeHideSkeleton = 4;
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
+  static const Duration _mapPanDuration = Duration(milliseconds: 450);
+  static const Offset _popupMapCenterOffset = Offset(-40, 150);
 
   var _loadedBaseTileCount = 0;
   var _mapSkeletonVisible = false;
@@ -118,17 +125,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       duration: const Duration(milliseconds: 350),
     );
     _selectedPlatformNotifier = ValueNotifier<model.Platform?>(null);
-    _isSelectingPlatformNotifier = ValueNotifier<bool>(false);
   }
 
   @override
   void dispose() {
     _mapSkeletonTimeoutTimer?.cancel();
+    _mapPanAnimationController?.dispose();
     _pulseController.dispose();
     _popupAnimationController.dispose();
     _selectedPlatformSubscription?.close();
     _selectedPlatformNotifier.dispose();
-    _isSelectingPlatformNotifier.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -189,29 +195,98 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
-  void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
-    if (_isSelectingPlatformNotifier.value) {
+  LatLng _mapCenterForPoint(LatLng point, double zoom, {Offset offset = Offset.zero}) {
+    if (offset == Offset.zero) {
+      return point;
+    }
+    final camera = _mapController.camera;
+    final projected = camera.projectAtZoom(point, zoom);
+    return camera.unprojectAtZoom(
+      camera.rotatePoint(projected, projected - offset),
+      zoom,
+    );
+  }
+
+  void _stopMapPanAnimation() {
+    _mapPanAnimationController?.stop();
+    _mapPanAnimationController?.dispose();
+    _mapPanAnimationController = null;
+  }
+
+  /// Smoothly pans so [point] sits below the top-left popup, not under it.
+  bool _shouldRecenterForPopup(LatLng point) {
+    final camera = _mapController.camera;
+    final screen = camera.latLngToScreenOffset(point);
+    final size = camera.nonRotatedSize;
+    const popupRight = 256.0;
+    const popupBottom = 300.0;
+    const edgeMargin = 56.0;
+
+    return screen.dx < popupRight ||
+        screen.dy < popupBottom ||
+        screen.dx > size.width - edgeMargin ||
+        screen.dy > size.height - edgeMargin;
+  }
+
+  void _animateMapToPoint(
+    LatLng point, {
+    Offset offset = _popupMapCenterOffset,
+    Duration duration = _mapPanDuration,
+  }) {
+    if (!widget.recenterOnMarkerSelect || !_shouldRecenterForPopup(point)) {
       return;
     }
-    _isSelectingPlatformNotifier.value = true;
-    _selectedPlatformNotifier.value = dbPlatform.toDomain();
-    _watchSelectedPlatform(dbPlatform.ref);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _isSelectingPlatformNotifier.value = false;
+
+    final zoom = _mapController.camera.zoom;
+    final targetCenter = _mapCenterForPoint(point, zoom, offset: offset);
+    final startCenter = _mapController.camera.center;
+
+    if (startCenter.latitude == targetCenter.latitude &&
+        startCenter.longitude == targetCenter.longitude) {
+      return;
+    }
+
+    _stopMapPanAnimation();
+    final controller = AnimationController(vsync: this, duration: duration);
+    _mapPanAnimationController = controller;
+
+    final latTween = Tween<double>(
+      begin: startCenter.latitude,
+      end: targetCenter.latitude,
+    );
+    final lngTween = Tween<double>(
+      begin: startCenter.longitude,
+      end: targetCenter.longitude,
+    );
+    final animation = CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
+
+    controller.addListener(() {
+      _mapController.move(
+        LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+        zoom,
+      );
+    });
+    controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+        if (identical(_mapPanAnimationController, controller)) {
+          _mapPanAnimationController = null;
+        }
+        controller.dispose();
       }
     });
-    // Reset and play animation
-    if (mounted) {
-      // `forward` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
-      // stays satisfied on analyzer versions that don't yet honour the annotation.
-      // ignore: unnecessary_unawaited
-      unawaited(_popupAnimationController.forward(from: 0));
-    }
-    // Center map on the selected marker.
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _mapController.move(position, _mapController.camera.zoom);
-    });
+    // `forward` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
+    // stays satisfied on analyzer versions that don't yet honour the annotation.
+    // ignore: unnecessary_unawaited
+    unawaited(controller.forward());
+  }
+
+  void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
+    _selectedPlatformNotifier.value = dbPlatform.toDomain();
+    _watchSelectedPlatform(dbPlatform.ref);
+    // Popup and map pan run together — no loading overlay (data is already local).
+    // ignore: unnecessary_unawaited
+    unawaited(_popupAnimationController.forward(from: 0));
+    _animateMapToPoint(position);
   }
 
   void _dezoomAtOffset(Offset localPosition) {
@@ -258,9 +333,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       (previous, next) {
         next.whenData((platform) {
           if (platform != null && mounted) {
-            _selectedPlatformNotifier.value = platform.toDomain();
+            final current = _selectedPlatformNotifier.value;
             final newPosition = LatLng(platform.lat, platform.lon);
-            _mapController.move(newPosition, _mapController.camera.zoom);
+            _selectedPlatformNotifier.value = platform.toDomain();
+            // Skip re-pan when the stream echoes the same coordinates we already show.
+            if (current != null &&
+                (current.latestPosition.latitude - newPosition.latitude).abs() < 0.00001 &&
+                (current.latestPosition.longitude - newPosition.longitude).abs() < 0.00001) {
+              return;
+            }
+            _animateMapToPoint(newPosition);
           }
         });
       },
@@ -269,10 +351,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   /// Clears the selected platform.
   void _clearSelection() {
+    _stopMapPanAnimation();
     _selectedPlatformSubscription?.close();
     _selectedPlatformSubscription = null;
     _selectedPlatformNotifier.value = null;
-    _isSelectingPlatformNotifier.value = false;
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
@@ -473,6 +555,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             return Marker(
               point: point,
               child: GestureDetector(
+                key: ValueKey('platform-marker-${dbPlatform.ref}'),
                 onTap: () => _selectPlatformMarker(dbPlatform, point),
                 child: Icon(
                   Icons.location_on,
@@ -489,14 +572,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   Marker _buildSelectedPlatformMarker(model.Platform platform) {
     return Marker(
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       point: platform.latestPosition,
       child: IgnorePointer(
-        child: Icon(
-          Icons.location_on,
-          color: const Color.fromARGB(255, 2, 0, 101),
-          size: 40,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color.fromARGB(255, 2, 0, 101),
+              width: 3,
+            ),
+          ),
         ),
       ),
     );
@@ -656,39 +743,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 child: GestureDetector(
                   onTap: () {},
                   child: _buildPopup(context, selectedPlatform),
-                ),
-              ),
-            );
-          },
-        ),
-        ValueListenableBuilder<bool>(
-          valueListenable: _isSelectingPlatformNotifier,
-          builder: (context, isSelectingPlatform, _) {
-            if (!isSelectingPlatform) {
-              return const SizedBox.shrink();
-            }
-            return Positioned.fill(
-              child: AbsorbPointer(
-                child: ColoredBox(
-                  color: Colors.black.withAlpha(38),
-                  child: Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Loading platform…',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             );
