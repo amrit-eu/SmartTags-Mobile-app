@@ -114,10 +114,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
-    // `repeat` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
-    // stays satisfied on analyzer versions that don't yet honour the annotation.
-    // ignore: unnecessary_unawaited
-    unawaited(_pulseController.repeat(reverse: true));
+    _pulseController.repeat(reverse: true);
 
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
@@ -274,18 +271,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         controller.dispose();
       }
     });
-    // `forward` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
-    // stays satisfied on analyzer versions that don't yet honour the annotation.
-    // ignore: unnecessary_unawaited
-    unawaited(controller.forward());
+    controller.forward();
   }
 
   void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
     _selectedPlatformNotifier.value = dbPlatform.toDomain();
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
-    // ignore: unnecessary_unawaited
-    unawaited(_popupAnimationController.forward(from: 0));
+    _popupAnimationController.forward(from: 0);
     _animateMapToPoint(position);
   }
 
@@ -397,15 +390,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     setState(() {
       _mapSkeletonVisible = false;
     });
-    unawaited(
-      Future<void>.delayed(const Duration(milliseconds: 350), () {
-        if (mounted) {
-          setState(() {
-            _mapSkeletonMounted = false;
-          });
-        }
-      }),
-    );
+    Future<void>.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        setState(() {
+          _mapSkeletonMounted = false;
+        });
+      }
+    });
   }
 
   Widget _baseTileBuilder(
@@ -501,14 +492,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // `push` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
-                    // stays satisfied on analyzer versions that don't yet honour the annotation.
-                    // ignore: unnecessary_unawaited
-                    unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
-                        ),
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
                       ),
                     );
                   },
