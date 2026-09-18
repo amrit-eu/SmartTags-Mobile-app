@@ -18,6 +18,48 @@ import 'package:smart_tags/widgets/offline_status.dart';
 
 import '../helpers/fake_auth_service.dart';
 
+/// Applies [OperationSubmitResult] on pop, mirroring the in-app platform detail flow.
+class _OperationRecordHost extends ConsumerWidget {
+  const _OperationRecordHost({required this.screen});
+
+  final Widget screen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Navigator(
+      pages: [
+        const MaterialPage<void>(key: ValueKey('home'), child: Scaffold(body: SizedBox.shrink())),
+        MaterialPage<void>(key: const ValueKey('operation'), child: screen),
+      ],
+      // Navigator 2 `onDidRemovePage` does not expose pop results; keep until tests migrate.
+      // ignore: deprecated_member_use
+      onPopPage: (route, result) {
+        if (!route.didPop(result)) {
+          return false;
+        }
+        if (result is OperationSubmitResult) {
+          final container = ProviderScope.containerOf(context, listen: false);
+          final messenger = ScaffoldMessenger.of(context);
+          try {
+            applyOperationSubmitResult(
+              container: container,
+              result: result,
+              messenger: messenger,
+            );
+          } on Exception {
+            if (context.mounted) {
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Failed to update platform.')),
+              );
+            }
+          }
+        }
+        return true;
+      },
+    );
+  }
+}
+
 class MockErrorDatabase extends AppDatabase {
   /// A mock database that throws an error on update, used to test error handling in the UI.
   MockErrorDatabase() : super.executor(conn.inMemoryConnection());
@@ -321,18 +363,11 @@ void main() {
           platformsRefreshDelayProvider.overrideWithValue(Duration.zero),
         ],
         child: MaterialApp(
-          home: Navigator(
-            pages: [
-              MaterialPage(child: Scaffold(body: Container())),
-              MaterialPage(
-                // Screen is opened for a Deploy, but the operator will toggle it to Recover in-form.
-                child: DeployPlatformScreen(
-                  platform: platform,
-                  action: DeployAction.deploy,
-                ),
-              ),
-            ],
-            onDidRemovePage: (page) {},
+          home: _OperationRecordHost(
+            screen: DeployPlatformScreen(
+              platform: platform,
+              action: DeployAction.deploy,
+            ),
           ),
         ),
       ),
@@ -436,17 +471,11 @@ void main() {
           platformsRefreshDelayProvider.overrideWithValue(Duration.zero),
         ],
         child: MaterialApp(
-          home: Navigator(
-            pages: [
-              MaterialPage(child: Scaffold(body: Container())),
-              MaterialPage(
-                child: DeployPlatformScreen(
-                  platform: platform,
-                  action: DeployAction.recover,
-                ),
-              ),
-            ],
-            onDidRemovePage: (page) {},
+          home: _OperationRecordHost(
+            screen: DeployPlatformScreen(
+              platform: platform,
+              action: DeployAction.recover,
+            ),
           ),
         ),
       ),
@@ -552,17 +581,11 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: Navigator(
-            pages: [
-              MaterialPage(child: Scaffold(body: Container())),
-              MaterialPage(
-                child: DeployPlatformScreen(
-                  platform: platform,
-                  action: DeployAction.recover,
-                ),
-              ),
-            ],
-            onDidRemovePage: (page) {},
+          home: _OperationRecordHost(
+            screen: DeployPlatformScreen(
+              platform: platform,
+              action: DeployAction.recover,
+            ),
           ),
         ),
       ),
@@ -648,17 +671,11 @@ void main() {
           checkConnectionProvider.overrideWith(_NoConnectivityStatus.new),
         ],
         child: MaterialApp(
-          home: Navigator(
-            pages: [
-              MaterialPage(child: Scaffold(body: Container())),
-              MaterialPage(
-                child: DeployPlatformScreen(
-                  platform: platform,
-                  action: DeployAction.recover,
-                ),
-              ),
-            ],
-            onDidRemovePage: (page) {},
+          home: _OperationRecordHost(
+            screen: DeployPlatformScreen(
+              platform: platform,
+              action: DeployAction.recover,
+            ),
           ),
         ),
       ),

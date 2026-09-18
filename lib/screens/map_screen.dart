@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +34,7 @@ class MapScreen extends ConsumerStatefulWidget {
     this.onLocationCentered,
     this.showMapSkeleton = true,
     this.reportMarkersPainted = true,
+    this.recenterOnMarkerSelect = true,
   });
 
   /// Optional test / injection hook to provide a LocationFetcher
@@ -53,6 +53,10 @@ class MapScreen extends ConsumerStatefulWidget {
   @visibleForTesting
   final bool reportMarkersPainted;
 
+  /// Whether selecting a marker pans the map to keep it clear of the popup.
+  @visibleForTesting
+  final bool recenterOnMarkerSelect;
+
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
@@ -62,12 +66,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late final MapController _mapController;
   late AnimationController _pulseController;
   late AnimationController _popupAnimationController;
+  AnimationController? _mapPanAnimationController;
   late final ValueNotifier<model.Platform?> _selectedPlatformNotifier;
-  late final ValueNotifier<bool> _isSelectingPlatformNotifier;
 
   /// Cached platform markers — rebuilt only when the platforms list changes.
   List<Platform>? _markersCacheSource;
   List<Marker> _platformMarkers = const [];
+  final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
+  Set<String>? _openClusterMarkerRefs;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
@@ -76,6 +82,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   static const int _minBaseTilesBeforeHideSkeleton = 4;
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
+  static const Duration _mapPanDuration = Duration(milliseconds: 450);
+  static const Offset _popupMapCenterOffset = Offset(-40, 150);
 
   var _loadedBaseTileCount = 0;
   var _mapSkeletonVisible = false;
@@ -115,17 +123,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       duration: const Duration(milliseconds: 350),
     );
     _selectedPlatformNotifier = ValueNotifier<model.Platform?>(null);
-    _isSelectingPlatformNotifier = ValueNotifier<bool>(false);
   }
 
   @override
   void dispose() {
     _mapSkeletonTimeoutTimer?.cancel();
+    _mapPanAnimationController?.dispose();
     _pulseController.dispose();
     _popupAnimationController.dispose();
     _selectedPlatformSubscription?.close();
     _selectedPlatformNotifier.dispose();
-    _isSelectingPlatformNotifier.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -186,62 +193,158 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
-  void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
-    if (_isSelectingPlatformNotifier.value) {
-      return;
+  LatLng _mapCenterForPoint(LatLng point, double zoom, {Offset offset = Offset.zero}) {
+    if (offset == Offset.zero) {
+      return point;
     }
-    _isSelectingPlatformNotifier.value = true;
-    _selectedPlatformNotifier.value = dbPlatform.toDomain();
-    _watchSelectedPlatform(dbPlatform.ref);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _isSelectingPlatformNotifier.value = false;
-      }
-    });
-    // Reset and play animation
-    if (mounted) {
-      _popupAnimationController.forward(from: 0);
-    }
-    // Center map on the selected marker.
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _mapController.move(position, _mapController.camera.zoom);
-    });
-  }
-
-  void _dezoomAtOffset(Offset localPosition) {
     final camera = _mapController.camera;
-    final minZoom = camera.minZoom ?? 0;
-    final maxZoom = camera.maxZoom ?? 18;
-    final newZoom = (camera.zoom - 1).clamp(minZoom, maxZoom);
-    if (newZoom >= camera.zoom) {
+    final projected = camera.projectAtZoom(point, zoom);
+    return camera.unprojectAtZoom(
+      camera.rotatePoint(projected, projected - offset),
+      zoom,
+    );
+  }
+
+  void _stopMapPanAnimation() {
+    _mapPanAnimationController?.stop();
+    _mapPanAnimationController?.dispose();
+    _mapPanAnimationController = null;
+  }
+
+  /// Smoothly pans so [point] sits below the top-left popup, not under it.
+  bool _shouldRecenterForPopup(LatLng point) {
+    final camera = _mapController.camera;
+    final screen = camera.latLngToScreenOffset(point);
+    final size = camera.nonRotatedSize;
+    const popupRight = 256.0;
+    const popupBottom = 300.0;
+    const edgeMargin = 56.0;
+
+    return screen.dx < popupRight ||
+        screen.dy < popupBottom ||
+        screen.dx > size.width - edgeMargin ||
+        screen.dy > size.height - edgeMargin;
+  }
+
+  void _animateMapToPoint(
+    LatLng point, {
+    Offset offset = _popupMapCenterOffset,
+    Duration duration = _mapPanDuration,
+  }) {
+    if (!widget.recenterOnMarkerSelect || !_shouldRecenterForPopup(point)) {
       return;
     }
 
-    final newCenter = camera.focusedZoomCenter(localPosition, newZoom);
-    _mapController.move(newCenter, newZoom);
-  }
+    final zoom = _mapController.camera.zoom;
+    final targetCenter = _mapCenterForPoint(point, zoom, offset: offset);
+    final startCenter = _mapController.camera.center;
 
-  bool _hasDezoomModifier() {
-    final keyboard = HardwareKeyboard.instance;
-    return keyboard.isControlPressed ||
-        keyboard.isShiftPressed ||
-        keyboard.isMetaPressed ||
-        keyboard.isAltPressed;
-  }
-
-  void _handleMapPointerDown(PointerDownEvent event) {
-    final isSecondary = (event.buttons & kSecondaryMouseButton) != 0;
-    final isPrimary = (event.buttons & kPrimaryMouseButton) != 0;
-
-    // Right-click / Option+click (iOS Simulator) → dezoom immediately.
-    if (isSecondary) {
-      _dezoomAtOffset(event.localPosition);
+    if (startCenter.latitude == targetCenter.latitude &&
+        startCenter.longitude == targetCenter.longitude) {
       return;
     }
 
-    // Shift/Ctrl/⌥/⌘ + left-click → dezoom (macOS trackpad fallback).
-    if (isPrimary && _hasDezoomModifier()) {
-      _dezoomAtOffset(event.localPosition);
+    _stopMapPanAnimation();
+    final controller = AnimationController(vsync: this, duration: duration);
+    _mapPanAnimationController = controller;
+
+    final latTween = Tween<double>(
+      begin: startCenter.latitude,
+      end: targetCenter.latitude,
+    );
+    final lngTween = Tween<double>(
+      begin: startCenter.longitude,
+      end: targetCenter.longitude,
+    );
+    final animation = CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
+
+    controller
+      ..addListener(() {
+        _mapController.move(
+          LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+          zoom,
+        );
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+          if (identical(_mapPanAnimationController, controller)) {
+            _mapPanAnimationController = null;
+          }
+          controller.dispose();
+        }
+      });
+    controller.forward();
+  }
+
+  void _selectPlatformMarker(
+    Platform dbPlatform,
+    LatLng position, {
+    bool recenter = true,
+  }) {
+    final previousRef = _selectedPlatformNotifier.value?.platformRef;
+    _selectedPlatformNotifier.value = dbPlatform.toDomain();
+    _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
+    _watchSelectedPlatform(dbPlatform.ref);
+    // Popup and map pan run together — no loading overlay (data is already local).
+    _popupAnimationController.forward(from: 0);
+    if (recenter) {
+      _animateMapToPoint(position);
+    }
+  }
+
+  String? _platformRefFromMarker(Marker marker) {
+    final key = marker.key;
+    if (key is! ValueKey<String>) {
+      return null;
+    }
+    const prefix = 'platform-marker-';
+    final value = key.value;
+    if (!value.startsWith(prefix)) {
+      return null;
+    }
+    return value.substring(prefix.length);
+  }
+
+  void _onClusterTap(MarkerClusterNode cluster) {
+    final clusterRefs = <String>{
+      for (final markerNode in cluster.markers)
+        ? _platformRefFromMarker(markerNode.marker),
+    };
+    if (clusterRefs.isEmpty) {
+      return;
+    }
+
+    // Tapping an open cluster again closes it — clear selection with it.
+    if (_openClusterMarkerRefs != null &&
+        setEquals(_openClusterMarkerRefs, clusterRefs)) {
+      _openClusterMarkerRefs = null;
+      _clearSelection();
+      return;
+    }
+
+    _openClusterMarkerRefs = clusterRefs;
+    _selectFirstClusterMarker(cluster);
+  }
+
+  void _selectFirstClusterMarker(MarkerClusterNode cluster) {
+    final source = _markersCacheSource;
+    if (source == null) {
+      return;
+    }
+
+    for (final markerNode in cluster.markers) {
+      final ref = _platformRefFromMarker(markerNode.marker);
+      if (ref == null) {
+        continue;
+      }
+      for (final dbPlatform in source) {
+        if (dbPlatform.ref == ref) {
+          final point = LatLng(dbPlatform.lat, dbPlatform.lon);
+          // Cluster layer may zoom/pan — avoid fighting that animation.
+          _selectPlatformMarker(dbPlatform, point, recenter: false);
+          return;
+        }
+      }
     }
   }
 
@@ -252,21 +355,39 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       (previous, next) {
         next.whenData((platform) {
           if (platform != null && mounted) {
-            _selectedPlatformNotifier.value = platform.toDomain();
+            final current = _selectedPlatformNotifier.value;
             final newPosition = LatLng(platform.lat, platform.lon);
-            _mapController.move(newPosition, _mapController.camera.zoom);
+            _selectedPlatformNotifier.value = platform.toDomain();
+            // Skip re-pan when the stream echoes the same coordinates we already show.
+            if (current != null &&
+                (current.latestPosition.latitude - newPosition.latitude).abs() < 0.00001 &&
+                (current.latestPosition.longitude - newPosition.longitude).abs() < 0.00001) {
+              return;
+            }
+            _animateMapToPoint(newPosition);
           }
         });
       },
     );
   }
 
+  void _onMapBackgroundTap(TapPosition tapPosition, LatLng point) {
+    if (_selectedPlatformNotifier.value != null) {
+      _clearSelection();
+    }
+  }
+
   /// Clears the selected platform.
   void _clearSelection() {
+    _openClusterMarkerRefs = null;
+    final previousRef = _selectedPlatformNotifier.value?.platformRef;
+    _stopMapPanAnimation();
     _selectedPlatformSubscription?.close();
     _selectedPlatformSubscription = null;
     _selectedPlatformNotifier.value = null;
-    _isSelectingPlatformNotifier.value = false;
+    if (previousRef != null) {
+      _updateMarkerHighlight(previousRef: previousRef);
+    }
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
@@ -451,42 +572,41 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
+  Marker _platformMarkerFor(Platform dbPlatform) {
+    final point = LatLng(dbPlatform.lat, dbPlatform.lon);
+    final selectedRef = _selectedPlatformNotifier.value?.platformRef;
+    return Marker(
+      key: ValueKey('platform-marker-${dbPlatform.ref}'),
+      point: point,
+      width: _PlatformMapMarker.markerSize,
+      height: _PlatformMapMarker.markerSize,
+      alignment: Alignment.center,
+      child: _PlatformMapMarker(
+        dbPlatform: dbPlatform,
+        initiallySelected: dbPlatform.ref == selectedRef,
+        onTap: () => _selectPlatformMarker(dbPlatform, point),
+        states: _platformMarkerStates,
+      ),
+    );
+  }
+
+  void _updateMarkerHighlight({String? previousRef, String? newRef}) {
+    if (previousRef != null) {
+      _platformMarkerStates[previousRef]?.setSelected(selected: false);
+    }
+    if (newRef != null) {
+      _platformMarkerStates[newRef]?.setSelected(selected: true);
+    }
+  }
+
   List<Marker> _platformMarkersFor(List<Platform> databasePlatforms) {
     if (!identical(_markersCacheSource, databasePlatforms)) {
       _markersCacheSource = databasePlatforms;
       _platformMarkers = databasePlatforms
-          .map((dbPlatform) {
-            final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-            return Marker(
-              point: point,
-              child: GestureDetector(
-                onTap: () => _selectPlatformMarker(dbPlatform, point),
-                child: Icon(
-                  Icons.location_on,
-                  color: PlatformStatusPalette.resolve(dbPlatform.status).backgroundColor,
-                  size: 30,
-                ),
-              ),
-            );
-          })
+          .map(_platformMarkerFor)
           .toList(growable: false);
     }
     return _platformMarkers;
-  }
-
-  Marker _buildSelectedPlatformMarker(model.Platform platform) {
-    return Marker(
-      width: 40,
-      height: 40,
-      point: platform.latestPosition,
-      child: const IgnorePointer(
-        child: Icon(
-          Icons.location_on,
-          color: Color.fromARGB(255, 2, 0, 101),
-          size: 40,
-        ),
-      ),
-    );
   }
 
   List<Marker> _buildMarkers(List<Platform> databasePlatforms) {
@@ -555,37 +675,27 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     return Stack(
       children: [
         Positioned.fill(
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: _handleMapPointerDown,
-            child: FlutterMap(
-              mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: _defaultCenter,
-                initialZoom: _defaultZoom,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _defaultCenter,
+              initialZoom: _defaultZoom,
+              interactionOptions: const InteractionOptions(
+                keyboardOptions: KeyboardOptions(
+                  enableRFZooming: true,
+                ),
               ),
-              children: [
-            ValueListenableBuilder<model.Platform?>(
-              valueListenable: _selectedPlatformNotifier,
-              builder: (context, selectedPlatform, _) {
-                return GestureDetector(
-                  onTap: selectedPlatform != null ? _clearSelection : null,
-                  behavior: HitTestBehavior.opaque,
-                  child: Stack(
-                    children: [
-                      TileLayer(
-                        urlTemplate: MapConfig.oceanBaseTileUrl,
-                        userAgentPackageName: MapConfig.userAgentPackageName,
-                        tileBuilder: _baseTileBuilder,
-                      ),
-                      TileLayer(
-                        urlTemplate: MapConfig.oceanReferenceTileUrl,
-                        userAgentPackageName: MapConfig.userAgentPackageName,
-                      ),
-                    ],
-                  ),
-                );
-              },
+              onTap: _onMapBackgroundTap,
+            ),
+            children: [
+            TileLayer(
+              urlTemplate: MapConfig.oceanBaseTileUrl,
+              userAgentPackageName: MapConfig.userAgentPackageName,
+              tileBuilder: _baseTileBuilder,
+            ),
+            TileLayer(
+              urlTemplate: MapConfig.oceanReferenceTileUrl,
+              userAgentPackageName: MapConfig.userAgentPackageName,
             ),
             MarkerClusterLayerWidget(
               options: MarkerClusterLayerOptions(
@@ -594,6 +704,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(50),
                 maxZoom: 15,
+                markerChildBehavior: true,
+                centerMarkerOnClick: false,
+                onClusterTap: _onClusterTap,
                 markers: _buildMarkers(platforms),
                 builder: (context, markers) {
                   return Container(
@@ -611,19 +724,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 },
               ),
             ),
-            ValueListenableBuilder<model.Platform?>(
-              valueListenable: _selectedPlatformNotifier,
-              builder: (context, selectedPlatform, _) {
-                if (selectedPlatform == null) {
-                  return const SizedBox.shrink();
-                }
-                return MarkerLayer(
-                  markers: [_buildSelectedPlatformMarker(selectedPlatform)],
-                );
-              },
-            ),
-              ],
-            ),
+            ],
           ),
         ),
         ValueListenableBuilder<model.Platform?>(
@@ -643,39 +744,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 child: GestureDetector(
                   onTap: () {},
                   child: _buildPopup(context, selectedPlatform),
-                ),
-              ),
-            );
-          },
-        ),
-        ValueListenableBuilder<bool>(
-          valueListenable: _isSelectingPlatformNotifier,
-          builder: (context, isSelectingPlatform, _) {
-            if (!isSelectingPlatform) {
-              return const SizedBox.shrink();
-            }
-            return Positioned.fill(
-              child: AbsorbPointer(
-                child: ColoredBox(
-                  color: Colors.black.withAlpha(38),
-                  child: Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Loading platform…',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             );
@@ -708,6 +776,91 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       SnackBar(
         content: Text(message),
         action: SnackBarAction(label: label, onPressed: scaffold.hideCurrentSnackBar),
+      ),
+    );
+  }
+}
+
+class _PlatformMapMarker extends StatefulWidget {
+  const _PlatformMapMarker({
+    required this.dbPlatform,
+    required this.onTap,
+    required this.states,
+    required this.initiallySelected,
+  });
+
+  static const markerSize = 44.0;
+
+  final Platform dbPlatform;
+  final VoidCallback onTap;
+  final Map<String, _PlatformMapMarkerState> states;
+  final bool initiallySelected;
+
+  @override
+  State<_PlatformMapMarker> createState() => _PlatformMapMarkerState();
+}
+
+class _PlatformMapMarkerState extends State<_PlatformMapMarker> {
+  static const _selectionRingColor = Color.fromARGB(255, 2, 0, 101);
+  static const Duration _ringFadeDuration = Duration(milliseconds: 150);
+  static const _pinSize = 30.0;
+  static const double _ringSize = _PlatformMapMarker.markerSize;
+
+  late bool _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.initiallySelected;
+    widget.states[widget.dbPlatform.ref] = this;
+  }
+
+  @override
+  void dispose() {
+    if (widget.states[widget.dbPlatform.ref] == this) {
+      widget.states.remove(widget.dbPlatform.ref);
+    }
+    super.dispose();
+  }
+
+  void setSelected({required bool selected}) {
+    if (_selected != selected && mounted) {
+      setState(() => _selected = selected);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            Icons.location_on,
+            color: PlatformStatusPalette.resolve(widget.dbPlatform.status).backgroundColor,
+            size: _pinSize,
+          ),
+          IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: _selected ? 1 : 0,
+              duration: _ringFadeDuration,
+              curve: Curves.easeOut,
+              child: Container(
+                width: _ringSize,
+                height: _ringSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _selectionRingColor,
+                    width: 3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

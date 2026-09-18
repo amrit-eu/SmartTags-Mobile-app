@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 /// Placeholder shown while ArcGIS ocean basemap tiles load on first open.
@@ -22,10 +20,7 @@ class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-    // `repeat` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
-    // stays satisfied on analyzer versions that don't yet honour the annotation.
-    // ignore: unnecessary_unawaited
-    unawaited(_shimmerController.repeat());
+    _shimmerController.repeat();
   }
 
   @override

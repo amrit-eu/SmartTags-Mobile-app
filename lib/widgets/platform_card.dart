@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
@@ -42,14 +40,9 @@ class PlatformCard extends StatelessWidget {
             platform.operationLon,
           ),
         );
-        // `push` is annotated `@awaitNotRequired`; kept wrapped so `discarded_futures`
-        // stays satisfied on analyzer versions that don't yet honour the annotation.
-        // ignore: unnecessary_unawaited
-        unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
-            ),
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
           ),
         );
       },
