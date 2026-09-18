@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smart_tags/screens/operation_record_screen.dart';
+import 'package:smart_tags/screens/operation_record_screen.dart' show OperationSubmitResult;
 
 /// Opens the deploy/recover form with a light fade. Reverse is shorter so
 /// returning to platform detail feels quick rather than a heavy slide.

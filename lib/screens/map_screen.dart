@@ -115,7 +115,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
-    _pulseController.repeat(reverse: true);
+    unawaited(_pulseController.repeat(reverse: true));
 
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
@@ -258,21 +258,22 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
     final animation = CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
 
-    controller.addListener(() {
-      _mapController.move(
-        LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-        zoom,
-      );
-    });
-    controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-        if (identical(_mapPanAnimationController, controller)) {
-          _mapPanAnimationController = null;
+    controller
+      ..addListener(() {
+        _mapController.move(
+          LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+          zoom,
+        );
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+          if (identical(_mapPanAnimationController, controller)) {
+            _mapPanAnimationController = null;
+          }
+          controller.dispose();
         }
-        controller.dispose();
-      }
-    });
-    controller.forward();
+      });
+    unawaited(controller.forward());
   }
 
   void _selectPlatformMarker(
@@ -285,7 +286,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
-    _popupAnimationController.forward(from: 0);
+    unawaited(_popupAnimationController.forward(from: 0));
     if (recenter) {
       _animateMapToPoint(position);
     }
@@ -307,7 +308,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   void _onClusterTap(MarkerClusterNode cluster) {
     final clusterRefs = <String>{
       for (final markerNode in cluster.markers)
-        if (_platformRefFromMarker(markerNode.marker) case final ref?) ref,
+        ? _platformRefFromMarker(markerNode.marker),
     };
     if (clusterRefs.isEmpty) {
       return;
@@ -385,7 +386,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _selectedPlatformSubscription = null;
     _selectedPlatformNotifier.value = null;
     if (previousRef != null) {
-      _updateMarkerHighlight(previousRef: previousRef, newRef: null);
+      _updateMarkerHighlight(previousRef: previousRef);
     }
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
@@ -531,9 +532,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
+                    unawaited(
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
+                        ),
                       ),
                     );
                   },
@@ -591,10 +594,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   void _updateMarkerHighlight({String? previousRef, String? newRef}) {
     if (previousRef != null) {
-      _platformMarkerStates[previousRef]?.setSelected(false);
+      _platformMarkerStates[previousRef]?.setSelected(selected: false);
     }
     if (newRef != null) {
-      _platformMarkerStates[newRef]?.setSelected(true);
+      _platformMarkerStates[newRef]?.setSelected(selected: true);
     }
   }
 
@@ -781,14 +784,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 }
 
 class _PlatformMapMarker extends StatefulWidget {
-  static const markerSize = 44.0;
-
   const _PlatformMapMarker({
     required this.dbPlatform,
     required this.onTap,
     required this.states,
     required this.initiallySelected,
   });
+
+  static const markerSize = 44.0;
 
   final Platform dbPlatform;
   final VoidCallback onTap;
@@ -803,7 +806,7 @@ class _PlatformMapMarkerState extends State<_PlatformMapMarker> {
   static const _selectionRingColor = Color.fromARGB(255, 2, 0, 101);
   static const Duration _ringFadeDuration = Duration(milliseconds: 150);
   static const _pinSize = 30.0;
-  static const _ringSize = _PlatformMapMarker.markerSize;
+  static const double _ringSize = _PlatformMapMarker.markerSize;
 
   late bool _selected;
 
@@ -822,7 +825,7 @@ class _PlatformMapMarkerState extends State<_PlatformMapMarker> {
     super.dispose();
   }
 
-  void setSelected(bool selected) {
+  void setSelected({required bool selected}) {
     if (_selected != selected && mounted) {
       setState(() => _selected = selected);
     }

@@ -18,7 +18,7 @@ import 'package:smart_tags/widgets/offline_status.dart';
 
 import '../helpers/fake_auth_service.dart';
 
-/// Applies [OperationSubmitResult] on pop, like [PlatformDetailScreen] does in-app.
+/// Applies [OperationSubmitResult] on pop, mirroring the in-app platform detail flow.
 class _OperationRecordHost extends ConsumerWidget {
   const _OperationRecordHost({required this.screen});
 
@@ -31,6 +31,8 @@ class _OperationRecordHost extends ConsumerWidget {
         const MaterialPage<void>(key: ValueKey('home'), child: Scaffold(body: SizedBox.shrink())),
         MaterialPage<void>(key: const ValueKey('operation'), child: screen),
       ],
+      // Navigator 2 `onDidRemovePage` does not expose pop results; keep until tests migrate.
+      // ignore: deprecated_member_use
       onPopPage: (route, result) {
         if (!route.didPop(result)) {
           return false;
@@ -38,21 +40,19 @@ class _OperationRecordHost extends ConsumerWidget {
         if (result is OperationSubmitResult) {
           final container = ProviderScope.containerOf(context, listen: false);
           final messenger = ScaffoldMessenger.of(context);
-          unawaited(() async {
-            try {
-              await applyOperationSubmitResult(
-                container: container,
-                result: result,
-                messenger: messenger,
+          try {
+            applyOperationSubmitResult(
+              container: container,
+              result: result,
+              messenger: messenger,
+            );
+          } on Exception {
+            if (context.mounted) {
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Failed to update platform.')),
               );
-            } on Exception {
-              if (context.mounted) {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Failed to update platform.')),
-                );
-              }
             }
-          }());
+          }
         }
         return true;
       },

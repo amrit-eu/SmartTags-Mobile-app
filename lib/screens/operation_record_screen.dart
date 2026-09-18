@@ -23,6 +23,30 @@ import 'package:smart_tags/widgets/top_navigation.dart';
 
 export 'package:smart_tags/models/deploy_action.dart';
 
+/// Result returned when a deploy/recover form is submitted successfully.
+class OperationSubmitResult {
+  /// Creates an [OperationSubmitResult].
+  const OperationSubmitResult({
+    required this.message,
+    required this.platformRef,
+  });
+
+  /// User-facing confirmation shown after returning to the previous screen.
+  final String message;
+
+  /// Platform that was updated.
+  final String platformRef;
+}
+
+/// Shows post-submit feedback after [OperationSubmitResult] is returned from the form route.
+void applyOperationSubmitResult({
+  required ProviderContainer container,
+  required OperationSubmitResult result,
+  required ScaffoldMessengerState messenger,
+}) {
+  messenger.showSnackBar(SnackBar(content: Text(result.message)));
+}
+
 /// A screen for deploying or recovering a platform, allowing users to input relevant details.
 class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// Creates a [DeployPlatformScreen] widget.
@@ -273,7 +297,6 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       return;
     }
 
-    // If successful, show a success message.
     if (mounted) {
       final message = switch (outcome) {
         PassportEventSubmitOutcome.sent => '$_eventType successful! Changes have been saved and synced.',
@@ -282,10 +305,13 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         PassportEventSubmitOutcome.queued =>
           '$_eventType successful! Changes have been saved locally and queued for sync.',
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+      Navigator.pop(
+        context,
+        OperationSubmitResult(
+          message: message,
+          platformRef: widget.platform.platformRef,
+        ),
       );
-      Navigator.pop(context);
     }
   }
 
