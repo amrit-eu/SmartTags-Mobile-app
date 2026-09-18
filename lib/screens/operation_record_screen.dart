@@ -102,7 +102,16 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   /// Seeded from [DeployPlatformScreen.action] but can be overridden in-form.
   late DeployAction _selectedAction;
 
+  bool _submitInProgress = false;
+
   String get _eventType => _selectedAction == DeployAction.deploy ? 'Deployment' : 'Recovery';
+
+  void _closeForm([OperationSubmitResult? result]) {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (!navigator.canPop()) return;
+    navigator.pop(result);
+  }
 
   @override
   void initState() {
@@ -210,6 +219,8 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_submitInProgress) return;
+
     // Validate form before submission
     if (!_formKey.currentState!.validate()) {
       return;
@@ -223,10 +234,12 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
             content: Text('Missing Gateway platform ID — refresh platform data (reconnect) before syncing.'),
           ),
         );
-        Navigator.pop(context);
+        _closeForm();
       }
       return;
     }
+
+    setState(() => _submitInProgress = true);
 
     final latitude = double.parse(_latitudeController.text);
     final longitude = double.parse(_longitudeController.text);
@@ -290,6 +303,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     } on Exception catch (e) {
       debugPrint('Error updating platform: $e');
       if (mounted) {
+        setState(() => _submitInProgress = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to update platform.')),
         );
@@ -305,8 +319,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         PassportEventSubmitOutcome.queued =>
           '$_eventType successful! Changes have been saved locally and queued for sync.',
       };
-      Navigator.pop(
-        context,
+      _closeForm(
         OperationSubmitResult(
           message: message,
           platformRef: widget.platform.platformRef,
@@ -523,13 +536,16 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                       spacing: 16,
                       children: [
                         ElevatedButton(
-                          onPressed: _submitForm,
+                          onPressed: _submitInProgress ? null : _submitForm,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                           ),
                           child: Text('${_selectedAction.name.capitalize()} Platform'),
                         ),
-                        ElevatedButton(onPressed: () => {Navigator.pop(context)}, child: const Text('Cancel')),
+                        ElevatedButton(
+                          onPressed: _submitInProgress ? null : _closeForm,
+                          child: const Text('Cancel'),
+                        ),
                       ],
                     ),
                   ],

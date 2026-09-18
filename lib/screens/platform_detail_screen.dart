@@ -8,6 +8,7 @@ import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/latest_operation_status.dart';
+import 'package:smart_tags/helpers/operation_record_route.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
@@ -169,16 +170,21 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             );
             return;
           }
-          await Navigator.push(
-            context,
-            MaterialPageRoute<DeployPlatformScreen>(
-              builder: (context) => DeployPlatformScreen(
+          final result = await Navigator.of(context).push<OperationSubmitResult>(
+            operationRecordRoute(
+              DeployPlatformScreen(
                 action: platform.operationalStatus == OperationalStatus.deployed
                     ? DeployAction.recover
                     : DeployAction.deploy,
                 platform: platform,
               ),
             ),
+          );
+          if (!context.mounted || result == null) return;
+          applyOperationSubmitResult(
+            container: ProviderScope.containerOf(context, listen: false),
+            result: result,
+            messenger: ScaffoldMessenger.of(context),
           );
         },
         icon: platform.operationalStatus == OperationalStatus.deployed
