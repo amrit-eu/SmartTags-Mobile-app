@@ -71,6 +71,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   /// Cached platform markers — rebuilt only when the platforms list changes.
   List<Platform>? _markersCacheSource;
   List<Marker> _platformMarkers = const [];
+  final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
@@ -273,7 +274,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
+    final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _selectedPlatformNotifier.value = dbPlatform.toDomain();
+    _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
     _popupAnimationController.forward(from: 0);
@@ -311,10 +314,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   /// Clears the selected platform.
   void _clearSelection() {
+    final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _stopMapPanAnimation();
     _selectedPlatformSubscription?.close();
     _selectedPlatformSubscription = null;
     _selectedPlatformNotifier.value = null;
+    if (previousRef != null) {
+      _updateMarkerHighlight(previousRef: previousRef, newRef: null);
+    }
     // Reset animation when clearing selection
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
@@ -499,47 +506,41 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
   }
 
+  Marker _platformMarkerFor(Platform dbPlatform) {
+    final point = LatLng(dbPlatform.lat, dbPlatform.lon);
+    final selectedRef = _selectedPlatformNotifier.value?.platformRef;
+    return Marker(
+      key: ValueKey('platform-marker-${dbPlatform.ref}'),
+      point: point,
+      width: _PlatformMapMarker.markerSize,
+      height: _PlatformMapMarker.markerSize,
+      alignment: Alignment.center,
+      child: _PlatformMapMarker(
+        dbPlatform: dbPlatform,
+        initiallySelected: dbPlatform.ref == selectedRef,
+        onTap: () => _selectPlatformMarker(dbPlatform, point),
+        states: _platformMarkerStates,
+      ),
+    );
+  }
+
+  void _updateMarkerHighlight({String? previousRef, String? newRef}) {
+    if (previousRef != null) {
+      _platformMarkerStates[previousRef]?.setSelected(false);
+    }
+    if (newRef != null) {
+      _platformMarkerStates[newRef]?.setSelected(true);
+    }
+  }
+
   List<Marker> _platformMarkersFor(List<Platform> databasePlatforms) {
     if (!identical(_markersCacheSource, databasePlatforms)) {
       _markersCacheSource = databasePlatforms;
       _platformMarkers = databasePlatforms
-          .map((dbPlatform) {
-            final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-            return Marker(
-              point: point,
-              child: GestureDetector(
-                key: ValueKey('platform-marker-${dbPlatform.ref}'),
-                onTap: () => _selectPlatformMarker(dbPlatform, point),
-                child: Icon(
-                  Icons.location_on,
-                  color: PlatformStatusPalette.resolve(dbPlatform.status).backgroundColor,
-                  size: 30,
-                ),
-              ),
-            );
-          })
+          .map(_platformMarkerFor)
           .toList(growable: false);
     }
     return _platformMarkers;
-  }
-
-  Marker _buildSelectedPlatformMarker(model.Platform platform) {
-    return Marker(
-      width: 44,
-      height: 44,
-      point: platform.latestPosition,
-      child: IgnorePointer(
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color.fromARGB(255, 2, 0, 101),
-              width: 3,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   List<Marker> _buildMarkers(List<Platform> databasePlatforms) {
@@ -654,17 +655,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 },
               ),
             ),
-            ValueListenableBuilder<model.Platform?>(
-              valueListenable: _selectedPlatformNotifier,
-              builder: (context, selectedPlatform, _) {
-                if (selectedPlatform == null) {
-                  return const SizedBox.shrink();
-                }
-                return MarkerLayer(
-                  markers: [_buildSelectedPlatformMarker(selectedPlatform)],
-                );
-              },
-            ),
             ],
           ),
         ),
@@ -717,6 +707,91 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       SnackBar(
         content: Text(message),
         action: SnackBarAction(label: label, onPressed: scaffold.hideCurrentSnackBar),
+      ),
+    );
+  }
+}
+
+class _PlatformMapMarker extends StatefulWidget {
+  static const markerSize = 44.0;
+
+  const _PlatformMapMarker({
+    required this.dbPlatform,
+    required this.onTap,
+    required this.states,
+    required this.initiallySelected,
+  });
+
+  final Platform dbPlatform;
+  final VoidCallback onTap;
+  final Map<String, _PlatformMapMarkerState> states;
+  final bool initiallySelected;
+
+  @override
+  State<_PlatformMapMarker> createState() => _PlatformMapMarkerState();
+}
+
+class _PlatformMapMarkerState extends State<_PlatformMapMarker> {
+  static const _selectionRingColor = Color.fromARGB(255, 2, 0, 101);
+  static const Duration _ringFadeDuration = Duration(milliseconds: 150);
+  static const _pinSize = 30.0;
+  static const _ringSize = _PlatformMapMarker.markerSize;
+
+  late bool _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.initiallySelected;
+    widget.states[widget.dbPlatform.ref] = this;
+  }
+
+  @override
+  void dispose() {
+    if (widget.states[widget.dbPlatform.ref] == this) {
+      widget.states.remove(widget.dbPlatform.ref);
+    }
+    super.dispose();
+  }
+
+  void setSelected(bool selected) {
+    if (_selected != selected && mounted) {
+      setState(() => _selected = selected);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            Icons.location_on,
+            color: PlatformStatusPalette.resolve(widget.dbPlatform.status).backgroundColor,
+            size: _pinSize,
+          ),
+          IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: _selected ? 1 : 0,
+              duration: _ringFadeDuration,
+              curve: Curves.easeOut,
+              child: Container(
+                width: _ringSize,
+                height: _ringSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _selectionRingColor,
+                    width: 3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
