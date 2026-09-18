@@ -368,6 +368,16 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Deletes alerts whose `resource` doesn't match any local platform `ref`
+  /// (e.g. alerts for platforms outside the fetched scope, or removed
+  /// server-side). Cheap: indexed anti-join on `platforms.ref`. Should be
+  /// called after syncing/upserting both platforms and alerts.
+  Future<void> deleteOrphanedAlerts() async {
+    await customStatement(
+      'DELETE FROM alerts WHERE resource NOT IN (SELECT ref FROM platforms)',
+    );
+  }
+
   /// Returns the timestamp of the last successful platforms refresh, or
   /// `null` if a refresh has never completed successfully.
   Future<DateTime?> getLastPlatformsRefresh() async {

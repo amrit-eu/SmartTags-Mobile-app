@@ -5,12 +5,24 @@ import 'package:smart_tags/database/db.dart';
 abstract final class GatewayPassportMapper {
   /// Converts a list of enriched passport [items] JSON objects into their
   /// platforms and alerts, ready to be persisted together.
+  ///
+  /// Some items only carry orphaned alerts for a resource with no actual
+  /// passport data (no `passport` object at all — see [_hasPassport]); those
+  /// are skipped when building [GatewayPassportsResult.platforms] so we
+  /// don't persist an empty/garbage platform record for them. Their alerts
+  /// are still collected — any that end up pointing at a platform absent
+  /// from the local DB are pruned separately by `deleteOrphanedAlerts`.
   static GatewayPassportsResult fromEnrichedPassportItems(List<Map<String, dynamic>> items) {
     return GatewayPassportsResult(
-      platforms: items.map(fromPassportItem).toList(),
+      platforms: items.where(_hasPassport).map(fromPassportItem).toList(),
       alerts: items.expand(alertsFromPassportItem).toList(),
     );
   }
+
+  /// Whether [item] carries actual passport data to persist as a platform,
+  /// as opposed to being an alert-only entry (e.g. `{"reference": "...",
+  /// "alerts": [...]}` with no `passport` key).
+  static bool _hasPassport(Map<String, dynamic> item) => item['passport'] is Map<String, dynamic>;
 
   /// Converts a single enriched passport [item] JSON object.
   static PlatformsCompanion fromPassportItem(Map<String, dynamic> item) {

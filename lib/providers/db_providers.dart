@@ -105,6 +105,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
         phase.setSaving();
         await db.syncPlatforms(result.platforms);
         await db.syncAlerts(result.alerts);
+        await db.deleteOrphanedAlerts();
       }
       // Establishes the baseline `updatedSince` for the next (delta)
       // platforms refresh, so it doesn't have to re-fetch everything.

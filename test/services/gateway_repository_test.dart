@@ -219,6 +219,41 @@ void main() {
 
       expect(alerts, isEmpty);
     });
+
+    test(
+      'fromEnrichedPassportItems skips items with no passport data, but still collects their alerts',
+      () {
+        // An alert-only item: no `passport` key at all, just a reference and
+        // its alerts (seen in the wild for orphaned/out-of-scope alerts).
+        const alertOnlyItem = {
+          'reference': '4902437',
+          'alerts': [
+            {
+              'id': 'efa16767-712f-4dfb-99d0-3ca431ceed8c',
+              'resource': '4902437',
+              'event': 'TECH_FLAG_MpeBrokenAlarm_LOGICAL',
+              'severity': 'major',
+              'status': 'open',
+            },
+          ],
+        };
+
+        final result = GatewayPassportMapper.fromEnrichedPassportItems([
+          _samplePassportItem,
+          alertOnlyItem,
+        ]);
+
+        // Only the item with actual passport data becomes a platform.
+        expect(result.platforms, hasLength(1));
+        expect(result.platforms.single.ref.value, '2900314');
+
+        // Alerts from both items are still collected (the alert-only item's
+        // alert is pruned later by `deleteOrphanedAlerts` if it ends up
+        // pointing at no local platform).
+        expect(result.alerts, hasLength(2));
+        expect(result.alerts.map((a) => a.resource.value), containsAll(['2900314', '4902437']));
+      },
+    );
   });
 
   group('GatewayRepository', () {
