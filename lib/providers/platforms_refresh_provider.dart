@@ -103,6 +103,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
           phase.setSaving();
           await db.syncPlatforms(result.platforms);
           await db.syncAlerts(result.alerts);
+          await db.deleteOrphanedAlerts();
           if (kDebugMode) {
             debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
           }
@@ -127,6 +128,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         phase.setSaving();
         await db.upsertPlatforms(result.platforms);
         await db.upsertAlerts(result.alerts);
+        await db.deleteOrphanedAlerts();
         if (kDebugMode) {
           debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
         }
