@@ -2,7 +2,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/mappers/alert_mapper.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/models/alert.dart' as domain;
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
@@ -187,4 +189,14 @@ final FutureProviderFamily<List<Platform>, String> platformByRefProvider =
       (ref, platformRef) async {
         final db = ref.watch(databaseProvider);
         return db.getPlatformByRef(platformRef);
+    });
+
+/// Watches all alerts raised against a platform, keyed by the platform's
+/// reference (= alert `resource`), emitting updates on changes.
+final StreamProviderFamily<List<domain.Alert>, String> alertsByResourceStreamProvider =
+    StreamProvider.family<List<domain.Alert>, String>((ref, resource) {
+      final db = ref.watch(databaseProvider);
+      return db
+          .watchAlertsByResource(resource)
+          .map((rows) => rows.map((row) => row.toDomain()).toList());
     });

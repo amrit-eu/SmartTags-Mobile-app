@@ -421,6 +421,12 @@ class AppDatabase extends _$AppDatabase {
     return (select(platforms)..where((p) => p.ref.equals(ref))).watchSingleOrNull();
   }
 
+  /// Watches all alerts raised against the given platform resource (ref),
+  /// emitting updates on changes.
+  Stream<List<AlertEntity>> watchAlertsByResource(String resource) {
+    return (select(alerts)..where((a) => a.resource.equals(resource))).watch();
+  }
+
   /// Appends a new deploy/recover event to the FIFO queue.
   Future<int> enqueuePendingOperation(PendingOperationsCompanion companion) =>
       into(pendingOperations).insert(companion);
