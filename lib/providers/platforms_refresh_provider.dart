@@ -98,12 +98,14 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
             'unclosed missions instead of an unfiltered search',
           );
         }
-        final platforms = await repository.fetchUnclosedMissions();
-        if (platforms.isNotEmpty) {
+        final result = await repository.fetchUnclosedMissions();
+        if (result.platforms.isNotEmpty) {
           phase.setSaving();
-          await db.syncPlatforms(platforms);
+          await db.syncPlatforms(result.platforms);
+          await db.syncAlerts(result.alerts);
+          await db.deleteOrphanedAlerts();
           if (kDebugMode) {
-            debugPrint('Platforms refresh: synced ${platforms.length} platforms');
+            debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
           }
         }
         await db.setLastPlatformsRefresh(now);
@@ -119,14 +121,16 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         );
       }
 
-      final platforms = await repository.searchPassports(
+      final result = await repository.searchPassports(
         PassportFilterDto(cachedSince: cachedSince, paginationEnabled: false),
       );
-      if (platforms.isNotEmpty) {
+      if (result.platforms.isNotEmpty) {
         phase.setSaving();
-        await db.upsertPlatforms(platforms);
+        await db.upsertPlatforms(result.platforms);
+        await db.upsertAlerts(result.alerts);
+        await db.deleteOrphanedAlerts();
         if (kDebugMode) {
-          debugPrint('Platforms refresh: synced ${platforms.length} platforms');
+          debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
         }
       } else if (kDebugMode) {
         debugPrint(

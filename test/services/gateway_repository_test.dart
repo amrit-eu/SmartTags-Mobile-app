@@ -74,6 +74,17 @@ const Map<String, dynamic> _samplePassportItem = {
       ],
     },
   },
+  'alerts': [
+    {
+      'id': 'dcb42bf8-3f75-4241-a549-d79513fc8591',
+      'resource': '2900314',
+      'event': 'Float_Approaching_EEZ_Turkey_ARV',
+      'severity': 'minor',
+      'status': 'open',
+      'attributes': {'Country': 'Italy'},
+      'history': <Map<String, dynamic>>[],
+    },
+  ],
 };
 
 void main() {
@@ -188,6 +199,61 @@ void main() {
 
       expect(companion.ptfId.value, isNull);
     });
+
+    test('alertsFromPassportItem keeps only the Alert model attributes', () {
+      final alerts = GatewayPassportMapper.alertsFromPassportItem(_samplePassportItem);
+
+      expect(alerts, hasLength(1));
+      expect(alerts.first.id.value, 'dcb42bf8-3f75-4241-a549-d79513fc8591');
+      expect(alerts.first.resource.value, '2900314');
+      expect(alerts.first.event.value, 'Float_Approaching_EEZ_Turkey_ARV');
+      expect(alerts.first.severity.value, 'minor');
+      expect(alerts.first.status.value, 'open');
+    });
+
+    test('alertsFromPassportItem drops alerts missing a required field', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      (item['alerts'] as List<dynamic>).cast<Map<String, dynamic>>().first.remove('severity');
+
+      final alerts = GatewayPassportMapper.alertsFromPassportItem(item);
+
+      expect(alerts, isEmpty);
+    });
+
+    test(
+      'fromEnrichedPassportItems skips items with no passport data, but still collects their alerts',
+      () {
+        // An alert-only item: no `passport` key at all, just a reference and
+        // its alerts (seen in the wild for orphaned/out-of-scope alerts).
+        const alertOnlyItem = {
+          'reference': '4902437',
+          'alerts': [
+            {
+              'id': 'efa16767-712f-4dfb-99d0-3ca431ceed8c',
+              'resource': '4902437',
+              'event': 'TECH_FLAG_MpeBrokenAlarm_LOGICAL',
+              'severity': 'major',
+              'status': 'open',
+            },
+          ],
+        };
+
+        final result = GatewayPassportMapper.fromEnrichedPassportItems([
+          _samplePassportItem,
+          alertOnlyItem,
+        ]);
+
+        // Only the item with actual passport data becomes a platform.
+        expect(result.platforms, hasLength(1));
+        expect(result.platforms.single.ref.value, '2900314');
+
+        // Alerts from both items are still collected (the alert-only item's
+        // alert is pruned later by `deleteOrphanedAlerts` if it ends up
+        // pointing at no local platform).
+        expect(result.alerts, hasLength(2));
+        expect(result.alerts.map((a) => a.resource.value), containsAll(['2900314', '4902437']));
+      },
+    );
   });
 
   group('GatewayRepository', () {
@@ -203,10 +269,12 @@ void main() {
       });
 
       final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
-      final platforms = await repository.fetchUnclosedMissions();
+      final result = await repository.fetchUnclosedMissions();
 
-      expect(platforms.length, 1);
-      expect(platforms.first.ref.value, '2900314');
+      expect(result.platforms.length, 1);
+      expect(result.platforms.first.ref.value, '2900314');
+      expect(result.alerts.length, 1);
+      expect(result.alerts.first.id.value, 'dcb42bf8-3f75-4241-a549-d79513fc8591');
     });
 
     test('fetchUnclosedMissions throws on error response', () async {
@@ -239,14 +307,14 @@ void main() {
       });
 
       final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
-      final platforms = await repository.searchPassports(
+      final result = await repository.searchPassports(
         const PassportFilterDto(
           filters: {'updatedSince': '2026-07-01T00:00:00.000Z'},
         ),
       );
 
-      expect(platforms.length, 1);
-      expect(platforms.first.ref.value, '2900314');
+      expect(result.platforms.length, 1);
+      expect(result.platforms.first.ref.value, '2900314');
     });
 
     test('searchPassports accepts a 201 response (Gateway returns Created on this endpoint)', () async {
@@ -260,10 +328,10 @@ void main() {
       });
 
       final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
-      final platforms = await repository.searchPassports(const PassportFilterDto(filters: {}));
+      final result = await repository.searchPassports(const PassportFilterDto(filters: {}));
 
-      expect(platforms.length, 1);
-      expect(platforms.first.ref.value, '2900314');
+      expect(result.platforms.length, 1);
+      expect(result.platforms.first.ref.value, '2900314');
     });
 
     test('searchPassports throws on error response', () async {
@@ -292,9 +360,9 @@ void main() {
       });
 
       final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
-      final platforms = await repository.searchPassports(null);
+      final result = await repository.searchPassports(null);
 
-      expect(platforms.length, 1);
+      expect(result.platforms.length, 1);
     });
   });
 

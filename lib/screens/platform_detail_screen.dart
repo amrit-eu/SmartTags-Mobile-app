@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
+import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/latest_operation_status.dart';
+import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
@@ -148,6 +150,9 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             _PlatformSummaryCard(platform: platform),
             const SizedBox(height: 16),
 
+            _AlertsSummaryRow(platformRef: widget.platformRef),
+            const SizedBox(height: 16),
+
             _LatestOperationCard(platform: platform),
             const SizedBox(height: 72),
           ],
@@ -265,6 +270,81 @@ class _PlatformSummaryCard extends StatelessWidget {
             label: 'Observing network',
             value: _dash(platform.observingNetwork ?? platform.network),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Alerts summary row showing aggregate alert status for the platform (#84).
+class _AlertsSummaryRow extends ConsumerWidget {
+  const _AlertsSummaryRow({required this.platformRef});
+
+  final String platformRef;
+
+  static String _label({required int openCount, required int acknowledgedCount}) {
+    if (openCount > 0) {
+      return '$openCount Active ${openCount == 1 ? 'alert' : 'alerts'}';
+    }
+    if (acknowledgedCount > 0) {
+      return '$acknowledgedCount Acknowledged ${acknowledgedCount == 1 ? 'alert' : 'alerts'}';
+    }
+    return 'No active alerts';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alerts = ref.watch(alertsByResourceStreamProvider(platformRef)).value ?? const <Alert>[];
+    final openCount = alerts.where((alert) => alert.status == AlertStatus.open).length;
+    final acknowledgedCount = alerts.where((alert) => alert.status == AlertStatus.acknowledged).length;
+
+    final style = AlertStatusPalette.forCounts(openCount: openCount, acknowledgedCount: acknowledgedCount);
+    final label = _label(openCount: openCount, acknowledgedCount: acknowledgedCount);
+    final theme = Theme.of(context);
+
+    return SectionContainer(
+      child: Row(
+        children: [
+          Icon(style.displayIcon, color: style.color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Alerts',
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          if (openCount > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: style.color,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(style.displayIcon, size: 16, color: Colors.black87),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: style.color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          const SizedBox(width: 8),
+          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );
