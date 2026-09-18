@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
@@ -72,6 +73,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   List<Platform>? _markersCacheSource;
   List<Marker> _platformMarkers = const [];
   final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
+  Set<String>? _openClusterMarkerRefs;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
@@ -273,14 +275,76 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     controller.forward();
   }
 
-  void _selectPlatformMarker(Platform dbPlatform, LatLng position) {
+  void _selectPlatformMarker(
+    Platform dbPlatform,
+    LatLng position, {
+    bool recenter = true,
+  }) {
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _selectedPlatformNotifier.value = dbPlatform.toDomain();
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
     _popupAnimationController.forward(from: 0);
-    _animateMapToPoint(position);
+    if (recenter) {
+      _animateMapToPoint(position);
+    }
+  }
+
+  String? _platformRefFromMarker(Marker marker) {
+    final key = marker.key;
+    if (key is! ValueKey<String>) {
+      return null;
+    }
+    const prefix = 'platform-marker-';
+    final value = key.value;
+    if (!value.startsWith(prefix)) {
+      return null;
+    }
+    return value.substring(prefix.length);
+  }
+
+  void _onClusterTap(MarkerClusterNode cluster) {
+    final clusterRefs = <String>{
+      for (final markerNode in cluster.markers)
+        if (_platformRefFromMarker(markerNode.marker) case final ref?) ref,
+    };
+    if (clusterRefs.isEmpty) {
+      return;
+    }
+
+    // Tapping an open cluster again closes it — clear selection with it.
+    if (_openClusterMarkerRefs != null &&
+        setEquals(_openClusterMarkerRefs, clusterRefs)) {
+      _openClusterMarkerRefs = null;
+      _clearSelection();
+      return;
+    }
+
+    _openClusterMarkerRefs = clusterRefs;
+    _selectFirstClusterMarker(cluster);
+  }
+
+  void _selectFirstClusterMarker(MarkerClusterNode cluster) {
+    final source = _markersCacheSource;
+    if (source == null) {
+      return;
+    }
+
+    for (final markerNode in cluster.markers) {
+      final ref = _platformRefFromMarker(markerNode.marker);
+      if (ref == null) {
+        continue;
+      }
+      for (final dbPlatform in source) {
+        if (dbPlatform.ref == ref) {
+          final point = LatLng(dbPlatform.lat, dbPlatform.lon);
+          // Cluster layer may zoom/pan — avoid fighting that animation.
+          _selectPlatformMarker(dbPlatform, point, recenter: false);
+          return;
+        }
+      }
+    }
   }
 
   void _watchSelectedPlatform(String platformRef) {
@@ -314,6 +378,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   /// Clears the selected platform.
   void _clearSelection() {
+    _openClusterMarkerRefs = null;
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _stopMapPanAnimation();
     _selectedPlatformSubscription?.close();
@@ -638,6 +703,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(50),
                 maxZoom: 15,
+                markerChildBehavior: true,
+                centerMarkerOnClick: false,
+                onClusterTap: _onClusterTap,
                 markers: _buildMarkers(platforms),
                 builder: (context, markers) {
                   return Container(
