@@ -118,7 +118,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
-    unawaited(_pulseController.repeat(reverse: true));
+    _pulseController.repeat(reverse: true).ignore();
 
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
@@ -261,24 +261,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
     final animation = CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
 
-    unawaited(
-      (controller
-            ..addListener(() {
-              _mapController.move(
-                LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-                zoom,
-              );
-            })
-            ..addStatusListener((status) {
-              if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-                if (identical(_mapPanAnimationController, controller)) {
-                  _mapPanAnimationController = null;
-                }
-                controller.dispose();
+    (controller
+          ..addListener(() {
+            _mapController.move(
+              LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+              zoom,
+            );
+          })
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+              if (identical(_mapPanAnimationController, controller)) {
+                _mapPanAnimationController = null;
               }
-            }))
-          .forward(),
-    );
+              controller.dispose();
+            }
+          }))
+        .forward()
+        .ignore();
   }
 
   void _selectPlatformMarker(
@@ -292,7 +291,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
-    unawaited(_popupAnimationController.forward(from: 0));
+    _popupAnimationController.forward(from: 0).ignore();
     if (recenter) {
       _animateMapToPoint(position);
     }
@@ -497,13 +496,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
-                        ),
-                      ),
-                    );
+                    Navigator.of(context)
+                        .push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
+                          ),
+                        )
+                        .ignore();
                   },
                   child: const Text('View Details'),
                 ),

@@ -1,5 +1,8 @@
 import 'dart:async';
 
+// Subscriptions are cancelled in [setUseLiveLocation] and [dispose].
+// ignore_for_file: cancel_subscriptions
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/foundation.dart';
@@ -120,17 +123,31 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   }
 
   void setUseLiveLocation({required bool enabled}) {
+    final previousLive = _liveLocationSubscription;
+    if (previousLive != null) {
+      previousLive.cancel().ignore();
+      _liveLocationSubscription = null;
+    }
+    final previousService = _serviceStatusSubscription;
+    if (previousService != null) {
+      previousService.cancel().ignore();
+      _serviceStatusSubscription = null;
+    }
+
     setState(() {
       useLiveLocation = enabled; // Set live location updates on or off based on the provided flag.
     });
-    if (useLiveLocation) {
-      // Create fresh streams from providers or use injected ones (for testing)
-      final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
-      // getServiceStatusStream is not supported on web platform
-      final serviceStatusStream = widget.serviceStatusStream ?? (!kIsWeb ? Geolocator.getServiceStatusStream() : null);
+    if (!useLiveLocation) {
+      return;
+    }
 
-      // Monitor location changes.
-      _liveLocationSubscription = positionStream.listen(
+    // Create fresh streams from providers or use injected ones (for testing)
+    final positionStream = widget.positionStream ?? Geolocator.getPositionStream();
+    // getServiceStatusStream is not supported on web platform
+    final serviceStatusStream = widget.serviceStatusStream ?? (!kIsWeb ? Geolocator.getServiceStatusStream() : null);
+
+    // Monitor location changes.
+    _liveLocationSubscription = positionStream.listen(
         (position) {
           if (mounted) {
             setState(() {
@@ -169,11 +186,18 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           },
         );
       }
+  }
+
+  void _cancelLiveLocationSubscriptions() {
+    final live = _liveLocationSubscription;
+    if (live != null) {
+      live.cancel().ignore();
+      _liveLocationSubscription = null;
     }
-    // Cancel the listener subscriptions to stop battery drain
-    if (!useLiveLocation) {
-      unawaited(_liveLocationSubscription?.cancel());
-      unawaited(_serviceStatusSubscription?.cancel());
+    final service = _serviceStatusSubscription;
+    if (service != null) {
+      service.cancel().ignore();
+      _serviceStatusSubscription = null;
     }
   }
 
@@ -203,8 +227,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _shipImoNumberController.dispose();
     _shipOvhIdController.dispose();
     _shipNameController.dispose();
-    unawaited(_liveLocationSubscription?.cancel());
-    unawaited(_serviceStatusSubscription?.cancel());
+    _cancelLiveLocationSubscriptions();
     super.dispose();
   }
 
@@ -279,7 +302,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       // The event was actually sent to the Gateway now, so schedule a
       // delayed refresh to pick up the server-side change once it's had
       // time to propagate. Fire-and-forget and deliberately not awaited
-      unawaited(ref.read(platformsRefreshProvider.notifier).refreshAfterDelay());
+      ref.read(platformsRefreshProvider.notifier).refreshAfterDelay().ignore();
     }
 
     // The event was sent (or queued for later sync) successfully; reflect
