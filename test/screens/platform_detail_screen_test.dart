@@ -190,4 +190,3 @@ void main() {
     expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 }
-
