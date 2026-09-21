@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
@@ -73,7 +74,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   List<Platform>? _markersCacheSource;
   List<Marker> _platformMarkers = const [];
   final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
-  Set<String>? _openClusterMarkerRefs;
   var _ignoreNextBackgroundTap = false;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
@@ -87,6 +87,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   static const Offset _popupMapCenterOffset = Offset(-40, 150);
   /// Spiderfy pin distance from cluster badge (px); default 40 overlaps 44px markers + ring.
   static const int _clusterSpiderfyCircleRadius = 58;
+  static const double _clusterMaxZoom = 15;
 
   var _loadedBaseTileCount = 0;
   var _mapSkeletonVisible = false;
@@ -311,25 +312,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   void _onClusterTap(MarkerClusterNode cluster) {
     _ignoreNextBackgroundTap = true;
-    final clusterRefs = <String>{
-      for (final markerNode in cluster.markers)
-        ? _platformRefFromMarker(markerNode.marker),
-    };
-    if (clusterRefs.isEmpty) {
-      return;
-    }
-
-    // Tapping an open cluster again closes it — clear selection with it.
-    if (_openClusterMarkerRefs != null &&
-        setEquals(_openClusterMarkerRefs, clusterRefs)) {
-      _openClusterMarkerRefs = null;
-      _clearSelection();
-      return;
-    }
-
-    // Close popup from another marker, then spiderfy (cluster layer) in one tap.
     _dismissSelectedPlatform();
-    _openClusterMarkerRefs = clusterRefs;
+    _stopMapPanAnimation();
+    // Camera pan/zoom + spiderfy are handled by [MarkerClusterLayer] animations.
   }
 
   void _watchSelectedPlatform(String platformRef) {
@@ -381,9 +366,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     }
   }
 
-  /// Clears the selected platform and cluster spiderfy tracking.
+  /// Clears the selected platform.
   void _clearSelection() {
-    _openClusterMarkerRefs = null;
     _dismissSelectedPlatform();
   }
 
@@ -690,14 +674,15 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               urlTemplate: MapConfig.oceanReferenceTileUrl,
               userAgentPackageName: MapConfig.userAgentPackageName,
             ),
-            MarkerClusterLayerWidget(
+            SmartTagsMarkerClusterLayerWidget(
               options: MarkerClusterLayerOptions(
                 maxClusterRadius: 120,
                 size: const Size(40, 40),
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(50),
-                maxZoom: 15,
-                zoomToBoundsOnClick: false,
+                maxZoom: _clusterMaxZoom,
+                zoomToBoundsOnClick: true,
+                showPolygon: false,
                 spiderfyCircleRadius: _clusterSpiderfyCircleRadius,
                 markerChildBehavior: true,
                 centerMarkerOnClick: false,
