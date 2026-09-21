@@ -9,6 +9,7 @@ import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
 import '../helpers/fake_auth_service.dart';
@@ -52,9 +53,9 @@ class _CombinedGatewayRepository extends GatewayRepository {
   int submitCallCount = 0;
 
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     fetchUnclosedMissionsCallCount++;
-    return unclosedMissions;
+    return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
   }
 
   @override

@@ -123,6 +123,20 @@ adb connect $(awk '/nameserver/ { print $2; exit }' /etc/resolv.conf):5555
 
 Optional: `ANDROID_AVD`, `ANDROID_PACKAGE` (default `com.example.flutter_amrit`), `WSL_ADB_HOST`, `WSL_LAUNCH_EMULATOR`, `WINDOWS_ANDROID_SDK`.
 
+#### Windows (native, no WSL) — Android emulator or device
+
+Requires [adb](https://developer.android.com/tools/adb) on `PATH` and a connected emulator or device (debug build). Run from `cmd.exe` or PowerShell:
+
+```bat
+scripts/link-android-db.bat            :: pull only
+scripts/smartrun-android.bat           :: boot/connect emulator + pull + flutter run
+scripts/smartrun-android.bat -d emulator-5554
+```
+
+`smartrun-android.bat` pulls the DB to `.dev\db.sqlite` before launch, then keeps re-pulling in a background window while `flutter run` is active (reinstall / first sync can replace the on-device DB after the first pull) — the background watcher is closed automatically when `flutter run` exits.
+
+Optional env vars (`set VAR=value` before running): `ANDROID_AVD`, `ANDROID_PACKAGE` (default `com.example.flutter_amrit`), `ADB`.
+
 #### Cursor / VS Code tasks
 
 Command Palette → **Tasks: Run Task**:

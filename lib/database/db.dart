@@ -90,6 +90,28 @@ class Platforms extends Table {
   TextColumn get programCode => text().nullable()();
 }
 
+@DataClassName('AlertEntity')
+/// Table definition for alerts linked to platform
+class Alerts extends Table {
+  /// the alert id (unique identifier on Notification Center / Alerta side)
+  TextColumn get id => text()();
+
+  /// the alert resource identifier (= platform ref attribute)
+  TextColumn get resource => text().references(Platforms, #ref)();
+
+  /// Alert's event name
+  TextColumn get event => text()();
+
+  /// Alerts's severity
+  TextColumn get severity => text()();
+
+  /// Alerts's status
+  TextColumn get status => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DataClassName('UserEntity')
 /// Table definition for user profile data.
 class UserProfiles extends Table {
@@ -245,6 +267,7 @@ class SyncMetadata extends Table {
 @DriftDatabase(
   tables: [
     Platforms,
+    Alerts,
     UserProfiles,
     Programs,
     Roles,
@@ -325,6 +348,36 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Helper to sync alerts to database.
+  /// Currently empties and re-inserts, but could be optimized to do upserts in the future.
+  Future<void> syncAlerts(List<AlertsCompanion> companions) async {
+    await transaction(() async {
+      await delete(alerts).go();
+      await batch((batch) {
+        batch.insertAll(alerts, companions);
+      });
+    });
+  }
+
+  /// Inserts or replaces the given alerts (matched by `id`), without
+  /// touching local alerts absent from [companions]. Used by the
+  /// delta refresh (`updatedSince`).
+  Future<void> upsertAlerts(List<AlertsCompanion> companions) async {
+    await batch((batch) {
+      batch.insertAll(alerts, companions, mode: InsertMode.insertOrReplace);
+    });
+  }
+
+  /// Deletes alerts whose `resource` doesn't match any local platform `ref`
+  /// (e.g. alerts for platforms outside the fetched scope, or removed
+  /// server-side). Cheap: indexed anti-join on `platforms.ref`. Should be
+  /// called after syncing/upserting both platforms and alerts.
+  Future<void> deleteOrphanedAlerts() async {
+    await customStatement(
+      'DELETE FROM alerts WHERE resource NOT IN (SELECT ref FROM platforms)',
+    );
+  }
+
   /// Returns the timestamp of the last successful platforms refresh, or
   /// `null` if a refresh has never completed successfully.
   Future<DateTime?> getLastPlatformsRefresh() async {
@@ -366,6 +419,12 @@ class AppDatabase extends _$AppDatabase {
   /// Watches a single platform by its reference, emitting updates on changes.
   Stream<Platform?> watchPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref))).watchSingleOrNull();
+  }
+
+  /// Watches all alerts raised against the given platform resource (ref),
+  /// emitting updates on changes.
+  Stream<List<AlertEntity>> watchAlertsByResource(String resource) {
+    return (select(alerts)..where((a) => a.resource.equals(resource))).watch();
   }
 
   /// Appends a new deploy/recover event to the FIFO queue.
