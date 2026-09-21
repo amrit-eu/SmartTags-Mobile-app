@@ -91,21 +91,21 @@ class Platforms extends Table {
 }
 
 @DataClassName('AlertEntity')
-// Table definition for alerts linked to platform
+/// Table definition for alerts linked to platform
 class Alerts extends Table {
-  // the alert id (unique identifier on Notification Center / Alerta side)
+  /// the alert id (unique identifier on Notification Center / Alerta side)
   TextColumn get id => text()();
 
-  // the alert resource identifier (= platform ref attribute)
+  /// the alert resource identifier (= platform ref attribute)
   TextColumn get resource => text().references(Platforms, #ref)();
 
-  // Alert's event name
+  /// Alert's event name
   TextColumn get event => text()();
 
-  // Alerts's severity
+  /// Alerts's severity
   TextColumn get severity => text()();
 
-  //Alerts's status
+  /// Alerts's status
   TextColumn get status => text()();
 
   @override

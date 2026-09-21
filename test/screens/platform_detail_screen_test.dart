@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/database/db.dart' hide AppDatabase;
+import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
@@ -60,14 +61,25 @@ final testDbPlatformPlanned = Platform(
   hasLatestObservation: false,
 );
 
-/// Builds a [ProviderScope] with [platformByRefStreamProvider] overridden
-/// to return [testDbPlatform] without hitting a real database.
-Widget buildTestWidget({Platform? platform}) {
+Alert testAlert(String id, AlertStatus status) => Alert(
+  id: id,
+  resource: testRef,
+  event: 'event',
+  severity: AlertSeverity.major,
+  status: status,
+);
+
+/// Builds a [ProviderScope] with [platformByRefStreamProvider] and
+/// [alertsByResourceStreamProvider] overridden so no real database is hit.
+Widget buildTestWidget({Platform? platform, List<Alert> alerts = const []}) {
   final row = platform ?? testDbPlatform;
   return ProviderScope(
     overrides: [
       platformByRefStreamProvider(testRef).overrideWith(
         (ref) => Stream.value(row),
+      ),
+      alertsByResourceStreamProvider(testRef).overrideWith(
+        (ref) => Stream.value(alerts),
       ),
     ],
     child: const MaterialApp(
@@ -141,4 +153,41 @@ void main() {
 
     expect(find.text('Planned'), findsOneWidget);
   });
+
+  testWidgets('Alerts row shows open alerts chip (#84)', (tester) async {
+    await tester.pumpWidget(
+      buildTestWidget(
+        alerts: [
+          testAlert('1', AlertStatus.open),
+          testAlert('2', AlertStatus.open),
+          testAlert('3', AlertStatus.acknowledged),
+        ],
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Alerts'), findsOneWidget);
+    expect(find.text('2 Active alerts'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+  });
+
+  testWidgets('Alerts row shows acknowledged alerts when none open (#84)', (tester) async {
+    await tester.pumpWidget(buildTestWidget(alerts: [testAlert('1', AlertStatus.acknowledged)]));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('1 Acknowledged alert'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+  });
+
+  testWidgets('Alerts row shows no active alerts when none open or acknowledged (#84)', (tester) async {
+    await tester.pumpWidget(buildTestWidget(alerts: [testAlert('1', AlertStatus.closed)]));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('No active alerts'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+  });
 }
+
