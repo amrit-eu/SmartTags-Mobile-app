@@ -8,6 +8,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
 import '../helpers/fake_auth_service.dart';
@@ -141,14 +142,15 @@ class _FakeGatewayRepository extends GatewayRepository {
   final List<PlatformsCompanion> platforms;
 
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async => platforms;
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async =>
+      GatewayPassportsResult(platforms: platforms, alerts: const []);
 }
 
 class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
 
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     throw Exception('Network error');
   }
 }
@@ -160,10 +162,10 @@ class _ToggleGatewayRepository extends GatewayRepository {
   bool shouldSucceed = false;
 
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     if (!shouldSucceed) {
       throw Exception('Network error');
     }
-    return platforms;
+    return GatewayPassportsResult(platforms: platforms, alerts: const []);
   }
 }

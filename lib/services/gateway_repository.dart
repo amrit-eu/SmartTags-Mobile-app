@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
-import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
@@ -43,7 +42,7 @@ class GatewayRepository {
   final AuthService _authService;
 
   /// Loads unclosed missions from the Gateway enriched passposrt endpoint.
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     final uri = GatewayConfig.unclosedPassportsUri;
     try {
       if (kDebugMode) {
@@ -59,15 +58,16 @@ class GatewayRepository {
       }
 
       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      final items = (jsonResponse['items'] as List<dynamic>? ?? [])
-          .whereType<Map<String, dynamic>>()
-          .map(GatewayPassportMapper.fromPassportItem)
-          .toList();
+      final items = (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
+      final result = GatewayPassportMapper.fromEnrichedPassportItems(items);
 
       if (kDebugMode) {
-        debugPrint('Gateway returned ${items.length} unclosed missions');
+        debugPrint(
+          'Gateway returned ${result.platforms.length} unclosed missions '
+          '(${result.alerts.length} alerts)',
+        );
       }
-      return items;
+      return result;
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Gateway fetchUnclosedMissions error: $e\n$st');
@@ -80,7 +80,7 @@ class GatewayRepository {
   ///
   /// When [searchDto] is null, delegates to [fetchUnclosedMissions] instead
   /// of issuing a search request.
-  Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
+  Future<GatewayPassportsResult> searchPassports(PassportFilterDto? searchDto) async {
     if (searchDto == null) {
       return fetchUnclosedMissions();
     }
@@ -105,15 +105,13 @@ class GatewayRepository {
       }
 
       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      final items = (jsonResponse['items'] as List<dynamic>? ?? [])
-          .whereType<Map<String, dynamic>>()
-          .map(GatewayPassportMapper.fromPassportItem)
-          .toList();
+      final items = (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
+      final result = GatewayPassportMapper.fromEnrichedPassportItems(items);
 
       if (kDebugMode) {
-        debugPrint('Gateway returned ${items.length} passports');
+        debugPrint('Gateway returned ${result.platforms.length} passports (${result.alerts.length} alerts)');
       }
-      return items;
+      return result;
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Gateway searchPassports error: $e\n$st');

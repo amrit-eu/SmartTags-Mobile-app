@@ -1528,6 +1528,360 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   }
 }
 
+class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AlertsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resourceMeta = const VerificationMeta(
+    'resource',
+  );
+  @override
+  late final GeneratedColumn<String> resource = GeneratedColumn<String>(
+    'resource',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES platforms (ref)',
+    ),
+  );
+  static const VerificationMeta _eventMeta = const VerificationMeta('event');
+  @override
+  late final GeneratedColumn<String> event = GeneratedColumn<String>(
+    'event',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _severityMeta = const VerificationMeta(
+    'severity',
+  );
+  @override
+  late final GeneratedColumn<String> severity = GeneratedColumn<String>(
+    'severity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, resource, event, severity, status];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'alerts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AlertEntity> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('resource')) {
+      context.handle(
+        _resourceMeta,
+        resource.isAcceptableOrUnknown(data['resource']!, _resourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_resourceMeta);
+    }
+    if (data.containsKey('event')) {
+      context.handle(
+        _eventMeta,
+        event.isAcceptableOrUnknown(data['event']!, _eventMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventMeta);
+    }
+    if (data.containsKey('severity')) {
+      context.handle(
+        _severityMeta,
+        severity.isAcceptableOrUnknown(data['severity']!, _severityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_severityMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AlertEntity map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AlertEntity(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      resource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}resource'],
+      )!,
+      event: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event'],
+      )!,
+      severity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}severity'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+    );
+  }
+
+  @override
+  $AlertsTable createAlias(String alias) {
+    return $AlertsTable(attachedDatabase, alias);
+  }
+}
+
+class AlertEntity extends DataClass implements Insertable<AlertEntity> {
+  final String id;
+  final String resource;
+  final String event;
+  final String severity;
+  final String status;
+  const AlertEntity({
+    required this.id,
+    required this.resource,
+    required this.event,
+    required this.severity,
+    required this.status,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['resource'] = Variable<String>(resource);
+    map['event'] = Variable<String>(event);
+    map['severity'] = Variable<String>(severity);
+    map['status'] = Variable<String>(status);
+    return map;
+  }
+
+  AlertsCompanion toCompanion(bool nullToAbsent) {
+    return AlertsCompanion(
+      id: Value(id),
+      resource: Value(resource),
+      event: Value(event),
+      severity: Value(severity),
+      status: Value(status),
+    );
+  }
+
+  factory AlertEntity.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AlertEntity(
+      id: serializer.fromJson<String>(json['id']),
+      resource: serializer.fromJson<String>(json['resource']),
+      event: serializer.fromJson<String>(json['event']),
+      severity: serializer.fromJson<String>(json['severity']),
+      status: serializer.fromJson<String>(json['status']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'resource': serializer.toJson<String>(resource),
+      'event': serializer.toJson<String>(event),
+      'severity': serializer.toJson<String>(severity),
+      'status': serializer.toJson<String>(status),
+    };
+  }
+
+  AlertEntity copyWith({
+    String? id,
+    String? resource,
+    String? event,
+    String? severity,
+    String? status,
+  }) => AlertEntity(
+    id: id ?? this.id,
+    resource: resource ?? this.resource,
+    event: event ?? this.event,
+    severity: severity ?? this.severity,
+    status: status ?? this.status,
+  );
+  AlertEntity copyWithCompanion(AlertsCompanion data) {
+    return AlertEntity(
+      id: data.id.present ? data.id.value : this.id,
+      resource: data.resource.present ? data.resource.value : this.resource,
+      event: data.event.present ? data.event.value : this.event,
+      severity: data.severity.present ? data.severity.value : this.severity,
+      status: data.status.present ? data.status.value : this.status,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AlertEntity(')
+          ..write('id: $id, ')
+          ..write('resource: $resource, ')
+          ..write('event: $event, ')
+          ..write('severity: $severity, ')
+          ..write('status: $status')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, resource, event, severity, status);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AlertEntity &&
+          other.id == this.id &&
+          other.resource == this.resource &&
+          other.event == this.event &&
+          other.severity == this.severity &&
+          other.status == this.status);
+}
+
+class AlertsCompanion extends UpdateCompanion<AlertEntity> {
+  final Value<String> id;
+  final Value<String> resource;
+  final Value<String> event;
+  final Value<String> severity;
+  final Value<String> status;
+  final Value<int> rowid;
+  const AlertsCompanion({
+    this.id = const Value.absent(),
+    this.resource = const Value.absent(),
+    this.event = const Value.absent(),
+    this.severity = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AlertsCompanion.insert({
+    required String id,
+    required String resource,
+    required String event,
+    required String severity,
+    required String status,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       resource = Value(resource),
+       event = Value(event),
+       severity = Value(severity),
+       status = Value(status);
+  static Insertable<AlertEntity> custom({
+    Expression<String>? id,
+    Expression<String>? resource,
+    Expression<String>? event,
+    Expression<String>? severity,
+    Expression<String>? status,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (resource != null) 'resource': resource,
+      if (event != null) 'event': event,
+      if (severity != null) 'severity': severity,
+      if (status != null) 'status': status,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AlertsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? resource,
+    Value<String>? event,
+    Value<String>? severity,
+    Value<String>? status,
+    Value<int>? rowid,
+  }) {
+    return AlertsCompanion(
+      id: id ?? this.id,
+      resource: resource ?? this.resource,
+      event: event ?? this.event,
+      severity: severity ?? this.severity,
+      status: status ?? this.status,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (resource.present) {
+      map['resource'] = Variable<String>(resource.value);
+    }
+    if (event.present) {
+      map['event'] = Variable<String>(event.value);
+    }
+    if (severity.present) {
+      map['severity'] = Variable<String>(severity.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AlertsCompanion(')
+          ..write('id: $id, ')
+          ..write('resource: $resource, ')
+          ..write('event: $event, ')
+          ..write('severity: $severity, ')
+          ..write('status: $status, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $UserProfilesTable extends UserProfiles
     with TableInfo<$UserProfilesTable, UserEntity> {
   @override
@@ -4073,6 +4427,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $PlatformsTable platforms = $PlatformsTable(this);
+  late final $AlertsTable alerts = $AlertsTable(this);
   late final $UserProfilesTable userProfiles = $UserProfilesTable(this);
   late final $ProgramsTable programs = $ProgramsTable(this);
   late final $RolesTable roles = $RolesTable(this);
@@ -4094,6 +4449,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     platforms,
+    alerts,
     userProfiles,
     programs,
     roles,
@@ -4163,6 +4519,30 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> programName,
       Value<String?> programCode,
     });
+
+final class $$PlatformsTableReferences
+    extends BaseReferences<_$AppDatabase, $PlatformsTable, Platform> {
+  $$PlatformsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$AlertsTable, List<AlertEntity>> _alertsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.alerts,
+    aliasName: $_aliasNameGenerator(db.platforms.ref, db.alerts.resource),
+  );
+
+  $$AlertsTableProcessedTableManager get alertsRefs {
+    final manager = $$AlertsTableTableManager(
+      $_db,
+      $_db.alerts,
+    ).filter((f) => f.resource.ref.sqlEquals($_itemColumn<String>('ref')!));
+
+    final cache = $_typedResult.readTableOrNull(_alertsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$PlatformsTableFilterComposer
     extends Composer<_$AppDatabase, $PlatformsTable> {
@@ -4302,6 +4682,31 @@ class $$PlatformsTableFilterComposer
     column: $table.programCode,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> alertsRefs(
+    Expression<bool> Function($$AlertsTableFilterComposer f) f,
+  ) {
+    final $$AlertsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ref,
+      referencedTable: $db.alerts,
+      getReferencedColumn: (t) => t.resource,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AlertsTableFilterComposer(
+            $db: $db,
+            $table: $db.alerts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PlatformsTableOrderingComposer
@@ -4558,6 +4963,31 @@ class $$PlatformsTableAnnotationComposer
     column: $table.programCode,
     builder: (column) => column,
   );
+
+  Expression<T> alertsRefs<T extends Object>(
+    Expression<T> Function($$AlertsTableAnnotationComposer a) f,
+  ) {
+    final $$AlertsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ref,
+      referencedTable: $db.alerts,
+      getReferencedColumn: (t) => t.resource,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AlertsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.alerts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PlatformsTableTableManager
@@ -4571,9 +5001,9 @@ class $$PlatformsTableTableManager
           $$PlatformsTableAnnotationComposer,
           $$PlatformsTableCreateCompanionBuilder,
           $$PlatformsTableUpdateCompanionBuilder,
-          (Platform, BaseReferences<_$AppDatabase, $PlatformsTable, Platform>),
+          (Platform, $$PlatformsTableReferences),
           Platform,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool alertsRefs})
         > {
   $$PlatformsTableTableManager(_$AppDatabase db, $PlatformsTable table)
     : super(
@@ -4699,9 +5129,39 @@ class $$PlatformsTableTableManager
                 programCode: programCode,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlatformsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({alertsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (alertsRefs) db.alerts],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (alertsRefs)
+                    await $_getPrefetchedData<
+                      Platform,
+                      $PlatformsTable,
+                      AlertEntity
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PlatformsTableReferences
+                          ._alertsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PlatformsTableReferences(db, table, p0).alertsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.resource == item.ref),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -4716,9 +5176,324 @@ typedef $$PlatformsTableProcessedTableManager =
       $$PlatformsTableAnnotationComposer,
       $$PlatformsTableCreateCompanionBuilder,
       $$PlatformsTableUpdateCompanionBuilder,
-      (Platform, BaseReferences<_$AppDatabase, $PlatformsTable, Platform>),
+      (Platform, $$PlatformsTableReferences),
       Platform,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool alertsRefs})
+    >;
+typedef $$AlertsTableCreateCompanionBuilder =
+    AlertsCompanion Function({
+      required String id,
+      required String resource,
+      required String event,
+      required String severity,
+      required String status,
+      Value<int> rowid,
+    });
+typedef $$AlertsTableUpdateCompanionBuilder =
+    AlertsCompanion Function({
+      Value<String> id,
+      Value<String> resource,
+      Value<String> event,
+      Value<String> severity,
+      Value<String> status,
+      Value<int> rowid,
+    });
+
+final class $$AlertsTableReferences
+    extends BaseReferences<_$AppDatabase, $AlertsTable, AlertEntity> {
+  $$AlertsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PlatformsTable _resourceTable(_$AppDatabase db) => db.platforms
+      .createAlias($_aliasNameGenerator(db.alerts.resource, db.platforms.ref));
+
+  $$PlatformsTableProcessedTableManager get resource {
+    final $_column = $_itemColumn<String>('resource')!;
+
+    final manager = $$PlatformsTableTableManager(
+      $_db,
+      $_db.platforms,
+    ).filter((f) => f.ref.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_resourceTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AlertsTableFilterComposer
+    extends Composer<_$AppDatabase, $AlertsTable> {
+  $$AlertsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get event => $composableBuilder(
+    column: $table.event,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get severity => $composableBuilder(
+    column: $table.severity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PlatformsTableFilterComposer get resource {
+    final $$PlatformsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.resource,
+      referencedTable: $db.platforms,
+      getReferencedColumn: (t) => t.ref,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlatformsTableFilterComposer(
+            $db: $db,
+            $table: $db.platforms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AlertsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AlertsTable> {
+  $$AlertsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get event => $composableBuilder(
+    column: $table.event,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get severity => $composableBuilder(
+    column: $table.severity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PlatformsTableOrderingComposer get resource {
+    final $$PlatformsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.resource,
+      referencedTable: $db.platforms,
+      getReferencedColumn: (t) => t.ref,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlatformsTableOrderingComposer(
+            $db: $db,
+            $table: $db.platforms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AlertsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AlertsTable> {
+  $$AlertsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get event =>
+      $composableBuilder(column: $table.event, builder: (column) => column);
+
+  GeneratedColumn<String> get severity =>
+      $composableBuilder(column: $table.severity, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  $$PlatformsTableAnnotationComposer get resource {
+    final $$PlatformsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.resource,
+      referencedTable: $db.platforms,
+      getReferencedColumn: (t) => t.ref,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlatformsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.platforms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AlertsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AlertsTable,
+          AlertEntity,
+          $$AlertsTableFilterComposer,
+          $$AlertsTableOrderingComposer,
+          $$AlertsTableAnnotationComposer,
+          $$AlertsTableCreateCompanionBuilder,
+          $$AlertsTableUpdateCompanionBuilder,
+          (AlertEntity, $$AlertsTableReferences),
+          AlertEntity,
+          PrefetchHooks Function({bool resource})
+        > {
+  $$AlertsTableTableManager(_$AppDatabase db, $AlertsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AlertsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AlertsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AlertsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> resource = const Value.absent(),
+                Value<String> event = const Value.absent(),
+                Value<String> severity = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AlertsCompanion(
+                id: id,
+                resource: resource,
+                event: event,
+                severity: severity,
+                status: status,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String resource,
+                required String event,
+                required String severity,
+                required String status,
+                Value<int> rowid = const Value.absent(),
+              }) => AlertsCompanion.insert(
+                id: id,
+                resource: resource,
+                event: event,
+                severity: severity,
+                status: status,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$AlertsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({resource = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (resource) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.resource,
+                                referencedTable: $$AlertsTableReferences
+                                    ._resourceTable(db),
+                                referencedColumn: $$AlertsTableReferences
+                                    ._resourceTable(db)
+                                    .ref,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AlertsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AlertsTable,
+      AlertEntity,
+      $$AlertsTableFilterComposer,
+      $$AlertsTableOrderingComposer,
+      $$AlertsTableAnnotationComposer,
+      $$AlertsTableCreateCompanionBuilder,
+      $$AlertsTableUpdateCompanionBuilder,
+      (AlertEntity, $$AlertsTableReferences),
+      AlertEntity,
+      PrefetchHooks Function({bool resource})
     >;
 typedef $$UserProfilesTableCreateCompanionBuilder =
     UserProfilesCompanion Function({
@@ -6940,6 +7715,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$PlatformsTableTableManager get platforms =>
       $$PlatformsTableTableManager(_db, _db.platforms);
+  $$AlertsTableTableManager get alerts =>
+      $$AlertsTableTableManager(_db, _db.alerts);
   $$UserProfilesTableTableManager get userProfiles =>
       $$UserProfilesTableTableManager(_db, _db.userProfiles);
   $$ProgramsTableTableManager get programs =>
