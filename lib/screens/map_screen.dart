@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
-import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
@@ -13,6 +11,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
@@ -119,7 +118,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
-    _pulseController.repeat(reverse: true);
+    unawaited(_pulseController.repeat(reverse: true));
 
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
@@ -262,22 +261,24 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
     final animation = CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
 
-    controller
-      ..addListener(() {
-        _mapController.move(
-          LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-          zoom,
-        );
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-          if (identical(_mapPanAnimationController, controller)) {
-            _mapPanAnimationController = null;
-          }
-          controller.dispose();
-        }
-      });
-    controller.forward();
+    unawaited(
+      (controller
+            ..addListener(() {
+              _mapController.move(
+                LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+                zoom,
+              );
+            })
+            ..addStatusListener((status) {
+              if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+                if (identical(_mapPanAnimationController, controller)) {
+                  _mapPanAnimationController = null;
+                }
+                controller.dispose();
+              }
+            }))
+          .forward(),
+    );
   }
 
   void _selectPlatformMarker(
@@ -291,23 +292,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
-    _popupAnimationController.forward(from: 0);
+    unawaited(_popupAnimationController.forward(from: 0));
     if (recenter) {
       _animateMapToPoint(position);
     }
-  }
-
-  String? _platformRefFromMarker(Marker marker) {
-    final key = marker.key;
-    if (key is! ValueKey<String>) {
-      return null;
-    }
-    const prefix = 'platform-marker-';
-    final value = key.value;
-    if (!value.startsWith(prefix)) {
-      return null;
-    }
-    return value.substring(prefix.length);
   }
 
   void _onClusterTap(MarkerClusterNode cluster) {
@@ -509,9 +497,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
+                    unawaited(
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
+                        ),
                       ),
                     );
                   },
@@ -681,7 +671,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(50),
                 maxZoom: _clusterMaxZoom,
-                zoomToBoundsOnClick: true,
                 showPolygon: false,
                 spiderfyCircleRadius: _clusterSpiderfyCircleRadius,
                 markerChildBehavior: true,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
@@ -40,9 +42,11 @@ class PlatformCard extends StatelessWidget {
             platform.operationLon,
           ),
         );
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
+        unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
+            ),
           ),
         );
       },

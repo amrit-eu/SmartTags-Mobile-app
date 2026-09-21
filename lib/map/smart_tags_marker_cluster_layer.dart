@@ -1,5 +1,8 @@
 // Fork of flutter_map_marker_cluster 8.2.2 `marker_cluster_layer.dart` with SmartTags
 // cluster-tap behavior (coincident stacks: pan at current zoom, then spiderfy).
+//
+// ignore_for_file: implementation_imports, public_member_api_docs, sort_constructors_first, discarded_futures, unnecessary_breaks, no_default_cases, cascade_invocations, unnecessary_lambdas, only_throw_errors, unawaited_futures, omit_local_variable_types
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
