@@ -350,7 +350,7 @@ class _AlertsSummaryRow extends ConsumerWidget {
               ),
             ),
           const SizedBox(width: 8),
-          Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+          // Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );
