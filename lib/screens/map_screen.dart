@@ -74,6 +74,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   List<Marker> _platformMarkers = const [];
   final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
   Set<String>? _openClusterMarkerRefs;
+  var _ignoreNextBackgroundTap = false;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
@@ -84,6 +85,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
   static const Duration _mapPanDuration = Duration(milliseconds: 450);
   static const Offset _popupMapCenterOffset = Offset(-40, 150);
+  /// Spiderfy pin distance from cluster badge (px); default 40 overlaps 44px markers + ring.
+  static const int _clusterSpiderfyCircleRadius = 58;
 
   var _loadedBaseTileCount = 0;
   var _mapSkeletonVisible = false;
@@ -281,6 +284,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     LatLng position, {
     bool recenter = true,
   }) {
+    _ignoreNextBackgroundTap = true;
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _selectedPlatformNotifier.value = dbPlatform.toDomain();
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
@@ -306,6 +310,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   void _onClusterTap(MarkerClusterNode cluster) {
+    _ignoreNextBackgroundTap = true;
     final clusterRefs = <String>{
       for (final markerNode in cluster.markers)
         ? _platformRefFromMarker(markerNode.marker),
@@ -322,30 +327,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       return;
     }
 
+    // Close popup from another marker, then spiderfy (cluster layer) in one tap.
+    _dismissSelectedPlatform();
     _openClusterMarkerRefs = clusterRefs;
-    _selectFirstClusterMarker(cluster);
-  }
-
-  void _selectFirstClusterMarker(MarkerClusterNode cluster) {
-    final source = _markersCacheSource;
-    if (source == null) {
-      return;
-    }
-
-    for (final markerNode in cluster.markers) {
-      final ref = _platformRefFromMarker(markerNode.marker);
-      if (ref == null) {
-        continue;
-      }
-      for (final dbPlatform in source) {
-        if (dbPlatform.ref == ref) {
-          final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-          // Cluster layer may zoom/pan — avoid fighting that animation.
-          _selectPlatformMarker(dbPlatform, point, recenter: false);
-          return;
-        }
-      }
-    }
   }
 
   void _watchSelectedPlatform(String platformRef) {
@@ -372,26 +356,35 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   void _onMapBackgroundTap(TapPosition tapPosition, LatLng point) {
+    if (_ignoreNextBackgroundTap) {
+      _ignoreNextBackgroundTap = false;
+      return;
+    }
     if (_selectedPlatformNotifier.value != null) {
       _clearSelection();
     }
   }
 
-  /// Clears the selected platform.
-  void _clearSelection() {
-    _openClusterMarkerRefs = null;
+  /// Closes popup, ring, and stream subscription without affecting cluster spiderfy state.
+  void _dismissSelectedPlatform() {
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
+    if (previousRef == null) {
+      return;
+    }
     _stopMapPanAnimation();
     _selectedPlatformSubscription?.close();
     _selectedPlatformSubscription = null;
     _selectedPlatformNotifier.value = null;
-    if (previousRef != null) {
-      _updateMarkerHighlight(previousRef: previousRef);
-    }
-    // Reset animation when clearing selection
+    _updateMarkerHighlight(previousRef: previousRef);
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
     }
+  }
+
+  /// Clears the selected platform and cluster spiderfy tracking.
+  void _clearSelection() {
+    _openClusterMarkerRefs = null;
+    _dismissSelectedPlatform();
   }
 
   void _onBaseTileLoaded(TileImage tile) {
@@ -704,6 +697,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(50),
                 maxZoom: 15,
+                zoomToBoundsOnClick: false,
+                spiderfyCircleRadius: _clusterSpiderfyCircleRadius,
                 markerChildBehavior: true,
                 centerMarkerOnClick: false,
                 onClusterTap: _onClusterTap,
