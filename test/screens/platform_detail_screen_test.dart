@@ -169,7 +169,7 @@ void main() {
 
     expect(find.text('Alerts'), findsOneWidget);
     expect(find.text('2 Active alerts'), findsOneWidget);
-    // TODO(ylubac) : chevron Icon to display when alert row will be clickable:
+    // TODO(ylubac): chevron Icon to display when alert row will be clickable:
     // expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
@@ -179,7 +179,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('1 Acknowledged alert'), findsOneWidget);
-    // TODO(ylubac) : chevron Icon to display when alert row will be clickable:
+    // TODO(ylubac): chevron Icon to display when alert row will be clickable:
     // expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
@@ -189,7 +189,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('No active alerts'), findsOneWidget);
-    // TODO(ylubac) : chevron Icon to display when alert row will be clickable:
+    // TODO(ylubac): chevron Icon to display when alert row will be clickable:
     // expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 }
