@@ -350,6 +350,7 @@ class _AlertsSummaryRow extends ConsumerWidget {
               ),
             ),
           const SizedBox(width: 8),
+          // TODO(ylubac) : chevron Icon to display when alert row will be clickable:
           // Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
