@@ -23,7 +23,7 @@ final testDbPlatform = Platform(
   operationLat: 0,
   operationLon: 0,
   hasLatestObservation: false,
-  category: 'Profiling Float',
+  category: 'Float',
 );
 
 final testDbPlatformPassport = Platform(
@@ -43,7 +43,7 @@ final testDbPlatformPassport = Platform(
   latestOperationType: 'Deployment',
   latestOperationDate: DateTime.utc(2001, 10, 12),
   hasLatestObservation: true,
-  category: 'Profiling Float',
+  category: 'Float',
 );
 
 final testDbPlatformPlanned = Platform(
@@ -60,7 +60,7 @@ final testDbPlatformPlanned = Platform(
   operationLon: 0,
   latestOperationType: 'Deployment',
   hasLatestObservation: false,
-  category: 'Profiling Float',
+  category: 'Float',
 );
 
 Alert testAlert(String id, AlertStatus status) => Alert(
