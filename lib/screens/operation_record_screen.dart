@@ -460,101 +460,118 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                     Row(
                       spacing: 8,
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Latitude',
-                              errorMaxLines: 3,
-                            ),
-                            controller: _latitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
-                            enabled: !useLiveLocation, // Disable manual input if using live location.
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Latitude is required';
-                              }
-                              try {
-                                final latitude = double.parse(value);
-                                if (latitude < -90 || latitude > 90) {
-                                  return 'Latitude must be between -90 and 90';
-                                }
-                              } on FormatException {
-                                return 'Latitude must be a valid number';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        Expanded(
-                          child: TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: 'Longitude',
-                              errorMaxLines: 3,
-                            ),
-                            controller: _longitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
-                            enabled: !useLiveLocation, // Disable manual input if using live location.
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Longitude is required';
-                              }
-                              try {
-                                final longitude = double.parse(value);
-                                if (longitude < -180 || longitude > 180) {
-                                  return 'Longitude must be between -180 and 180';
-                                }
-                              } on FormatException {
-                                return 'Longitude must be a valid number';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.my_location),
-                          color: useLiveLocation ? Colors.lightBlue : null,
+                        _AutofillLocationTimeControl(
+                          active: useLiveLocation,
                           onPressed: toggleLiveUpdates,
-                          tooltip: useLiveLocation ? 'Disable live location updates' : 'Enable live location updates',
+                        ),
+                        Expanded(
+                          child: Column(
+                            spacing: 16,
+                            children: [
+                              Row(
+                                spacing: 8,
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      decoration: const InputDecoration(
+                                        labelText: 'Latitude',
+                                        errorMaxLines: 3,
+                                      ),
+                                      controller: _latitudeController,
+                                      keyboardType: const TextInputType.numberWithOptions(
+                                        signed: true,
+                                        decimal: true,
+                                      ),
+                                      enabled: !useLiveLocation,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Latitude is required';
+                                        }
+                                        try {
+                                          final latitude = double.parse(value);
+                                          if (latitude < -90 || latitude > 90) {
+                                            return 'Latitude must be between -90 and 90';
+                                          }
+                                        } on FormatException {
+                                          return 'Latitude must be a valid number';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextFormField(
+                                      decoration: const InputDecoration(
+                                        labelText: 'Longitude',
+                                        errorMaxLines: 3,
+                                      ),
+                                      controller: _longitudeController,
+                                      keyboardType: const TextInputType.numberWithOptions(
+                                        signed: true,
+                                        decimal: true,
+                                      ),
+                                      enabled: !useLiveLocation,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Longitude is required';
+                                        }
+                                        try {
+                                          final longitude = double.parse(value);
+                                          if (longitude < -180 || longitude > 180) {
+                                            return 'Longitude must be between -180 and 180';
+                                          }
+                                        } on FormatException {
+                                          return 'Longitude must be a valid number';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextFormField(
+                                decoration: InputDecoration(
+                                  labelText: '$_eventType Time (UTC)',
+                                  errorMaxLines: 3,
+                                ),
+                                controller: _dateTimeController,
+                                readOnly: true,
+                                enabled: !useLiveLocation,
+                                validator: (value) =>
+                                    (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
+                                onTap: () async {
+                                  final date = await showDatePicker(
+                                    context: this.context,
+                                    initialDate: _selectedDateTime ?? DateTime.now(),
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime(2100),
+                                    helpText: 'Date',
+                                  );
+                                  if (date == null) return;
+                                  if (!mounted) return;
+                                  final time = await showTimePicker(
+                                    context: this.context,
+                                    initialTime: _selectedDateTime != null
+                                        ? TimeOfDay.fromDateTime(_selectedDateTime!)
+                                        : TimeOfDay.now(),
+                                    helpText: 'Time (UTC)',
+                                  );
+                                  if (time == null) return;
+                                  if (!mounted) return;
+                                  final combined = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    time.hour,
+                                    time.minute,
+                                  );
+                                  _setSelectedDateTime(combined);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                    ),
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: '$_eventType Time (UTC)',
-                        errorMaxLines: 3,
-                      ),
-                      controller: _dateTimeController,
-                      readOnly: true,
-                      enabled: !useLiveLocation, // Disable manual input if using live location time.
-                      validator: (value) => (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: this.context,
-                          initialDate: _selectedDateTime ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          helpText: 'Date',
-                        );
-                        if (date == null) return;
-                        if (!mounted) return;
-                        final time = await showTimePicker(
-                          context: this.context,
-                          initialTime: _selectedDateTime != null
-                              ? TimeOfDay.fromDateTime(_selectedDateTime!)
-                              : TimeOfDay.now(),
-                          helpText: 'Time (UTC)',
-                        );
-                        if (time == null) return;
-                        if (!mounted) return;
-                        final combined = DateTime(
-                          date.year,
-                          date.month,
-                          date.day,
-                          time.hour,
-                          time.minute,
-                        );
-                        _setSelectedDateTime(combined);
-                      },
                     ),
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Notes'),
@@ -586,6 +603,53 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AutofillLocationTimeControl extends StatelessWidget {
+  const _AutofillLocationTimeControl({
+    required this.active,
+    required this.onPressed,
+  });
+
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final accent = active ? colorScheme.primary : null;
+
+    return Tooltip(
+      message: active ? 'Stop autofill (location & time)' : 'Autofill location & time',
+      child: TextButton(
+        key: const Key('autofill-location-time'),
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          foregroundColor: accent,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.my_location, color: accent),
+            const SizedBox(height: 4),
+            Text(
+              active ? 'Stop' : 'Autofill',
+              style: theme.textTheme.labelSmall,
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              active ? 'live' : 'loc. & time',
+              style: theme.textTheme.labelSmall,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
