@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 import 'package:smart_tags/constants/oceanops_codes.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/extensions/string_extension.dart';
+import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/platform.dart';
@@ -60,6 +61,7 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
     required this.platform,
     this.positionStream,
     this.serviceStatusStream,
+    this.ensureLocationPermission,
     super.key,
   });
 
@@ -76,6 +78,10 @@ class DeployPlatformScreen extends ConsumerStatefulWidget {
   /// Optional test injection for service status stream
   @visibleForTesting
   final Stream<ServiceStatus>? serviceStatusStream;
+
+  /// Optional test injection to bypass [Geolocator] permission checks.
+  @visibleForTesting
+  final Future<bool> Function()? ensureLocationPermission;
 
   @override
   ConsumerState<DeployPlatformScreen> createState() => _DeployPlatformScreenState();
@@ -122,18 +128,24 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _selectedAction = widget.action;
   }
 
-  void setUseLiveLocation({required bool enabled}) {
-    final previousLive = _liveLocationSubscription;
-    if (previousLive != null) {
-      previousLive.cancel().ignore();
-      _liveLocationSubscription = null;
-    }
-    final previousService = _serviceStatusSubscription;
-    if (previousService != null) {
-      previousService.cancel().ignore();
-      _serviceStatusSubscription = null;
+  Future<void> setUseLiveLocation({required bool enabled}) async {
+    if (enabled) {
+      final ensurePermission =
+          widget.ensureLocationPermission ?? () => LocationFetcher().ensureLocationPermission();
+      final allowed = await ensurePermission();
+      if (!allowed) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission is required for live updates.')),
+          );
+        }
+        return;
+      }
     }
 
+    if (!mounted) {
+      return;
+    }
     setState(() {
       useLiveLocation = enabled; // Set live location updates on or off based on the provided flag.
     });
@@ -165,7 +177,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
             );
             // addPostFrameCallback used to avoid setState during build
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setUseLiveLocation(enabled: false);
+              if (mounted) unawaited(setUseLiveLocation(enabled: false));
             });
           }
         },
@@ -180,7 +192,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
               );
               // addPostFrameCallback used to avoid setState during build
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) setUseLiveLocation(enabled: false);
+                if (mounted) unawaited(setUseLiveLocation(enabled: false));
               });
             }
           },
@@ -202,7 +214,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
   }
 
   void toggleLiveUpdates() {
-    setUseLiveLocation(enabled: !useLiveLocation); // Toggle the live location updates on or off.
+    unawaited(setUseLiveLocation(enabled: !useLiveLocation));
   }
 
   void _setSelectedDateTime(DateTime? dateTime) {

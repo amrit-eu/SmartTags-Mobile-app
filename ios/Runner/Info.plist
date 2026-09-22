@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>SmartTags needs camera access to scan QR codes on oceanographic platforms.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SmartTags uses your location to fill deploy and recover coordinates on the map and operation forms.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

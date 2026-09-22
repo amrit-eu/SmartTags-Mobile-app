@@ -4,27 +4,32 @@ import 'package:latlong2/latlong.dart';
 
 /// Class to handle fetching the location of a user.
 class LocationFetcher {
-  /// Fetches and returns the LatLng of the user.
-  Future<LatLng?> getUserLocation() async {
-    // Check if location services are enabled
+  /// Ensures location services are on and the app has when-in-use permission.
+  Future<bool> ensureLocationPermission() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint('Location services are disabled.');
-      return null;
+      return false;
     }
 
-    // Request permission
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint('Location permission denied.');
-        return null;
-      }
     }
-
+    if (permission == LocationPermission.denied) {
+      debugPrint('Location permission denied.');
+      return false;
+    }
     if (permission == LocationPermission.deniedForever) {
       debugPrint('Location permission permanently denied.');
+      return false;
+    }
+    return true;
+  }
+
+  /// Fetches and returns the LatLng of the user.
+  Future<LatLng?> getUserLocation() async {
+    if (!await ensureLocationPermission()) {
       return null;
     }
 
