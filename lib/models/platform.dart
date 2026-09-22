@@ -97,6 +97,7 @@ class Platform {
   const Platform({
     required this.platformRef,
     required this.model,
+    required this.category,
     required this.network,
     required this.latestPosition,
     required this.status,
@@ -104,7 +105,6 @@ class Platform {
     required this.lastUpdated,
     required this.operationLocation,
     this.operationNotes,
-    this.platformCategory,
     this.reportingStatus,
     this.observingNetwork,
     this.latestOperationType,
@@ -121,6 +121,9 @@ class Platform {
 
   /// The model name of the device.
   final String model;
+
+  /// The category name of the platform.
+  final String category;
 
   /// The network the device belongs to (e.g., Argo, DBCP).
   final String network;
@@ -142,9 +145,6 @@ class Platform {
 
   /// Additional notes about the latest operation (optional).
   final String? operationNotes;
-
-  /// Platform category from passport metadata (e.g. Float).
-  final String? platformCategory;
 
   /// Passport reporting status label.
   final String? reportingStatus;

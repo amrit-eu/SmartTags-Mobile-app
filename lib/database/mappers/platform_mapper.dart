@@ -13,6 +13,7 @@ extension PlatformMapper on Platform {
     return domain.Platform(
       platformRef: ref,
       model: model,
+      category: category,
       network: network,
       latestPosition: LatLng(lat, lon),
       status: domain.PlatformStatus.fromDb(status),
@@ -20,7 +21,6 @@ extension PlatformMapper on Platform {
       lastUpdated: lastUpdated,
       operationLocation: LatLng(operationLat, operationLon),
       operationNotes: operationNotes,
-      platformCategory: platformCategory,
       reportingStatus: reportingStatus,
       observingNetwork: observingNetwork,
       latestOperationType: latestOperationType,

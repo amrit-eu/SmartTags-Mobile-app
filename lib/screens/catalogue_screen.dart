@@ -93,7 +93,9 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
       );
     }
 
-    return ref.watch(platformsWatchProvider(_searchQuery)).when(
+    return ref
+        .watch(platformsWatchProvider(_searchQuery))
+        .when(
           data: (platforms) {
             if (platforms.isEmpty) {
               return ListView(
@@ -110,7 +112,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 400,
-                mainAxisExtent: 180,
+                mainAxisExtent: 150,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),

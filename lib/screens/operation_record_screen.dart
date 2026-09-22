@@ -130,8 +130,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
   Future<void> setUseLiveLocation({required bool enabled}) async {
     if (enabled) {
-      final ensurePermission =
-          widget.ensureLocationPermission ?? () => LocationFetcher().ensureLocationPermission();
+      final ensurePermission = widget.ensureLocationPermission ?? () => LocationFetcher().ensureLocationPermission();
       final allowed = await ensurePermission();
       if (!allowed) {
         if (mounted) {
@@ -160,20 +159,35 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
 
     // Monitor location changes.
     _liveLocationSubscription = positionStream.listen(
-        (position) {
-          if (mounted) {
-            setState(() {
-              _latitudeController.text = position.latitude.toStringAsFixed(6);
-              _longitudeController.text = position.longitude.toStringAsFixed(6);
-              _setSelectedDateTime(position.timestamp);
-            });
-          }
-        },
-        onError: (Object error) {
-          debugPrint('Location stream error: $error');
-          if (mounted && useLiveLocation) {
+      (position) {
+        if (mounted) {
+          setState(() {
+            _latitudeController.text = position.latitude.toStringAsFixed(6);
+            _longitudeController.text = position.longitude.toStringAsFixed(6);
+            _setSelectedDateTime(position.timestamp);
+          });
+        }
+      },
+      onError: (Object error) {
+        debugPrint('Location stream error: $error');
+        if (mounted && useLiveLocation) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error fetching live location. Live updates stopped.')),
+          );
+          // addPostFrameCallback used to avoid setState during build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(setUseLiveLocation(enabled: false));
+          });
+        }
+      },
+    );
+    // Monitor location service status changes (mobile only).
+    if (serviceStatusStream != null) {
+      _serviceStatusSubscription = serviceStatusStream.listen(
+        (status) {
+          if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Error fetching live location. Live updates stopped.')),
+              const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
             );
             // addPostFrameCallback used to avoid setState during build
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -182,22 +196,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           }
         },
       );
-      // Monitor location service status changes (mobile only).
-      if (serviceStatusStream != null) {
-        _serviceStatusSubscription = serviceStatusStream.listen(
-          (status) {
-            if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
-              );
-              // addPostFrameCallback used to avoid setState during build
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) unawaited(setUseLiveLocation(enabled: false));
-              });
-            }
-          },
-        );
-      }
+    }
   }
 
   void _cancelLiveLocationSubscriptions() {
@@ -454,7 +453,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
                     ),
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Platform Category'),
-                      initialValue: widget.platform.platformCategory,
+                      initialValue: widget.platform.category,
                       enabled: false, // Platform Model is not editable.
                     ),
                     Row(

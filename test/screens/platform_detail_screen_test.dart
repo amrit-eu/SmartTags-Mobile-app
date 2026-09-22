@@ -23,6 +23,7 @@ final testDbPlatform = Platform(
   operationLat: 0,
   operationLon: 0,
   hasLatestObservation: false,
+  category: 'Profiling Float',
 );
 
 final testDbPlatformPassport = Platform(
@@ -37,12 +38,12 @@ final testDbPlatformPassport = Platform(
   lastUpdated: DateTime.utc(2002, 6, 8, 23, 54, 33),
   operationLat: 33.999,
   operationLon: 143.993,
-  platformCategory: 'Float',
   wigosId: '2900314',
   observingNetwork: 'Argo',
   latestOperationType: 'Deployment',
   latestOperationDate: DateTime.utc(2001, 10, 12),
   hasLatestObservation: true,
+  category: 'Profiling Float',
 );
 
 final testDbPlatformPlanned = Platform(
@@ -59,6 +60,7 @@ final testDbPlatformPlanned = Platform(
   operationLon: 0,
   latestOperationType: 'Deployment',
   hasLatestObservation: false,
+  category: 'Profiling Float',
 );
 
 Alert testAlert(String id, AlertStatus status) => Alert(

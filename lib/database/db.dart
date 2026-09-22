@@ -16,6 +16,9 @@ class Platforms extends Table {
   /// Model name of the platform.
   TextColumn get model => text()();
 
+  /// Category name of the platform
+  TextColumn get category => text()();
+
   /// Network name (e.g., Argo, DBCP).
   TextColumn get network => text()();
 
@@ -51,9 +54,6 @@ class Platforms extends Table {
 
   /// Additional notes about the latest operation (optional).
   TextColumn get operationNotes => text().nullable()();
-
-  /// Platform category from passport (e.g. Float, Drifting buoy).
-  TextColumn get platformCategory => text().nullable()();
 
   /// Passport reporting status for display chips (#97).
   TextColumn get reportingStatus => text().nullable()();

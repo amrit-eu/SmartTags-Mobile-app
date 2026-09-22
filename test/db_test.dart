@@ -55,6 +55,7 @@ void main() {
               lastUpdated: now,
               operationLat: 10,
               operationLon: 20,
+              category: 'Profiling Float',
             ),
           );
 
@@ -83,6 +84,7 @@ void main() {
           lastUpdated: now,
           operationLat: 1,
           operationLon: 1,
+          category: 'Profiling Float',
         ),
       ];
 
@@ -125,6 +127,7 @@ void main() {
           lastUpdated: now,
           operationLat: lat,
           operationLon: lat,
+          category: 'Profiling Float',
         );
       }
 
@@ -161,6 +164,7 @@ void main() {
           lastUpdated: now,
           operationLat: 1,
           operationLon: 1,
+          category: 'Profiling Float',
         ),
       ]);
 
@@ -176,6 +180,7 @@ void main() {
           lastUpdated: now,
           operationLat: 2,
           operationLon: 2,
+          category: 'Profiling Float',
         ),
       ]);
 
@@ -202,6 +207,7 @@ void main() {
           lastUpdated: now,
           operationLat: 1,
           operationLon: 1,
+          category: 'Profiling Float',
         ),
       ]);
 

@@ -29,7 +29,6 @@ class _FixedConnectivity extends ConnectivityStatus {
   FutureOr<ConnectivityResult?> build() async => result;
 }
 
-
 void main() {
   testWidgets('Should be able to navigate to QR Scanner page', (
     WidgetTester tester,
@@ -43,22 +42,22 @@ void main() {
       authService: AuthService(authDao: db.authDao),
     );
     await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            gatewayRepositoryProvider.overrideWith((ref) => gatewayRepo),
-            databaseProvider.overrideWith((ref) => db),
-            checkConnectionProvider.overrideWith(
-              () => _FixedConnectivity(ConnectivityResult.wifi),
-            ),
-            initialSyncProvider.overrideWith(
-              () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
-            ),
-            platformsStreamProvider.overrideWith((ref) => Stream.value([])),
-          ],
-          child: const MaterialApp(
-            home: MyApp(),
+      ProviderScope(
+        overrides: [
+          gatewayRepositoryProvider.overrideWith((ref) => gatewayRepo),
+          databaseProvider.overrideWith((ref) => db),
+          checkConnectionProvider.overrideWith(
+            () => _FixedConnectivity(ConnectivityResult.wifi),
           ),
-        )
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+        ],
+        child: const MaterialApp(
+          home: MyApp(),
+        ),
+      ),
     );
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Scan'), findsOneWidget);
@@ -94,19 +93,20 @@ void main() {
         lastUpdated: now,
         operationLat: 1,
         operationLon: 1,
+        category: 'Profiling Float',
       ),
     ];
     await db.insertPlatforms(platforms);
 
     await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWith((ref) => db),
-          ],
-          child: const MaterialApp(
-            home: QrScanScreen(),
-          ),
-        )
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWith((ref) => db),
+        ],
+        child: const MaterialApp(
+          home: QrScanScreen(),
+        ),
+      ),
     );
     await tester.pump(const Duration(milliseconds: 500));
     final scanner = tester.widget<MobileScanner>(
@@ -130,19 +130,20 @@ void main() {
     await db.close();
   });
 
-  testWidgets('QR scanner warns if platform not found', ( // can resolve a valid OceanTags URL from QR code', (
+  testWidgets('QR scanner warns if platform not found', (
+    // can resolve a valid OceanTags URL from QR code', (
     WidgetTester tester,
   ) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWith((ref) => db),
-          ],
-          child: const MaterialApp(
-            home: QrScanScreen(),
-          ),
-        )
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWith((ref) => db),
+        ],
+        child: const MaterialApp(
+          home: QrScanScreen(),
+        ),
+      ),
     );
     await tester.pump(const Duration(milliseconds: 500));
     final scanner = tester.widget<MobileScanner>(
@@ -171,14 +172,14 @@ void main() {
   ) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWith((ref) => db),
-          ],
-          child: const MaterialApp(
-            home: QrScanScreen(),
-          ),
-        )
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWith((ref) => db),
+        ],
+        child: const MaterialApp(
+          home: QrScanScreen(),
+        ),
+      ),
     );
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -201,24 +202,24 @@ void main() {
   });
 
   testWidgets('QR scanner shows error when DB read fails', (
-      WidgetTester tester,
-      ) async {
+    WidgetTester tester,
+  ) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            databaseProvider.overrideWith((ref) => db),
-            platformByRefProvider.overrideWith(
-                  (ref, reference) => Future<List<Platform>>.error(
-                Exception('DB failure'),
-                StackTrace.current,
-              ),
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWith((ref) => db),
+          platformByRefProvider.overrideWith(
+            (ref, reference) => Future<List<Platform>>.error(
+              Exception('DB failure'),
+              StackTrace.current,
             ),
-          ],
-          child: const MaterialApp(
-            home: QrScanScreen(),
           ),
-        )
+        ],
+        child: const MaterialApp(
+          home: QrScanScreen(),
+        ),
+      ),
     );
     await tester.pump(const Duration(milliseconds: 500));
 
