@@ -3,9 +3,32 @@ import 'package:smart_tags/database/db.dart';
 
 /// Maps enriched GOOS passport items from the Gateway API to Drift companions.
 abstract final class GatewayPassportMapper {
+  /// Converts a list of enriched passport [items] JSON objects into their
+  /// platforms and alerts, ready to be persisted together.
+  ///
+  /// Some items only carry orphaned alerts for a resource with no actual
+  /// passport data (no `passport` object at all — see [_hasPassport]); those
+  /// are skipped when building [GatewayPassportsResult.platforms] so we
+  /// don't persist an empty/garbage platform record for them. Their alerts
+  /// are still collected — any that end up pointing at a platform absent
+  /// from the local DB are pruned separately by `deleteOrphanedAlerts`.
+  static GatewayPassportsResult fromEnrichedPassportItems(List<Map<String, dynamic>> items) {
+    return GatewayPassportsResult(
+      platforms: items.where(_hasPassport).map(fromPassportItem).toList(),
+      alerts: items.expand(alertsFromPassportItem).toList(),
+    );
+  }
+
+  /// Whether [item] carries actual passport data to persist as a platform,
+  /// as opposed to being an alert-only entry (e.g. `{"reference": "...",
+  /// "alerts": [...]}` with no `passport` key).
+  static bool _hasPassport(Map<String, dynamic> item) => item['passport'] is Map<String, dynamic>;
+
   /// Converts a single enriched passport [item] JSON object.
   static PlatformsCompanion fromPassportItem(Map<String, dynamic> item) {
     final passport = item['passport'] as Map<String, dynamic>? ?? {};
+
+    // passport info
     final identification = passport['identification'] as Map<String, dynamic>? ?? {};
     final status = passport['status'] as Map<String, dynamic>? ?? {};
     final affiliation = passport['affiliation'] as Map<String, dynamic>? ?? {};
@@ -56,6 +79,32 @@ abstract final class GatewayPassportMapper {
       programId: Value(supervisingProgram?['id'] as int?),
       programName: Value(supervisingProgram?['name'] as String?),
       programCode: Value(supervisingProgram?['code'] as String?),
+    );
+  }
+
+  /// Converts the `alerts` list of an enriched passport [item] JSON object,
+  /// keeping only the attributes defined on the Alert model (id, resource,
+  /// event, severity, status).
+  static List<AlertsCompanion> alertsFromPassportItem(Map<String, dynamic> item) {
+    final alerts = item['alerts'] as List<dynamic>? ?? [];
+    return alerts.whereType<Map<String, dynamic>>().map(_alertCompanionFromJson).whereType<AlertsCompanion>().toList();
+  }
+
+  static AlertsCompanion? _alertCompanionFromJson(Map<String, dynamic> alert) {
+    final id = alert['id'] as String?;
+    final resource = alert['resource'] as String?;
+    final event = alert['event'] as String?;
+    final severity = alert['severity'] as String?;
+    final status = alert['status'] as String?;
+    if (id == null || resource == null || event == null || severity == null || status == null) {
+      return null;
+    }
+    return AlertsCompanion.insert(
+      id: id,
+      resource: resource,
+      event: event,
+      severity: severity,
+      status: status,
     );
   }
 
@@ -146,4 +195,17 @@ class _OperationEntry {
   final DateTime date;
   final double? lat;
   final double? lon;
+}
+
+/// Platforms and alerts parsed from a Gateway enriched passport response,
+/// returned together so callers persist them in the same sync pass.
+class GatewayPassportsResult {
+  /// Creates a [GatewayPassportsResult] with the given platforms and alerts.
+  const GatewayPassportsResult({required this.platforms, required this.alerts});
+
+  /// Platforms mapped from the response's `items`.
+  final List<PlatformsCompanion> platforms;
+
+  /// Alerts mapped from every item's `alerts` list.
+  final List<AlertsCompanion> alerts;
 }

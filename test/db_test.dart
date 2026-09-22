@@ -186,6 +186,53 @@ void main() {
       await db.close();
     });
 
+    test('Test deleteOrphanedAlerts removes alerts whose resource has no matching platform', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+      final now = DateTime.now();
+
+      await db.insertPlatforms([
+        PlatformsCompanion.insert(
+          ref: 'PLT-001',
+          model: 'Model A',
+          network: 'Net',
+          lat: 1,
+          lon: 1,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: now,
+          operationLat: 1,
+          operationLon: 1,
+        ),
+      ]);
+
+      await db.upsertAlerts([
+        AlertsCompanion.insert(
+          id: 'alert-1',
+          resource: 'PLT-001',
+          event: 'LowBattery',
+          severity: 'warning',
+          status: 'open',
+        ),
+        AlertsCompanion.insert(
+          // No matching platform in the local DB (e.g. outside the fetched
+          // scope, or the platform closed/was removed server-side).
+          id: 'alert-2',
+          resource: 'PLT-999',
+          event: 'LowBattery',
+          severity: 'warning',
+          status: 'open',
+        ),
+      ]);
+
+      await db.deleteOrphanedAlerts();
+
+      final remaining = await db.select(db.alerts).get();
+      expect(remaining, hasLength(1));
+      expect(remaining.single.id, 'alert-1');
+
+      await db.close();
+    });
+
     test('Test getLastPlatformsRefresh/setLastPlatformsRefresh persist the timestamp', () async {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 

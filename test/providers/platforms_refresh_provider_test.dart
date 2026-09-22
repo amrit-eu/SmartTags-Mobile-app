@@ -9,6 +9,7 @@ import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
 import '../helpers/fake_auth_service.dart';
@@ -54,15 +55,15 @@ class _FakeGatewayRepository extends GatewayRepository {
   final List<PassportFilterDto?> capturedSearchDtos = [];
 
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     fetchUnclosedMissionsCallCount++;
-    return unclosedMissions;
+    return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
   }
 
   @override
-  Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
+  Future<GatewayPassportsResult> searchPassports(PassportFilterDto? searchDto) async {
     capturedSearchDtos.add(searchDto);
-    return searchResults;
+    return GatewayPassportsResult(platforms: searchResults, alerts: const []);
   }
 }
 
@@ -70,12 +71,12 @@ class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
 
   @override
-  Future<List<PlatformsCompanion>> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     throw Exception('Network error');
   }
 
   @override
-  Future<List<PlatformsCompanion>> searchPassports(PassportFilterDto? searchDto) async {
+  Future<GatewayPassportsResult> searchPassports(PassportFilterDto? searchDto) async {
     throw Exception('Network error');
   }
 }
