@@ -20,7 +20,7 @@ class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-    _shimmerController.repeat();
+    _shimmerController.repeat().ignore();
   }
 
   @override

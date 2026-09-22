@@ -40,11 +40,13 @@ class PlatformCard extends StatelessWidget {
             platform.operationLon,
           ),
         );
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
-          ),
-        );
+        Navigator.of(context)
+            .push(
+              MaterialPageRoute<void>(
+                builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
+              ),
+            )
+            .ignore();
       },
       child: Container(
         padding: const EdgeInsets.all(16),

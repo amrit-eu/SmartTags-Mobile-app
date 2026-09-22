@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
@@ -12,6 +11,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
@@ -73,7 +73,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   List<Platform>? _markersCacheSource;
   List<Marker> _platformMarkers = const [];
   final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
-  Set<String>? _openClusterMarkerRefs;
+  var _ignoreNextBackgroundTap = false;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
   // Initial map center (Atlantic Ocean, near Europe as in reference image)
@@ -84,6 +84,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
   static const Duration _mapPanDuration = Duration(milliseconds: 450);
   static const Offset _popupMapCenterOffset = Offset(-40, 150);
+  /// Spiderfy pin distance from cluster badge (px); default 40 overlaps 44px markers + ring.
+  static const int _clusterSpiderfyCircleRadius = 58;
+  static const double _clusterMaxZoom = 15;
 
   var _loadedBaseTileCount = 0;
   var _mapSkeletonVisible = false;
@@ -115,7 +118,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       lowerBound: 0.6,
       upperBound: 1.3,
     );
-    _pulseController.repeat(reverse: true);
+    _pulseController.repeat(reverse: true).ignore();
 
     // Animation controller for popup effect.
     _popupAnimationController = AnimationController(
@@ -258,22 +261,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     );
     final animation = CurvedAnimation(parent: controller, curve: Curves.easeInOutCubic);
 
-    controller
-      ..addListener(() {
-        _mapController.move(
-          LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
-          zoom,
-        );
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
-          if (identical(_mapPanAnimationController, controller)) {
-            _mapPanAnimationController = null;
-          }
-          controller.dispose();
-        }
-      });
-    controller.forward();
+    (controller
+          ..addListener(() {
+            _mapController.move(
+              LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
+              zoom,
+            );
+          })
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+              if (identical(_mapPanAnimationController, controller)) {
+                _mapPanAnimationController = null;
+              }
+              controller.dispose();
+            }
+          }))
+        .forward()
+        .ignore();
   }
 
   void _selectPlatformMarker(
@@ -281,71 +285,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     LatLng position, {
     bool recenter = true,
   }) {
+    _ignoreNextBackgroundTap = true;
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _selectedPlatformNotifier.value = dbPlatform.toDomain();
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
     _watchSelectedPlatform(dbPlatform.ref);
     // Popup and map pan run together — no loading overlay (data is already local).
-    _popupAnimationController.forward(from: 0);
+    _popupAnimationController.forward(from: 0).ignore();
     if (recenter) {
       _animateMapToPoint(position);
     }
   }
 
-  String? _platformRefFromMarker(Marker marker) {
-    final key = marker.key;
-    if (key is! ValueKey<String>) {
-      return null;
-    }
-    const prefix = 'platform-marker-';
-    final value = key.value;
-    if (!value.startsWith(prefix)) {
-      return null;
-    }
-    return value.substring(prefix.length);
-  }
-
   void _onClusterTap(MarkerClusterNode cluster) {
-    final clusterRefs = <String>{
-      for (final markerNode in cluster.markers)
-        ? _platformRefFromMarker(markerNode.marker),
-    };
-    if (clusterRefs.isEmpty) {
-      return;
-    }
-
-    // Tapping an open cluster again closes it — clear selection with it.
-    if (_openClusterMarkerRefs != null &&
-        setEquals(_openClusterMarkerRefs, clusterRefs)) {
-      _openClusterMarkerRefs = null;
-      _clearSelection();
-      return;
-    }
-
-    _openClusterMarkerRefs = clusterRefs;
-    _selectFirstClusterMarker(cluster);
-  }
-
-  void _selectFirstClusterMarker(MarkerClusterNode cluster) {
-    final source = _markersCacheSource;
-    if (source == null) {
-      return;
-    }
-
-    for (final markerNode in cluster.markers) {
-      final ref = _platformRefFromMarker(markerNode.marker);
-      if (ref == null) {
-        continue;
-      }
-      for (final dbPlatform in source) {
-        if (dbPlatform.ref == ref) {
-          final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-          // Cluster layer may zoom/pan — avoid fighting that animation.
-          _selectPlatformMarker(dbPlatform, point, recenter: false);
-          return;
-        }
-      }
-    }
+    _ignoreNextBackgroundTap = true;
+    _dismissSelectedPlatform();
+    _stopMapPanAnimation();
+    // Camera pan/zoom + spiderfy are handled by [MarkerClusterLayer] animations.
   }
 
   void _watchSelectedPlatform(String platformRef) {
@@ -372,26 +328,34 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   void _onMapBackgroundTap(TapPosition tapPosition, LatLng point) {
+    if (_ignoreNextBackgroundTap) {
+      _ignoreNextBackgroundTap = false;
+      return;
+    }
     if (_selectedPlatformNotifier.value != null) {
       _clearSelection();
     }
   }
 
-  /// Clears the selected platform.
-  void _clearSelection() {
-    _openClusterMarkerRefs = null;
+  /// Closes popup, ring, and stream subscription without affecting cluster spiderfy state.
+  void _dismissSelectedPlatform() {
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
+    if (previousRef == null) {
+      return;
+    }
     _stopMapPanAnimation();
     _selectedPlatformSubscription?.close();
     _selectedPlatformSubscription = null;
     _selectedPlatformNotifier.value = null;
-    if (previousRef != null) {
-      _updateMarkerHighlight(previousRef: previousRef);
-    }
-    // Reset animation when clearing selection
+    _updateMarkerHighlight(previousRef: previousRef);
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
     }
+  }
+
+  /// Clears the selected platform.
+  void _clearSelection() {
+    _dismissSelectedPlatform();
   }
 
   void _onBaseTileLoaded(TileImage tile) {
@@ -532,11 +496,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
-                      ),
-                    );
+                    Navigator.of(context)
+                        .push(
+                          MaterialPageRoute<void>(
+                            builder: (context) => PlatformDetailScreen(platformRef: platform.platformRef),
+                          ),
+                        )
+                        .ignore();
                   },
                   child: const Text('View Details'),
                 ),
@@ -697,13 +663,15 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               urlTemplate: MapConfig.oceanReferenceTileUrl,
               userAgentPackageName: MapConfig.userAgentPackageName,
             ),
-            MarkerClusterLayerWidget(
+            SmartTagsMarkerClusterLayerWidget(
               options: MarkerClusterLayerOptions(
                 maxClusterRadius: 120,
                 size: const Size(40, 40),
                 alignment: Alignment.center,
                 padding: const EdgeInsets.all(50),
-                maxZoom: 15,
+                maxZoom: _clusterMaxZoom,
+                showPolygon: false,
+                spiderfyCircleRadius: _clusterSpiderfyCircleRadius,
                 markerChildBehavior: true,
                 centerMarkerOnClick: false,
                 onClusterTap: _onClusterTap,
