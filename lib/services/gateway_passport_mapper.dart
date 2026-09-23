@@ -79,6 +79,9 @@ abstract final class GatewayPassportMapper {
       programId: Value(supervisingProgram?['id'] as int?),
       programName: Value(supervisingProgram?['name'] as String?),
       programCode: Value(supervisingProgram?['code'] as String?),
+      name: Value(identification['name'] as String?),
+      serial: Value(asset['name'] as String?),
+      internalId: Value(identification['internalId'] as String?),
     );
   }
 

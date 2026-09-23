@@ -17,6 +17,7 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -257,9 +258,19 @@ class _PlatformSummaryCard extends StatelessWidget {
             ],
           ),
           const Divider(height: 24),
-          ContainerRow(
-            label: 'WIGOS ID',
-            value: _dash(platform.wigosId),
+          InkWell(
+            onTap: () => showIdentifiersBottomSheet(context, platform: platform),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ContainerRow(
+                    label: 'WIGOS ID',
+                    value: _dash(platform.wigosId),
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+              ],
+            ),
           ),
           const Divider(height: 16),
           ContainerRow(

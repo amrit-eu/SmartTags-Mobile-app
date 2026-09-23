@@ -43,6 +43,12 @@ class Platforms extends Table {
   /// Longitude of the last operation.
   RealColumn get operationLon => real()();
 
+  /// Platform's name.
+  TextColumn get name => text().nullable()();
+
+  /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
+  TextColumn get internalId => text().nullable()();
+
   /// WIGOS identifier (optional).
   TextColumn get wigosId => text().nullable()();
 
@@ -54,6 +60,9 @@ class Platforms extends Table {
 
   /// Additional notes about the latest operation (optional).
   TextColumn get operationNotes => text().nullable()();
+
+  /// Platform serial number.
+  TextColumn get serial => text().nullable()();
 
   /// Passport reporting status for display chips (#97).
   TextColumn get reportingStatus => text().nullable()();
