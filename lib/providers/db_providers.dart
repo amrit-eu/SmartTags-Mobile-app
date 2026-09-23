@@ -26,8 +26,7 @@ final gatewayRepositoryProvider = Provider<GatewayRepository>((ref) {
 
 /// Loads unclosed missions from the Gateway into the local database on startup
 /// when the database is empty and the device is online.
-final initialSyncProvider =
-    AsyncNotifierProvider<InitialSyncNotifier, InitialSyncStatus>(
+final initialSyncProvider = AsyncNotifierProvider<InitialSyncNotifier, InitialSyncStatus>(
   InitialSyncNotifier.new,
 );
 
@@ -96,8 +95,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     }
 
     final repository = ref.read(gatewayRepositoryProvider);
-    final phase = ref.read(platformsSyncPhaseProvider.notifier)
-      ..setDownloading();
+    final phase = ref.read(platformsSyncPhaseProvider.notifier)..setDownloading();
     // Captured before the network call so a change that happens while the
     // request is in flight isn't missed by the first delta refresh.
     final now = DateTime.now().toUtc();
@@ -128,9 +126,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       return null;
     }
     try {
-      return await ref
-          .read(checkConnectionProvider.future)
-          .timeout(const Duration(seconds: 5));
+      return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
     } on Object {
       return null;
     }
@@ -170,11 +166,13 @@ final StreamProviderFamily<List<Platform>, String> platformsWatchProvider =
     });
 
 /// Watches a single [Platform] by its reference, emitting updates on changes.
-final StreamProviderFamily<Platform?, String> platformByRefStreamProvider =
-    StreamProvider.family<Platform?, String>((ref, platformRef) {
-      final db = ref.watch(databaseProvider);
-      return db.watchPlatformByRef(platformRef);
-    });
+final StreamProviderFamily<Platform?, String> platformByRefStreamProvider = StreamProvider.family<Platform?, String>((
+  ref,
+  platformRef,
+) {
+  final db = ref.watch(databaseProvider);
+  return db.watchPlatformByRef(platformRef);
+});
 
 /// Fetches one or more [Platform] records matching the given platform
 /// reference.
@@ -184,11 +182,9 @@ final StreamProviderFamily<Platform?, String> platformByRefStreamProvider =
 ///
 /// The data is fetched from the local database only.
 final FutureProviderFamily<List<Platform>, String> platformByRefProvider =
-    FutureProvider.family<List<Platform>, String>(
-      retry: (retryCount, error) => null,
-      (ref, platformRef) async {
-        final db = ref.watch(databaseProvider);
-        return db.getPlatformByRef(platformRef);
+    FutureProvider.family<List<Platform>, String>(retry: (retryCount, error) => null, (ref, platformRef) async {
+      final db = ref.watch(databaseProvider);
+      return db.getPlatformByRef(platformRef);
     });
 
 /// Watches all alerts raised against a platform, keyed by the platform's
@@ -196,7 +192,33 @@ final FutureProviderFamily<List<Platform>, String> platformByRefProvider =
 final StreamProviderFamily<List<domain.Alert>, String> alertsByResourceStreamProvider =
     StreamProvider.family<List<domain.Alert>, String>((ref, resource) {
       final db = ref.watch(databaseProvider);
-      return db
-          .watchAlertsByResource(resource)
-          .map((rows) => rows.map((row) => row.toDomain()).toList());
+      return db.watchAlertsByResource(resource).map((rows) => rows.map((row) => row.toDomain()).toList());
+    });
+
+/// Open/acknowledged alert counts for a single resource.
+typedef AlertCounts = ({int open, int acknowledged});
+
+/// Watches open/acknowledged alert counts for every resource at once, from a
+/// single DB subscription.
+/// Prefer this over watching [alertsByResourceStreamProvider] per item in a
+/// list (e.g. one per visible card): that opens one DB stream per resource,
+/// and Drift re-runs every one of them on any write to the `alerts` table,
+/// even for resources that didn't change.
+final StreamProvider<Map<String, AlertCounts>> alertCountsByResourceStreamProvider =
+    StreamProvider<Map<String, AlertCounts>>((ref) {
+      final db = ref.watch(databaseProvider);
+      return db.watchAllAlerts().map((rows) {
+        final counts = <String, AlertCounts>{};
+        for (final row in rows) {
+          final status = domain.AlertStatus.fromDb(row.status);
+          if (status != domain.AlertStatus.open && status != domain.AlertStatus.acknowledged) {
+            continue;
+          }
+          final current = counts[row.resource] ?? (open: 0, acknowledged: 0);
+          counts[row.resource] = status == domain.AlertStatus.open
+              ? (open: current.open + 1, acknowledged: current.acknowledged)
+              : (open: current.open, acknowledged: current.acknowledged + 1);
+        }
+        return counts;
+      });
     });

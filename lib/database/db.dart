@@ -427,6 +427,14 @@ class AppDatabase extends _$AppDatabase {
     return (select(alerts)..where((a) => a.resource.equals(resource))).watch();
   }
 
+  /// Watches every alert across all resources in a single subscription.
+  ///
+  /// Used to derive per-resource data (e.g. counts) for many platforms at
+  /// once without opening one DB stream per resource.
+  Stream<List<AlertEntity>> watchAllAlerts() {
+    return select(alerts).watch();
+  }
+
   /// Appends a new deploy/recover event to the FIFO queue.
   Future<int> enqueuePendingOperation(PendingOperationsCompanion companion) =>
       into(pendingOperations).insert(companion);

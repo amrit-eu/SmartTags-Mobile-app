@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/database/db.dart';
-import 'package:smart_tags/models/alert.dart' as domain;
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
@@ -30,9 +29,13 @@ class PlatformCard extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    final alerts = ref.watch(alertsByResourceStreamProvider(platform.ref)).value ?? const <domain.Alert>[];
-    final openCount = alerts.where((alert) => alert.status == domain.AlertStatus.open).length;
-    final acknowledgedCount = alerts.where((alert) => alert.status == domain.AlertStatus.acknowledged).length;
+    final counts = ref.watch(
+      alertCountsByResourceStreamProvider.select(
+        (asyncCounts) => asyncCounts.value?[platform.ref] ?? (open: 0, acknowledged: 0),
+      ),
+    );
+    final openCount = counts.open;
+    final acknowledgedCount = counts.acknowledged;
 
     return GestureDetector(
       onTap: () {
@@ -77,8 +80,6 @@ class PlatformCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 StatusBadge(rawStatus: platform.status),
-                const SizedBox(width: 4),
-                Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
               ],
             ),
             const SizedBox(height: 4),
