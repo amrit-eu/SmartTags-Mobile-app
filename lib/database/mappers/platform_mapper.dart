@@ -32,6 +32,9 @@ extension PlatformMapper on Platform {
       program: programIdValue != null && programNameValue != null && programCodeValue != null
           ? Program(id: programIdValue, name: programNameValue, code: programCodeValue)
           : null,
+      serial: serial,
+      name: name,
+      internalId: internalId,
     );
   }
 }
