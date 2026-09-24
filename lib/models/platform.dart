@@ -110,6 +110,7 @@ class Platform {
     this.latestOperationType,
     this.latestOperationDate,
     this.wigosId,
+    this.gtsId,
     this.endingCauseId,
     this.hasLatestObservation = false,
     this.ptfId,
@@ -148,6 +149,9 @@ class Platform {
 
   /// The platform's name
   final String? name;
+
+  /// Platform 's gtsId
+  final String? gtsId;
 
   /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
   final String? internalId;

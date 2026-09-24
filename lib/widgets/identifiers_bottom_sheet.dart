@@ -62,7 +62,7 @@ class _IdentifiersBottomSheet extends StatelessWidget {
             const Divider(height: 16),
             ContainerRow(label: 'Internal ID', value: _dash(platform.internalId)),
             const Divider(height: 16),
-            const ContainerRow(label: 'GTS-ID (WMO)', value: _placeholder),
+            ContainerRow(label: 'GTS-ID (WMO)', value: _dash(platform.gtsId)),
             const Divider(height: 16),
             ContainerRow(label: 'Serial number', value: _dash(platform.serial)),
             const Divider(height: 16),

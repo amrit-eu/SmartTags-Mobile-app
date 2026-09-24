@@ -25,6 +25,7 @@ extension PlatformMapper on Platform {
       observingNetwork: observingNetwork,
       latestOperationType: latestOperationType,
       latestOperationDate: latestOperationDate,
+      gtsId: gtsId,
       wigosId: wigosId,
       endingCauseId: endingCauseId,
       hasLatestObservation: hasLatestObservation,
