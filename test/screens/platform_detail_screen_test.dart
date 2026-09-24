@@ -169,9 +169,11 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    final alertsRow = find.ancestor(of: find.text('Alerts'), matching: find.byType(InkWell)).first;
+
     expect(find.text('Alerts'), findsOneWidget);
     expect(find.text('3 Active alerts'), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.descendant(of: alertsRow, matching: find.byIcon(Icons.chevron_right)), findsOneWidget);
   });
 
   testWidgets('Alerts row shows acknowledged alerts when none open (#84)', (tester) async {
