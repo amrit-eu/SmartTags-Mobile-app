@@ -110,10 +110,14 @@ class Platform {
     this.latestOperationType,
     this.latestOperationDate,
     this.wigosId,
+    this.gtsId,
     this.endingCauseId,
     this.hasLatestObservation = false,
     this.ptfId,
     this.program,
+    this.name,
+    this.internalId,
+    this.serial,
   });
 
   /// The unique identifier of the platform (e.g., PLT-12345).
@@ -142,6 +146,18 @@ class Platform {
 
   /// The location of the last operation.
   final LatLng operationLocation;
+
+  /// The platform's name
+  final String? name;
+
+  /// Platform 's gtsId
+  final String? gtsId;
+
+  /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
+  final String? internalId;
+
+  /// The Platform serial number..
+  final String? serial;
 
   /// Additional notes about the latest operation (optional).
   final String? operationNotes;

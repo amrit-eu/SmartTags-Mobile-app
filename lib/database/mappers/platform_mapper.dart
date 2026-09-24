@@ -25,6 +25,7 @@ extension PlatformMapper on Platform {
       observingNetwork: observingNetwork,
       latestOperationType: latestOperationType,
       latestOperationDate: latestOperationDate,
+      gtsId: gtsId,
       wigosId: wigosId,
       endingCauseId: endingCauseId,
       hasLatestObservation: hasLatestObservation,
@@ -32,6 +33,9 @@ extension PlatformMapper on Platform {
       program: programIdValue != null && programNameValue != null && programCodeValue != null
           ? Program(id: programIdValue, name: programNameValue, code: programCodeValue)
           : null,
+      serial: serial,
+      name: name,
+      internalId: internalId,
     );
   }
 }
