@@ -2,8 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Whether the map has painted platform markers at least once.
-final mapMarkersPaintedProvider =
-    NotifierProvider<MapMarkersPaintedNotifier, bool>(
+final mapMarkersPaintedProvider = NotifierProvider<MapMarkersPaintedNotifier, bool>(
   MapMarkersPaintedNotifier.new,
 );
 

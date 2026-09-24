@@ -9,36 +9,36 @@ class StatusBadge extends StatelessWidget {
     required this.rawStatus,
     this.showLeadingDot = false,
     super.key,
-  })  : status = null,
-        operationalStatus = null,
-        style = null;
+  }) : status = null,
+       operationalStatus = null,
+       style = null;
 
   /// Creates a [StatusBadge] from a [PlatformStatus] enum value.
   const StatusBadge.fromStatus({
     required this.status,
     this.showLeadingDot = false,
     super.key,
-  })  : rawStatus = null,
-        operationalStatus = null,
-        style = null;
+  }) : rawStatus = null,
+       operationalStatus = null,
+       style = null;
 
   /// Creates a [StatusBadge] from an [OperationalStatus] enum value.
   const StatusBadge.fromOperationalStatus({
     required this.operationalStatus,
     this.showLeadingDot = false,
     super.key,
-  })  : rawStatus = null,
-        status = null,
-        style = null;
+  }) : rawStatus = null,
+       status = null,
+       style = null;
 
   /// Creates a [StatusBadge] with an explicit [PlatformStatusStyle].
   const StatusBadge.fromStyle({
     required PlatformStatusStyle this.style,
     this.showLeadingDot = false,
     super.key,
-  })  : rawStatus = null,
-        status = null,
-        operationalStatus = null;
+  }) : rawStatus = null,
+       status = null,
+       operationalStatus = null;
 
   /// Raw status value from the API or local database.
   final String? rawStatus;

@@ -30,7 +30,7 @@ String _decodePayload(String encodedPayload) {
     // Convert bytes to UTF-8 string
     return utf8.decode(payloadBytes);
   } on FormatException catch (e) {
-      throw JwtDecodingException('Failed to decode payload: $e');
+    throw JwtDecodingException('Failed to decode payload: $e');
   }
 }
 

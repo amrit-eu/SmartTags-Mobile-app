@@ -171,8 +171,7 @@ void main() {
 
     expect(find.text('Alerts'), findsOneWidget);
     expect(find.text('2 Active alerts'), findsOneWidget);
-    // TODO(ylubac): chevron Icon to display when alert row will be clickable:
-    // expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
   testWidgets('Alerts row shows acknowledged alerts when none open (#84)', (tester) async {
@@ -181,8 +180,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('1 Acknowledged alert'), findsOneWidget);
-    // TODO(ylubac): chevron Icon to display when alert row will be clickable:
-    // expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
   testWidgets('Alerts row shows no active alerts when none open or acknowledged (#84)', (tester) async {
@@ -191,7 +189,34 @@ void main() {
     await tester.pump();
 
     expect(find.text('No active alerts'), findsOneWidget);
-    // TODO(ylubac): chevron Icon to display when alert row will be clickable:
-    // expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsNothing);
+  });
+
+  testWidgets('Tapping alerts row opens bottom sheet with active alerts (#85)', (tester) async {
+    await tester.pumpWidget(
+      buildTestWidget(
+        alerts: [
+          testAlert('1', AlertStatus.open),
+          testAlert('2', AlertStatus.acknowledged),
+          testAlert('3', AlertStatus.closed),
+        ],
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.ensureVisible(find.text('Alerts'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Alerts'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 open alert'), findsOneWidget);
+    expect(find.text('See all alerts (3)'), findsOneWidget);
+    expect(find.text('Acknowledged'), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(find.text('1 open alert'), findsNothing);
   });
 }

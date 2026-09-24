@@ -63,7 +63,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     if (!mounted) return;
     if (reference == _lastFailedReference) {
       return;
-    }    setState(() => _isProcessing = true);
+    }
+    setState(() => _isProcessing = true);
     await _scannerController.stop();
     try {
       final platforms = await ref.read(platformByRefProvider(reference).future);
@@ -84,7 +85,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
       _showMessage('Error fetching platform');
       Error.throwWithStackTrace(e, st);
     } finally {
-      if (mounted) { // Only restart scanner if widget is still active
+      if (mounted) {
+        // Only restart scanner if widget is still active
         setState(() => _isProcessing = false);
         await _scannerController.start();
       }
@@ -95,10 +97,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        action: SnackBarAction(
-            label: 'Retry',
-            onPressed: () => setState(() => _lastFailedReference = null)
-        ),
+        action: SnackBarAction(label: 'Retry', onPressed: () => setState(() => _lastFailedReference = null)),
       ),
     );
   }

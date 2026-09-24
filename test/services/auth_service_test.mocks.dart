@@ -31,165 +31,119 @@ import 'package:smart_tags/models/user.dart' as _i10;
 // ignore_for_file: invalid_use_of_internal_member
 
 class _FakeIOSOptions_0 extends _i1.SmartFake implements _i2.IOSOptions {
-  _FakeIOSOptions_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeIOSOptions_0(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeAndroidOptions_1 extends _i1.SmartFake
-    implements _i2.AndroidOptions {
-  _FakeAndroidOptions_1(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeAndroidOptions_1 extends _i1.SmartFake implements _i2.AndroidOptions {
+  _FakeAndroidOptions_1(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeLinuxOptions_2 extends _i1.SmartFake implements _i2.LinuxOptions {
-  _FakeLinuxOptions_2(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeLinuxOptions_2(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeWindowsOptions_3 extends _i1.SmartFake
-    implements _i2.WindowsOptions {
-  _FakeWindowsOptions_3(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeWindowsOptions_3 extends _i1.SmartFake implements _i2.WindowsOptions {
+  _FakeWindowsOptions_3(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeWebOptions_4 extends _i1.SmartFake implements _i2.WebOptions {
-  _FakeWebOptions_4(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeWebOptions_4(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeAppleOptions_5 extends _i1.SmartFake implements _i2.AppleOptions {
-  _FakeAppleOptions_5(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeAppleOptions_5(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeAppDatabase_6 extends _i1.SmartFake implements _i3.AppDatabase {
-  _FakeAppDatabase_6(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeAppDatabase_6(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeDatabaseConnection_7 extends _i1.SmartFake
-    implements _i4.DatabaseConnection {
-  _FakeDatabaseConnection_7(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeDatabaseConnection_7 extends _i1.SmartFake implements _i4.DatabaseConnection {
+  _FakeDatabaseConnection_7(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeDriftDatabaseOptions_8 extends _i1.SmartFake
-    implements _i4.DriftDatabaseOptions {
-  _FakeDriftDatabaseOptions_8(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeDriftDatabaseOptions_8 extends _i1.SmartFake implements _i4.DriftDatabaseOptions {
+  _FakeDriftDatabaseOptions_8(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeQueryExecutor_9 extends _i1.SmartFake implements _i4.QueryExecutor {
-  _FakeQueryExecutor_9(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeQueryExecutor_9(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeStreamQueryStore_10 extends _i1.SmartFake
-    implements _i5.StreamQueryStore {
-  _FakeStreamQueryStore_10(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeStreamQueryStore_10 extends _i1.SmartFake implements _i5.StreamQueryStore {
+  _FakeStreamQueryStore_10(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeDatabaseConnectionUser_11 extends _i1.SmartFake
-    implements _i4.DatabaseConnectionUser {
-  _FakeDatabaseConnectionUser_11(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeDatabaseConnectionUser_11 extends _i1.SmartFake implements _i4.DatabaseConnectionUser {
+  _FakeDatabaseConnectionUser_11(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _Fake$UserProfilesTable_12 extends _i1.SmartFake
-    implements _i3.$UserProfilesTable {
-  _Fake$UserProfilesTable_12(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _Fake$UserProfilesTable_12 extends _i1.SmartFake implements _i3.$UserProfilesTable {
+  _Fake$UserProfilesTable_12(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _Fake$ProgramsTable_13 extends _i1.SmartFake
-    implements _i3.$ProgramsTable {
-  _Fake$ProgramsTable_13(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _Fake$ProgramsTable_13 extends _i1.SmartFake implements _i3.$ProgramsTable {
+  _Fake$ProgramsTable_13(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _Fake$RolesTable_14 extends _i1.SmartFake implements _i3.$RolesTable {
-  _Fake$RolesTable_14(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _Fake$RolesTable_14(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _Fake$UserProgramRolesTable_15 extends _i1.SmartFake
-    implements _i3.$UserProgramRolesTable {
-  _Fake$UserProgramRolesTable_15(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _Fake$UserProgramRolesTable_15 extends _i1.SmartFake implements _i3.$UserProgramRolesTable {
+  _Fake$UserProgramRolesTable_15(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _Fake$UserRolesTable_16 extends _i1.SmartFake
-    implements _i3.$UserRolesTable {
-  _Fake$UserRolesTable_16(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _Fake$UserRolesTable_16 extends _i1.SmartFake implements _i3.$UserRolesTable {
+  _Fake$UserRolesTable_16(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeAuthDaoManager_17 extends _i1.SmartFake
-    implements _i6.AuthDaoManager {
-  _FakeAuthDaoManager_17(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeAuthDaoManager_17 extends _i1.SmartFake implements _i6.AuthDaoManager {
+  _FakeAuthDaoManager_17(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeFuture_18<T1> extends _i1.SmartFake implements _i7.Future<T1> {
-  _FakeFuture_18(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeFuture_18(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeInsertStatement_19<T1 extends _i4.Table, D1> extends _i1.SmartFake
-    implements _i4.InsertStatement<T1, D1> {
-  _FakeInsertStatement_19(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeInsertStatement_19<T1 extends _i4.Table, D1> extends _i1.SmartFake implements _i4.InsertStatement<T1, D1> {
+  _FakeInsertStatement_19(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeUpdateStatement_20<T extends _i4.Table, D> extends _i1.SmartFake
-    implements _i4.UpdateStatement<T, D> {
-  _FakeUpdateStatement_20(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeUpdateStatement_20<T extends _i4.Table, D> extends _i1.SmartFake implements _i4.UpdateStatement<T, D> {
+  _FakeUpdateStatement_20(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeSimpleSelectStatement_21<T1 extends _i4.HasResultSet, D>
-    extends _i1.SmartFake
+class _FakeSimpleSelectStatement_21<T1 extends _i4.HasResultSet, D> extends _i1.SmartFake
     implements _i4.SimpleSelectStatement<T1, D> {
-  _FakeSimpleSelectStatement_21(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeSimpleSelectStatement_21(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeJoinedSelectStatement_22<FirstT extends _i4.HasResultSet, FirstD>
-    extends _i1.SmartFake
+class _FakeJoinedSelectStatement_22<FirstT extends _i4.HasResultSet, FirstD> extends _i1.SmartFake
     implements _i4.JoinedSelectStatement<FirstT, FirstD> {
-  _FakeJoinedSelectStatement_22(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeJoinedSelectStatement_22(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeBaseSelectStatement_23<Row> extends _i1.SmartFake
-    implements _i4.BaseSelectStatement<Row> {
-  _FakeBaseSelectStatement_23(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeBaseSelectStatement_23<Row> extends _i1.SmartFake implements _i4.BaseSelectStatement<Row> {
+  _FakeBaseSelectStatement_23(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeDeleteStatement_24<T1 extends _i4.Table, D1> extends _i1.SmartFake
-    implements _i4.DeleteStatement<T1, D1> {
-  _FakeDeleteStatement_24(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeDeleteStatement_24<T1 extends _i4.Table, D1> extends _i1.SmartFake implements _i4.DeleteStatement<T1, D1> {
+  _FakeDeleteStatement_24(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 class _FakeSelectable_25<T> extends _i1.SmartFake implements _i4.Selectable<T> {
-  _FakeSelectable_25(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeSelectable_25(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
-class _FakeGenerationContext_26 extends _i1.SmartFake
-    implements _i4.GenerationContext {
-  _FakeGenerationContext_26(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+class _FakeGenerationContext_26 extends _i1.SmartFake implements _i4.GenerationContext {
+  _FakeGenerationContext_26(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 /// A class which mocks [FlutterSecureStorage].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockFlutterSecureStorage extends _i1.Mock
-    implements _i2.FlutterSecureStorage {
+class MockFlutterSecureStorage extends _i1.Mock implements _i2.FlutterSecureStorage {
   MockFlutterSecureStorage() {
     _i1.throwOnMissingStub(this);
   }
@@ -287,11 +241,10 @@ class MockFlutterSecureStorage extends _i1.Mock
   );
 
   @override
-  void unregisterAllListenersForKey({required String? key}) =>
-      super.noSuchMethod(
-        Invocation.method(#unregisterAllListenersForKey, [], {#key: key}),
-        returnValueForMissingStub: null,
-      );
+  void unregisterAllListenersForKey({required String? key}) => super.noSuchMethod(
+    Invocation.method(#unregisterAllListenersForKey, [], {#key: key}),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void unregisterAllListeners() => super.noSuchMethod(
@@ -651,11 +604,10 @@ class MockAuthDao extends _i1.Mock implements _i6.AuthDao {
           as T);
 
   @override
-  void markTablesUpdated(Iterable<_i4.TableInfo<_i4.Table, dynamic>>? tables) =>
-      super.noSuchMethod(
-        Invocation.method(#markTablesUpdated, [tables]),
-        returnValueForMissingStub: null,
-      );
+  void markTablesUpdated(Iterable<_i4.TableInfo<_i4.Table, dynamic>>? tables) => super.noSuchMethod(
+    Invocation.method(#markTablesUpdated, [tables]),
+    returnValueForMissingStub: null,
+  );
 
   @override
   void notifyUpdates(Set<_i4.TableUpdate>? updates) => super.noSuchMethod(

@@ -9,8 +9,7 @@ class MapSkeletonLoader extends StatefulWidget {
   State<MapSkeletonLoader> createState() => _MapSkeletonLoaderState();
 }
 
-class _MapSkeletonLoaderState extends State<MapSkeletonLoader>
-    with SingleTickerProviderStateMixin {
+class _MapSkeletonLoaderState extends State<MapSkeletonLoader> with SingleTickerProviderStateMixin {
   late final AnimationController _shimmerController;
 
   @override

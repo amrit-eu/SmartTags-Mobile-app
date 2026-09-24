@@ -25,8 +25,7 @@ import 'package:smart_tags/services/auth_service.dart' as _i3;
 // ignore_for_file: invalid_use_of_internal_member
 
 class _FakeUser_0 extends _i1.SmartFake implements _i2.User {
-  _FakeUser_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeUser_0(Object parent, Invocation parentInvocation) : super(parent, parentInvocation);
 }
 
 /// A class which mocks [AuthService].

@@ -105,6 +105,9 @@ abstract final class GatewayPassportMapper {
       event: event,
       severity: severity,
       status: status,
+      value: Value(alert['value']?.toString()),
+      createTime: Value(_parseDateTime(alert['createTime'] as String?)),
+      lastReceiveTime: Value(_parseDateTime(alert['lastReceiveTime'] as String?)),
     );
   }
 

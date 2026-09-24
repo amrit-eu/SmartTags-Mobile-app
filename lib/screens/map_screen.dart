@@ -84,6 +84,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
   static const Duration _mapPanDuration = Duration(milliseconds: 450);
   static const Offset _popupMapCenterOffset = Offset(-40, 150);
+
   /// Spiderfy pin distance from cluster badge (px); default 40 overlaps 44px markers + ring.
   static const int _clusterSpiderfyCircleRadius = 58;
   static const double _clusterMaxZoom = 15;
@@ -242,8 +243,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     final targetCenter = _mapCenterForPoint(point, zoom, offset: offset);
     final startCenter = _mapController.camera.center;
 
-    if (startCenter.latitude == targetCenter.latitude &&
-        startCenter.longitude == targetCenter.longitude) {
+    if (startCenter.latitude == targetCenter.latitude && startCenter.longitude == targetCenter.longitude) {
       return;
     }
 
@@ -568,9 +568,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   List<Marker> _platformMarkersFor(List<Platform> databasePlatforms) {
     if (!identical(_markersCacheSource, databasePlatforms)) {
       _markersCacheSource = databasePlatforms;
-      _platformMarkers = databasePlatforms
-          .map(_platformMarkerFor)
-          .toList(growable: false);
+      _platformMarkers = databasePlatforms.map(_platformMarkerFor).toList(growable: false);
     }
     return _platformMarkers;
   }
@@ -654,44 +652,44 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               onTap: _onMapBackgroundTap,
             ),
             children: [
-            TileLayer(
-              urlTemplate: MapConfig.oceanBaseTileUrl,
-              userAgentPackageName: MapConfig.userAgentPackageName,
-              tileBuilder: _baseTileBuilder,
-            ),
-            TileLayer(
-              urlTemplate: MapConfig.oceanReferenceTileUrl,
-              userAgentPackageName: MapConfig.userAgentPackageName,
-            ),
-            SmartTagsMarkerClusterLayerWidget(
-              options: MarkerClusterLayerOptions(
-                maxClusterRadius: 120,
-                size: const Size(40, 40),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.all(50),
-                maxZoom: _clusterMaxZoom,
-                showPolygon: false,
-                spiderfyCircleRadius: _clusterSpiderfyCircleRadius,
-                markerChildBehavior: true,
-                centerMarkerOnClick: false,
-                onClusterTap: _onClusterTap,
-                markers: _buildMarkers(platforms),
-                builder: (context, markers) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.blue,
-                    ),
-                    child: Center(
-                      child: Text(
-                        markers.length.toString(),
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  );
-                },
+              TileLayer(
+                urlTemplate: MapConfig.oceanBaseTileUrl,
+                userAgentPackageName: MapConfig.userAgentPackageName,
+                tileBuilder: _baseTileBuilder,
               ),
-            ),
+              TileLayer(
+                urlTemplate: MapConfig.oceanReferenceTileUrl,
+                userAgentPackageName: MapConfig.userAgentPackageName,
+              ),
+              SmartTagsMarkerClusterLayerWidget(
+                options: MarkerClusterLayerOptions(
+                  maxClusterRadius: 120,
+                  size: const Size(40, 40),
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.all(50),
+                  maxZoom: _clusterMaxZoom,
+                  showPolygon: false,
+                  spiderfyCircleRadius: _clusterSpiderfyCircleRadius,
+                  markerChildBehavior: true,
+                  centerMarkerOnClick: false,
+                  onClusterTap: _onClusterTap,
+                  markers: _buildMarkers(platforms),
+                  builder: (context, markers) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.blue,
+                      ),
+                      child: Center(
+                        child: Text(
+                          markers.length.toString(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         ),
