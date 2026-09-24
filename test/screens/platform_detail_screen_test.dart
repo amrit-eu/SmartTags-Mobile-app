@@ -170,7 +170,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Alerts'), findsOneWidget);
-    expect(find.text('2 Active alerts'), findsOneWidget);
+    expect(find.text('3 Active alerts'), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
@@ -179,8 +179,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    final alertsRow = find.ancestor(of: find.text('Alerts'), matching: find.byType(InkWell)).first;
+
     expect(find.text('1 Acknowledged alert'), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.descendant(of: alertsRow, matching: find.byIcon(Icons.chevron_right)), findsOneWidget);
   });
 
   testWidgets('Alerts row shows no active alerts when none open or acknowledged (#84)', (tester) async {
@@ -188,8 +190,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    final alertsRow = find.ancestor(of: find.text('Alerts'), matching: find.byType(InkWell)).first;
+
     expect(find.text('No active alerts'), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right), findsNothing);
+    expect(find.descendant(of: alertsRow, matching: find.byIcon(Icons.chevron_right)), findsNothing);
   });
 
   testWidgets('Tapping alerts row opens bottom sheet with active alerts (#85)', (tester) async {
