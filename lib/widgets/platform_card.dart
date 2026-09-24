@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:smart_tags/constants/platform_status_palette.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/database/db.dart';
-import 'package:smart_tags/models/platform.dart' as model_entity;
+import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
 
-/// A card widget that displays details for a specific platform.
-class PlatformCard extends StatelessWidget {
+/// A card widget that displays details for a specific platform
+class PlatformCard extends ConsumerWidget {
   /// Creates a [PlatformCard].
   const PlatformCard({
     required this.platform,
@@ -17,42 +17,41 @@ class PlatformCard extends StatelessWidget {
   /// The platform data to be displayed in this card.
   final Platform platform;
 
+  static String _dash(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '-';
+    }
+    return value.trim();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final statusStyle = PlatformStatusPalette.resolve(platform.status);
-    final platformStatus = model_entity.PlatformStatus.fromDb(platform.status);
+    final theme = Theme.of(context);
+
+    final counts = ref.watch(
+      alertCountsByResourceStreamProvider.select(
+        (asyncCounts) => asyncCounts.value?[platform.ref] ?? (open: 0, acknowledged: 0),
+      ),
+    );
+    final openCount = counts.open;
+    final acknowledgedCount = counts.acknowledged;
 
     return GestureDetector(
       onTap: () {
-        final platformModel = model_entity.Platform(
-          platformRef: platform.ref,
-          model: platform.model,
-          network: platform.network,
-          latestPosition: LatLng(platform.lat, platform.lon),
-          status: platformStatus,
-          operationalStatus: platform.operationalStatus == 'Deployed'
-              ? model_entity.OperationalStatus.deployed
-              : model_entity.OperationalStatus.recovered,
-          lastUpdated: platform.lastUpdated,
-          operationLocation: LatLng(
-            platform.operationLat,
-            platform.operationLon,
-          ),
-        );
         Navigator.of(context)
             .push(
               MaterialPageRoute<void>(
-                builder: (context) => PlatformDetailScreen(platformRef: platformModel.platformRef),
+                builder: (context) => PlatformDetailScreen(platformRef: platform.ref),
               ),
             )
             .ignore();
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          border: Border.all(color: statusStyle.backgroundColor, width: 2),
+          border: Border.all(color: colorScheme.outline),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -63,47 +62,93 @@ class PlatformCard extends StatelessWidget {
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        platform.model,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      Text(
-                        platform.ref,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    _dash(platform.category).toUpperCase(),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 StatusBadge(rawStatus: platform.status),
               ],
             ),
-            const Spacer(),
-            Center(
-              child: Text(
-                platform.network,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1.2,
-                  color: colorScheme.onSurface,
-                ),
-              ),
+            const SizedBox(height: 4),
+            Text(
+              _dash(platform.model),
+              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
             ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    _dash(platform.wigosId),
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(Icons.circle, size: 4, color: colorScheme.onSurfaceVariant),
+                ),
+                Flexible(
+                  child: Text(
+                    _dash(platform.observingNetwork ?? platform.network),
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
+            if (openCount > 0 || acknowledgedCount > 0) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  if (openCount > 0) _AlertCountChip(count: openCount, style: AlertStatusPalette.open),
+                  if (openCount > 0 && acknowledgedCount > 0) const SizedBox(width: 8),
+                  if (acknowledgedCount > 0)
+                    _AlertCountChip(count: acknowledgedCount, style: AlertStatusPalette.acknowledged),
+                ],
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A pill-shaped chip showing an alert count for a given status, following
+/// [AlertStatusPalette] colors.
+class _AlertCountChip extends StatelessWidget {
+  const _AlertCountChip({required this.count, required this.style});
+
+  final int count;
+  final AlertStatusStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: style.color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$count ${style.label} alerts',
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Colors.black87,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

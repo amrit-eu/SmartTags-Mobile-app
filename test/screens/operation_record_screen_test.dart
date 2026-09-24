@@ -29,7 +29,10 @@ class _OperationRecordHost extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Navigator(
       pages: [
-        const MaterialPage<void>(key: ValueKey('home'), child: Scaffold(body: SizedBox.shrink())),
+        const MaterialPage<void>(
+          key: ValueKey('home'),
+          child: Scaffold(body: SizedBox.shrink()),
+        ),
         MaterialPage<void>(key: const ValueKey('operation'), child: screen),
       ],
       // Navigator 2 `onDidRemovePage` does not expose pop results; keep until tests migrate.
@@ -110,7 +113,7 @@ class _NoConnectivityStatus extends ConnectivityStatus {
 final testPlatform = Platform(
   platformRef: 'TEST-001',
   wigosId: 'test-0001-wigosid',
-  platformCategory: 'test-category',
+  category: 'test-category',
   model: 'Model 1',
   network: 'Network 1',
   latestPosition: const LatLng(0, 0),
@@ -141,7 +144,7 @@ void main() {
     );
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.initialValue == testPlatform.platformCategory && !widget.enabled,
+        (widget) => widget is TextFormField && widget.initialValue == testPlatform.category && !widget.enabled,
       ),
       findsOneWidget,
     );
@@ -170,7 +173,7 @@ void main() {
     );
     expect(
       find.byWidgetPredicate(
-        (widget) => widget is TextFormField && widget.initialValue == testPlatform.platformCategory && !widget.enabled,
+        (widget) => widget is TextFormField && widget.initialValue == testPlatform.category && !widget.enabled,
       ),
       findsOneWidget,
     );
@@ -331,6 +334,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     // Set up platform-aware in-memory database
@@ -349,6 +353,7 @@ void main() {
             lastUpdated: platform.lastUpdated,
             operationLat: platform.operationLocation.latitude,
             operationLon: platform.operationLocation.longitude,
+            category: 'Profiling Float',
           ),
         );
 
@@ -438,6 +443,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     // Set up platform-aware in-memory database
@@ -456,6 +462,7 @@ void main() {
             lastUpdated: platform.lastUpdated,
             operationLat: platform.operationLocation.latitude,
             operationLon: platform.operationLocation.longitude,
+            category: 'Profiling Float',
           ),
         );
 
@@ -552,6 +559,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     // Set up platform-aware in-memory database
@@ -570,6 +578,7 @@ void main() {
             lastUpdated: platform.lastUpdated,
             operationLat: platform.operationLocation.latitude,
             operationLon: platform.operationLocation.longitude,
+            category: 'Profiling Float',
           ),
         );
 
@@ -657,6 +666,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     // Set up mocked db that will error on update.
@@ -721,6 +731,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     // Create mock streams for testing
@@ -787,6 +798,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     // Create mock streams for testing
@@ -835,6 +847,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     await tester.pumpWidget(
@@ -872,6 +885,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     await tester.pumpWidget(
@@ -909,6 +923,7 @@ void main() {
       status: PlatformStatus.operational,
       operationalStatus: OperationalStatus.deployed,
       lastUpdated: DateTime(2025),
+      category: 'test-category',
     );
 
     await tester.pumpWidget(

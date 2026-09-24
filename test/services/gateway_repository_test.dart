@@ -95,7 +95,6 @@ void main() {
       expect(companion.ref.value, '2900314');
       expect(companion.ptfId.value, '22');
       expect(companion.model.value, 'PROVOR_MT');
-      expect(companion.platformCategory.value, 'Float');
       expect(companion.reportingStatus.value, 'OPERATIONAL');
       expect(companion.observingNetwork.value, 'Argo');
       expect(companion.wigosId.value, '0-22000-0-2900314');

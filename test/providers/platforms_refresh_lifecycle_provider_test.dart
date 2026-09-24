@@ -39,6 +39,7 @@ PlatformsCompanion _samplePlatform({String ref = 'PLT-001'}) {
     lastUpdated: DateTime.utc(2025),
     operationLat: 0,
     operationLon: 0,
+    category: 'Profiling Float',
   );
 }
 
