@@ -212,7 +212,6 @@ void main() {
 
     expect(find.text('1 open alert'), findsOneWidget);
     expect(find.text('See all alerts (3)'), findsOneWidget);
-    expect(find.text('Acknowledged'), findsOneWidget);
     expect(find.byIcon(Icons.close), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.close));

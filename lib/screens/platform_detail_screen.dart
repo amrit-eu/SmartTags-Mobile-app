@@ -290,8 +290,13 @@ class _AlertsSummaryRow extends ConsumerWidget {
   final String platformRef;
 
   static String _label({required int openCount, required int acknowledgedCount}) {
+    if (openCount > 0 && acknowledgedCount > 0) {
+      final totalCount = openCount + acknowledgedCount;
+      return '$totalCount Active ${totalCount == 1 ? 'alert' : 'alerts'}';
+    }
+
     if (openCount > 0) {
-      return '$openCount Active ${openCount == 1 ? 'alert' : 'alerts'}';
+      return '$openCount Open ${openCount == 1 ? 'alert' : 'alerts'}';
     }
     if (acknowledgedCount > 0) {
       return '$acknowledgedCount Acknowledged ${acknowledgedCount == 1 ? 'alert' : 'alerts'}';

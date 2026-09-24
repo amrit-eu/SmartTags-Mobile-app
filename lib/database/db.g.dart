@@ -3,7 +3,8 @@
 part of 'db.dart';
 
 // ignore_for_file: type=lint
-class $PlatformsTable extends Platforms with TableInfo<$PlatformsTable, Platform> {
+class $PlatformsTable extends Platforms
+    with TableInfo<$PlatformsTable, Platform> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -96,13 +97,14 @@ class $PlatformsTable extends Platforms with TableInfo<$PlatformsTable, Platform
     'operationalStatus',
   );
   @override
-  late final GeneratedColumn<String> operationalStatus = GeneratedColumn<String>(
-    'operational_status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
+  late final GeneratedColumn<String> operationalStatus =
+      GeneratedColumn<String>(
+        'operational_status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
   static const VerificationMeta _lastUpdatedMeta = const VerificationMeta(
     'lastUpdated',
   );
@@ -200,24 +202,28 @@ class $PlatformsTable extends Platforms with TableInfo<$PlatformsTable, Platform
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _latestOperationTypeMeta = const VerificationMeta('latestOperationType');
+  static const VerificationMeta _latestOperationTypeMeta =
+      const VerificationMeta('latestOperationType');
   @override
-  late final GeneratedColumn<String> latestOperationType = GeneratedColumn<String>(
-    'latest_operation_type',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _latestOperationDateMeta = const VerificationMeta('latestOperationDate');
+  late final GeneratedColumn<String> latestOperationType =
+      GeneratedColumn<String>(
+        'latest_operation_type',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _latestOperationDateMeta =
+      const VerificationMeta('latestOperationDate');
   @override
-  late final GeneratedColumn<DateTime> latestOperationDate = GeneratedColumn<DateTime>(
-    'latest_operation_date',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
+  late final GeneratedColumn<DateTime> latestOperationDate =
+      GeneratedColumn<DateTime>(
+        'latest_operation_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _endingCauseIdMeta = const VerificationMeta(
     'endingCauseId',
   );
@@ -229,7 +235,8 @@ class $PlatformsTable extends Platforms with TableInfo<$PlatformsTable, Platform
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _hasLatestObservationMeta = const VerificationMeta('hasLatestObservation');
+  static const VerificationMeta _hasLatestObservationMeta =
+      const VerificationMeta('hasLatestObservation');
   @override
   late final GeneratedColumn<bool> hasLatestObservation = GeneratedColumn<bool>(
     'has_latest_observation',
@@ -843,24 +850,46 @@ class Platform extends DataClass implements Insertable<Platform> {
       lastUpdated: Value(lastUpdated),
       operationLat: Value(operationLat),
       operationLon: Value(operationLon),
-      wigosId: wigosId == null && nullToAbsent ? const Value.absent() : Value(wigosId),
-      gtsId: gtsId == null && nullToAbsent ? const Value.absent() : Value(gtsId),
-      batchRef: batchRef == null && nullToAbsent ? const Value.absent() : Value(batchRef),
-      operationNotes: operationNotes == null && nullToAbsent ? const Value.absent() : Value(operationNotes),
-      reportingStatus: reportingStatus == null && nullToAbsent ? const Value.absent() : Value(reportingStatus),
-      observingNetwork: observingNetwork == null && nullToAbsent ? const Value.absent() : Value(observingNetwork),
+      wigosId: wigosId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(wigosId),
+      gtsId: gtsId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gtsId),
+      batchRef: batchRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchRef),
+      operationNotes: operationNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(operationNotes),
+      reportingStatus: reportingStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reportingStatus),
+      observingNetwork: observingNetwork == null && nullToAbsent
+          ? const Value.absent()
+          : Value(observingNetwork),
       latestOperationType: latestOperationType == null && nullToAbsent
           ? const Value.absent()
           : Value(latestOperationType),
       latestOperationDate: latestOperationDate == null && nullToAbsent
           ? const Value.absent()
           : Value(latestOperationDate),
-      endingCauseId: endingCauseId == null && nullToAbsent ? const Value.absent() : Value(endingCauseId),
+      endingCauseId: endingCauseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endingCauseId),
       hasLatestObservation: Value(hasLatestObservation),
-      ptfId: ptfId == null && nullToAbsent ? const Value.absent() : Value(ptfId),
-      programId: programId == null && nullToAbsent ? const Value.absent() : Value(programId),
-      programName: programName == null && nullToAbsent ? const Value.absent() : Value(programName),
-      programCode: programCode == null && nullToAbsent ? const Value.absent() : Value(programCode),
+      ptfId: ptfId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ptfId),
+      programId: programId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programId),
+      programName: programName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programName),
+      programCode: programCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(programCode),
     );
   }
 
@@ -980,12 +1009,24 @@ class Platform extends DataClass implements Insertable<Platform> {
     wigosId: wigosId.present ? wigosId.value : this.wigosId,
     gtsId: gtsId.present ? gtsId.value : this.gtsId,
     batchRef: batchRef.present ? batchRef.value : this.batchRef,
-    operationNotes: operationNotes.present ? operationNotes.value : this.operationNotes,
-    reportingStatus: reportingStatus.present ? reportingStatus.value : this.reportingStatus,
-    observingNetwork: observingNetwork.present ? observingNetwork.value : this.observingNetwork,
-    latestOperationType: latestOperationType.present ? latestOperationType.value : this.latestOperationType,
-    latestOperationDate: latestOperationDate.present ? latestOperationDate.value : this.latestOperationDate,
-    endingCauseId: endingCauseId.present ? endingCauseId.value : this.endingCauseId,
+    operationNotes: operationNotes.present
+        ? operationNotes.value
+        : this.operationNotes,
+    reportingStatus: reportingStatus.present
+        ? reportingStatus.value
+        : this.reportingStatus,
+    observingNetwork: observingNetwork.present
+        ? observingNetwork.value
+        : this.observingNetwork,
+    latestOperationType: latestOperationType.present
+        ? latestOperationType.value
+        : this.latestOperationType,
+    latestOperationDate: latestOperationDate.present
+        ? latestOperationDate.value
+        : this.latestOperationDate,
+    endingCauseId: endingCauseId.present
+        ? endingCauseId.value
+        : this.endingCauseId,
     hasLatestObservation: hasLatestObservation ?? this.hasLatestObservation,
     ptfId: ptfId.present ? ptfId.value : this.ptfId,
     programId: programId.present ? programId.value : this.programId,
@@ -1002,26 +1043,50 @@ class Platform extends DataClass implements Insertable<Platform> {
       lat: data.lat.present ? data.lat.value : this.lat,
       lon: data.lon.present ? data.lon.value : this.lon,
       status: data.status.present ? data.status.value : this.status,
-      operationalStatus: data.operationalStatus.present ? data.operationalStatus.value : this.operationalStatus,
-      lastUpdated: data.lastUpdated.present ? data.lastUpdated.value : this.lastUpdated,
-      operationLat: data.operationLat.present ? data.operationLat.value : this.operationLat,
-      operationLon: data.operationLon.present ? data.operationLon.value : this.operationLon,
+      operationalStatus: data.operationalStatus.present
+          ? data.operationalStatus.value
+          : this.operationalStatus,
+      lastUpdated: data.lastUpdated.present
+          ? data.lastUpdated.value
+          : this.lastUpdated,
+      operationLat: data.operationLat.present
+          ? data.operationLat.value
+          : this.operationLat,
+      operationLon: data.operationLon.present
+          ? data.operationLon.value
+          : this.operationLon,
       wigosId: data.wigosId.present ? data.wigosId.value : this.wigosId,
       gtsId: data.gtsId.present ? data.gtsId.value : this.gtsId,
       batchRef: data.batchRef.present ? data.batchRef.value : this.batchRef,
-      operationNotes: data.operationNotes.present ? data.operationNotes.value : this.operationNotes,
-      reportingStatus: data.reportingStatus.present ? data.reportingStatus.value : this.reportingStatus,
-      observingNetwork: data.observingNetwork.present ? data.observingNetwork.value : this.observingNetwork,
-      latestOperationType: data.latestOperationType.present ? data.latestOperationType.value : this.latestOperationType,
-      latestOperationDate: data.latestOperationDate.present ? data.latestOperationDate.value : this.latestOperationDate,
-      endingCauseId: data.endingCauseId.present ? data.endingCauseId.value : this.endingCauseId,
+      operationNotes: data.operationNotes.present
+          ? data.operationNotes.value
+          : this.operationNotes,
+      reportingStatus: data.reportingStatus.present
+          ? data.reportingStatus.value
+          : this.reportingStatus,
+      observingNetwork: data.observingNetwork.present
+          ? data.observingNetwork.value
+          : this.observingNetwork,
+      latestOperationType: data.latestOperationType.present
+          ? data.latestOperationType.value
+          : this.latestOperationType,
+      latestOperationDate: data.latestOperationDate.present
+          ? data.latestOperationDate.value
+          : this.latestOperationDate,
+      endingCauseId: data.endingCauseId.present
+          ? data.endingCauseId.value
+          : this.endingCauseId,
       hasLatestObservation: data.hasLatestObservation.present
           ? data.hasLatestObservation.value
           : this.hasLatestObservation,
       ptfId: data.ptfId.present ? data.ptfId.value : this.ptfId,
       programId: data.programId.present ? data.programId.value : this.programId,
-      programName: data.programName.present ? data.programName.value : this.programName,
-      programCode: data.programCode.present ? data.programCode.value : this.programCode,
+      programName: data.programName.present
+          ? data.programName.value
+          : this.programName,
+      programCode: data.programCode.present
+          ? data.programCode.value
+          : this.programCode,
     );
   }
 
@@ -1259,10 +1324,13 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (operationNotes != null) 'operation_notes': operationNotes,
       if (reportingStatus != null) 'reporting_status': reportingStatus,
       if (observingNetwork != null) 'observing_network': observingNetwork,
-      if (latestOperationType != null) 'latest_operation_type': latestOperationType,
-      if (latestOperationDate != null) 'latest_operation_date': latestOperationDate,
+      if (latestOperationType != null)
+        'latest_operation_type': latestOperationType,
+      if (latestOperationDate != null)
+        'latest_operation_date': latestOperationDate,
       if (endingCauseId != null) 'ending_cause_id': endingCauseId,
-      if (hasLatestObservation != null) 'has_latest_observation': hasLatestObservation,
+      if (hasLatestObservation != null)
+        'has_latest_observation': hasLatestObservation,
       if (ptfId != null) 'ptf_id': ptfId,
       if (programId != null) 'program_id': programId,
       if (programName != null) 'program_name': programName,
@@ -1533,13 +1601,14 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     'lastReceiveTime',
   );
   @override
-  late final GeneratedColumn<DateTime> lastReceiveTime = GeneratedColumn<DateTime>(
-    'last_receive_time',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
+  late final GeneratedColumn<DateTime> lastReceiveTime =
+      GeneratedColumn<DateTime>(
+        'last_receive_time',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1732,9 +1801,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       event: Value(event),
       severity: Value(severity),
       status: Value(status),
-      value: value == null && nullToAbsent ? const Value.absent() : Value(value),
-      createTime: createTime == null && nullToAbsent ? const Value.absent() : Value(createTime),
-      lastReceiveTime: lastReceiveTime == null && nullToAbsent ? const Value.absent() : Value(lastReceiveTime),
+      value: value == null && nullToAbsent
+          ? const Value.absent()
+          : Value(value),
+      createTime: createTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createTime),
+      lastReceiveTime: lastReceiveTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReceiveTime),
     );
   }
 
@@ -1786,7 +1861,9 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     status: status ?? this.status,
     value: value.present ? value.value : this.value,
     createTime: createTime.present ? createTime.value : this.createTime,
-    lastReceiveTime: lastReceiveTime.present ? lastReceiveTime.value : this.lastReceiveTime,
+    lastReceiveTime: lastReceiveTime.present
+        ? lastReceiveTime.value
+        : this.lastReceiveTime,
   );
   AlertEntity copyWithCompanion(AlertsCompanion data) {
     return AlertEntity(
@@ -1796,8 +1873,12 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       severity: data.severity.present ? data.severity.value : this.severity,
       status: data.status.present ? data.status.value : this.status,
       value: data.value.present ? data.value.value : this.value,
-      createTime: data.createTime.present ? data.createTime.value : this.createTime,
-      lastReceiveTime: data.lastReceiveTime.present ? data.lastReceiveTime.value : this.lastReceiveTime,
+      createTime: data.createTime.present
+          ? data.createTime.value
+          : this.createTime,
+      lastReceiveTime: data.lastReceiveTime.present
+          ? data.lastReceiveTime.value
+          : this.lastReceiveTime,
     );
   }
 
@@ -1975,7 +2056,8 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
   }
 }
 
-class $UserProfilesTable extends UserProfiles with TableInfo<$UserProfilesTable, UserEntity> {
+class $UserProfilesTable extends UserProfiles
+    with TableInfo<$UserProfilesTable, UserEntity> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2107,18 +2189,20 @@ class $UserProfilesTable extends UserProfiles with TableInfo<$UserProfilesTable,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _hideContactInfoFromPublicMeta = const VerificationMeta('hideContactInfoFromPublic');
+  static const VerificationMeta _hideContactInfoFromPublicMeta =
+      const VerificationMeta('hideContactInfoFromPublic');
   @override
-  late final GeneratedColumn<bool> hideContactInfoFromPublic = GeneratedColumn<bool>(
-    'hide_contact_info_from_public',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("hide_contact_info_from_public" IN (0, 1))',
-    ),
-  );
+  late final GeneratedColumn<bool> hideContactInfoFromPublic =
+      GeneratedColumn<bool>(
+        'hide_contact_info_from_public',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("hide_contact_info_from_public" IN (0, 1))',
+        ),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2417,7 +2501,9 @@ class UserEntity extends DataClass implements Insertable<UserEntity> {
       id: Value(id),
       ref: Value(ref),
       email: Value(email),
-      email2: email2 == null && nullToAbsent ? const Value.absent() : Value(email2),
+      email2: email2 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email2),
       fullName: Value(fullName),
       firstName: Value(firstName),
       lastName: Value(lastName),
@@ -2426,7 +2512,9 @@ class UserEntity extends DataClass implements Insertable<UserEntity> {
       tel: Value(tel),
       tel2: Value(tel2),
       address: Value(address),
-      country: country == null && nullToAbsent ? const Value.absent() : Value(country),
+      country: country == null && nullToAbsent
+          ? const Value.absent()
+          : Value(country),
       hideContactInfoFromPublic: Value(hideContactInfoFromPublic),
     );
   }
@@ -2507,7 +2595,8 @@ class UserEntity extends DataClass implements Insertable<UserEntity> {
     tel2: tel2 ?? this.tel2,
     address: address ?? this.address,
     country: country.present ? country.value : this.country,
-    hideContactInfoFromPublic: hideContactInfoFromPublic ?? this.hideContactInfoFromPublic,
+    hideContactInfoFromPublic:
+        hideContactInfoFromPublic ?? this.hideContactInfoFromPublic,
   );
   UserEntity copyWithCompanion(UserProfilesCompanion data) {
     return UserEntity(
@@ -2675,7 +2764,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserEntity> {
       if (tel2 != null) 'tel2': tel2,
       if (address != null) 'address': address,
       if (country != null) 'country': country,
-      if (hideContactInfoFromPublic != null) 'hide_contact_info_from_public': hideContactInfoFromPublic,
+      if (hideContactInfoFromPublic != null)
+        'hide_contact_info_from_public': hideContactInfoFromPublic,
     });
   }
 
@@ -2709,7 +2799,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserEntity> {
       tel2: tel2 ?? this.tel2,
       address: address ?? this.address,
       country: country ?? this.country,
-      hideContactInfoFromPublic: hideContactInfoFromPublic ?? this.hideContactInfoFromPublic,
+      hideContactInfoFromPublic:
+          hideContactInfoFromPublic ?? this.hideContactInfoFromPublic,
     );
   }
 
@@ -2785,7 +2876,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserEntity> {
   }
 }
 
-class $ProgramsTable extends Programs with TableInfo<$ProgramsTable, ProgramEntity> {
+class $ProgramsTable extends Programs
+    with TableInfo<$ProgramsTable, ProgramEntity> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2932,11 +3024,12 @@ class ProgramEntity extends DataClass implements Insertable<ProgramEntity> {
     };
   }
 
-  ProgramEntity copyWith({int? id, String? name, String? code}) => ProgramEntity(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    code: code ?? this.code,
-  );
+  ProgramEntity copyWith({int? id, String? name, String? code}) =>
+      ProgramEntity(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        code: code ?? this.code,
+      );
   ProgramEntity copyWithCompanion(ProgramsCompanion data) {
     return ProgramEntity(
       id: data.id.present ? data.id.value : this.id,
@@ -2960,7 +3053,10 @@ class ProgramEntity extends DataClass implements Insertable<ProgramEntity> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is ProgramEntity && other.id == this.id && other.name == this.name && other.code == this.code);
+      (other is ProgramEntity &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.code == this.code);
 }
 
 class ProgramsCompanion extends UpdateCompanion<ProgramEntity> {
@@ -3195,7 +3291,10 @@ class RoleEntity extends DataClass implements Insertable<RoleEntity> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is RoleEntity && other.id == this.id && other.name == this.name && other.code == this.code);
+      (other is RoleEntity &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.code == this.code);
 }
 
 class RolesCompanion extends UpdateCompanion<RoleEntity> {
@@ -3263,7 +3362,8 @@ class RolesCompanion extends UpdateCompanion<RoleEntity> {
   }
 }
 
-class $UserProgramRolesTable extends UserProgramRoles with TableInfo<$UserProgramRolesTable, UserProgramRole> {
+class $UserProgramRolesTable extends UserProgramRoles
+    with TableInfo<$UserProgramRolesTable, UserProgramRole> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3426,11 +3526,12 @@ class UserProgramRole extends DataClass implements Insertable<UserProgramRole> {
     };
   }
 
-  UserProgramRole copyWith({int? userId, int? programId, int? roleId}) => UserProgramRole(
-    userId: userId ?? this.userId,
-    programId: programId ?? this.programId,
-    roleId: roleId ?? this.roleId,
-  );
+  UserProgramRole copyWith({int? userId, int? programId, int? roleId}) =>
+      UserProgramRole(
+        userId: userId ?? this.userId,
+        programId: programId ?? this.programId,
+        roleId: roleId ?? this.roleId,
+      );
   UserProgramRole copyWithCompanion(UserProgramRolesCompanion data) {
     return UserProgramRole(
       userId: data.userId.present ? data.userId.value : this.userId,
@@ -3537,7 +3638,8 @@ class UserProgramRolesCompanion extends UpdateCompanion<UserProgramRole> {
   }
 }
 
-class $UserRolesTable extends UserRoles with TableInfo<$UserRolesTable, UserRole> {
+class $UserRolesTable extends UserRoles
+    with TableInfo<$UserRolesTable, UserRole> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3683,7 +3785,10 @@ class UserRole extends DataClass implements Insertable<UserRole> {
   int get hashCode => Object.hash(userId, roleCode);
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || (other is UserRole && other.userId == this.userId && other.roleCode == this.roleCode);
+      identical(this, other) ||
+      (other is UserRole &&
+          other.userId == this.userId &&
+          other.roleCode == this.roleCode);
 }
 
 class UserRolesCompanion extends UpdateCompanion<UserRole> {
@@ -3751,7 +3856,8 @@ class UserRolesCompanion extends UpdateCompanion<UserRole> {
   }
 }
 
-class $PendingOperationsTable extends PendingOperations with TableInfo<$PendingOperationsTable, PendingOperation> {
+class $PendingOperationsTable extends PendingOperations
+    with TableInfo<$PendingOperationsTable, PendingOperation> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3975,7 +4081,8 @@ class $PendingOperationsTable extends PendingOperations with TableInfo<$PendingO
   }
 }
 
-class PendingOperation extends DataClass implements Insertable<PendingOperation> {
+class PendingOperation extends DataClass
+    implements Insertable<PendingOperation> {
   /// Primary key identifying the record; the natural FIFO ordering key.
   final int id;
 
@@ -4034,7 +4141,9 @@ class PendingOperation extends DataClass implements Insertable<PendingOperation>
       payloadJson: Value(payloadJson),
       createdAt: Value(createdAt),
       status: Value(status),
-      lastError: lastError == null && nullToAbsent ? const Value.absent() : Value(lastError),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
       attempts: Value(attempts),
     );
   }
@@ -4092,9 +4201,13 @@ class PendingOperation extends DataClass implements Insertable<PendingOperation>
   PendingOperation copyWithCompanion(PendingOperationsCompanion data) {
     return PendingOperation(
       id: data.id.present ? data.id.value : this.id,
-      platformRef: data.platformRef.present ? data.platformRef.value : this.platformRef,
+      platformRef: data.platformRef.present
+          ? data.platformRef.value
+          : this.platformRef,
       action: data.action.present ? data.action.value : this.action,
-      payloadJson: data.payloadJson.present ? data.payloadJson.value : this.payloadJson,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       status: data.status.present ? data.status.value : this.status,
       lastError: data.lastError.present ? data.lastError.value : this.lastError,
@@ -4263,7 +4376,8 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   }
 }
 
-class $SyncMetadataTable extends SyncMetadata with TableInfo<$SyncMetadataTable, SyncMetadataData> {
+class $SyncMetadataTable extends SyncMetadata
+    with TableInfo<$SyncMetadataTable, SyncMetadataData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -4277,15 +4391,17 @@ class $SyncMetadataTable extends SyncMetadata with TableInfo<$SyncMetadataTable,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _lastPlatformsRefreshMeta = const VerificationMeta('lastPlatformsRefresh');
+  static const VerificationMeta _lastPlatformsRefreshMeta =
+      const VerificationMeta('lastPlatformsRefresh');
   @override
-  late final GeneratedColumn<DateTime> lastPlatformsRefresh = GeneratedColumn<DateTime>(
-    'last_platforms_refresh',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
+  late final GeneratedColumn<DateTime> lastPlatformsRefresh =
+      GeneratedColumn<DateTime>(
+        'last_platforms_refresh',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [id, lastPlatformsRefresh];
   @override
@@ -4338,7 +4454,8 @@ class $SyncMetadataTable extends SyncMetadata with TableInfo<$SyncMetadataTable,
   }
 }
 
-class SyncMetadataData extends DataClass implements Insertable<SyncMetadataData> {
+class SyncMetadataData extends DataClass
+    implements Insertable<SyncMetadataData> {
   /// Fixed row id — this table only ever holds a single row (`1`).
   final int id;
 
@@ -4392,7 +4509,9 @@ class SyncMetadataData extends DataClass implements Insertable<SyncMetadataData>
     Value<DateTime?> lastPlatformsRefresh = const Value.absent(),
   }) => SyncMetadataData(
     id: id ?? this.id,
-    lastPlatformsRefresh: lastPlatformsRefresh.present ? lastPlatformsRefresh.value : this.lastPlatformsRefresh,
+    lastPlatformsRefresh: lastPlatformsRefresh.present
+        ? lastPlatformsRefresh.value
+        : this.lastPlatformsRefresh,
   );
   SyncMetadataData copyWithCompanion(SyncMetadataCompanion data) {
     return SyncMetadataData(
@@ -4417,7 +4536,9 @@ class SyncMetadataData extends DataClass implements Insertable<SyncMetadataData>
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is SyncMetadataData && other.id == this.id && other.lastPlatformsRefresh == this.lastPlatformsRefresh);
+      (other is SyncMetadataData &&
+          other.id == this.id &&
+          other.lastPlatformsRefresh == this.lastPlatformsRefresh);
 }
 
 class SyncMetadataCompanion extends UpdateCompanion<SyncMetadataData> {
@@ -4437,7 +4558,8 @@ class SyncMetadataCompanion extends UpdateCompanion<SyncMetadataData> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (lastPlatformsRefresh != null) 'last_platforms_refresh': lastPlatformsRefresh,
+      if (lastPlatformsRefresh != null)
+        'last_platforms_refresh': lastPlatformsRefresh,
     });
   }
 
@@ -4487,7 +4609,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $UserRolesTable userRoles = $UserRolesTable(this);
-  late final $PendingOperationsTable pendingOperations = $PendingOperationsTable(this);
+  late final $PendingOperationsTable pendingOperations =
+      $PendingOperationsTable(this);
   late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
   late final Index idxPlatformsRef = Index(
     'idx_platforms_ref',
@@ -4495,7 +4618,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final AuthDao authDao = AuthDao(this as AppDatabase);
   @override
-  Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     platforms,
@@ -4570,7 +4694,8 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> programCode,
     });
 
-final class $$PlatformsTableReferences extends BaseReferences<_$AppDatabase, $PlatformsTable, Platform> {
+final class $$PlatformsTableReferences
+    extends BaseReferences<_$AppDatabase, $PlatformsTable, Platform> {
   $$PlatformsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$AlertsTable, List<AlertEntity>> _alertsRefsTable(
@@ -4593,7 +4718,8 @@ final class $$PlatformsTableReferences extends BaseReferences<_$AppDatabase, $Pl
   }
 }
 
-class $$PlatformsTableFilterComposer extends Composer<_$AppDatabase, $PlatformsTable> {
+class $$PlatformsTableFilterComposer
+    extends Composer<_$AppDatabase, $PlatformsTable> {
   $$PlatformsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -4749,14 +4875,16 @@ class $$PlatformsTableFilterComposer extends Composer<_$AppDatabase, $PlatformsT
             $table: $db.alerts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
   }
 }
 
-class $$PlatformsTableOrderingComposer extends Composer<_$AppDatabase, $PlatformsTable> {
+class $$PlatformsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlatformsTable> {
   $$PlatformsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -4895,7 +5023,8 @@ class $$PlatformsTableOrderingComposer extends Composer<_$AppDatabase, $Platform
   );
 }
 
-class $$PlatformsTableAnnotationComposer extends Composer<_$AppDatabase, $PlatformsTable> {
+class $$PlatformsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlatformsTable> {
   $$PlatformsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -4903,21 +5032,29 @@ class $$PlatformsTableAnnotationComposer extends Composer<_$AppDatabase, $Platfo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get ref => $composableBuilder(column: $table.ref, builder: (column) => column);
+  GeneratedColumn<String> get ref =>
+      $composableBuilder(column: $table.ref, builder: (column) => column);
 
-  GeneratedColumn<String> get model => $composableBuilder(column: $table.model, builder: (column) => column);
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
 
-  GeneratedColumn<String> get category => $composableBuilder(column: $table.category, builder: (column) => column);
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
 
-  GeneratedColumn<String> get network => $composableBuilder(column: $table.network, builder: (column) => column);
+  GeneratedColumn<String> get network =>
+      $composableBuilder(column: $table.network, builder: (column) => column);
 
-  GeneratedColumn<double> get lat => $composableBuilder(column: $table.lat, builder: (column) => column);
+  GeneratedColumn<double> get lat =>
+      $composableBuilder(column: $table.lat, builder: (column) => column);
 
-  GeneratedColumn<double> get lon => $composableBuilder(column: $table.lon, builder: (column) => column);
+  GeneratedColumn<double> get lon =>
+      $composableBuilder(column: $table.lon, builder: (column) => column);
 
-  GeneratedColumn<String> get status => $composableBuilder(column: $table.status, builder: (column) => column);
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   GeneratedColumn<String> get operationalStatus => $composableBuilder(
     column: $table.operationalStatus,
@@ -4939,11 +5076,14 @@ class $$PlatformsTableAnnotationComposer extends Composer<_$AppDatabase, $Platfo
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get wigosId => $composableBuilder(column: $table.wigosId, builder: (column) => column);
+  GeneratedColumn<String> get wigosId =>
+      $composableBuilder(column: $table.wigosId, builder: (column) => column);
 
-  GeneratedColumn<String> get gtsId => $composableBuilder(column: $table.gtsId, builder: (column) => column);
+  GeneratedColumn<String> get gtsId =>
+      $composableBuilder(column: $table.gtsId, builder: (column) => column);
 
-  GeneratedColumn<String> get batchRef => $composableBuilder(column: $table.batchRef, builder: (column) => column);
+  GeneratedColumn<String> get batchRef =>
+      $composableBuilder(column: $table.batchRef, builder: (column) => column);
 
   GeneratedColumn<String> get operationNotes => $composableBuilder(
     column: $table.operationNotes,
@@ -4980,9 +5120,11 @@ class $$PlatformsTableAnnotationComposer extends Composer<_$AppDatabase, $Platfo
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get ptfId => $composableBuilder(column: $table.ptfId, builder: (column) => column);
+  GeneratedColumn<String> get ptfId =>
+      $composableBuilder(column: $table.ptfId, builder: (column) => column);
 
-  GeneratedColumn<int> get programId => $composableBuilder(column: $table.programId, builder: (column) => column);
+  GeneratedColumn<int> get programId =>
+      $composableBuilder(column: $table.programId, builder: (column) => column);
 
   GeneratedColumn<String> get programName => $composableBuilder(
     column: $table.programName,
@@ -5012,7 +5154,8 @@ class $$PlatformsTableAnnotationComposer extends Composer<_$AppDatabase, $Platfo
             $table: $db.alerts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
@@ -5039,9 +5182,12 @@ class $$PlatformsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$PlatformsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$PlatformsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$PlatformsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$PlatformsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlatformsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlatformsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -5170,10 +5316,16 @@ class $$PlatformsTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (alertsRefs)
-                    await $_getPrefetchedData<Platform, $PlatformsTable, AlertEntity>(
+                    await $_getPrefetchedData<
+                      Platform,
+                      $PlatformsTable,
+                      AlertEntity
+                    >(
                       currentTable: table,
-                      referencedTable: $$PlatformsTableReferences._alertsRefsTable(db),
-                      managerFromTypedResult: (p0) => $$PlatformsTableReferences(db, table, p0).alertsRefs,
+                      referencedTable: $$PlatformsTableReferences
+                          ._alertsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PlatformsTableReferences(db, table, p0).alertsRefs,
                       referencedItemsForCurrentItem: (item, referencedItems) =>
                           referencedItems.where((e) => e.resource == item.ref),
                       typedResults: items,
@@ -5225,11 +5377,12 @@ typedef $$AlertsTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$AlertsTableReferences extends BaseReferences<_$AppDatabase, $AlertsTable, AlertEntity> {
+final class $$AlertsTableReferences
+    extends BaseReferences<_$AppDatabase, $AlertsTable, AlertEntity> {
   $$AlertsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $PlatformsTable _resourceTable(_$AppDatabase db) =>
-      db.platforms.createAlias($_aliasNameGenerator(db.alerts.resource, db.platforms.ref));
+  static $PlatformsTable _resourceTable(_$AppDatabase db) => db.platforms
+      .createAlias($_aliasNameGenerator(db.alerts.resource, db.platforms.ref));
 
   $$PlatformsTableProcessedTableManager get resource {
     final $_column = $_itemColumn<String>('resource')!;
@@ -5246,7 +5399,8 @@ final class $$AlertsTableReferences extends BaseReferences<_$AppDatabase, $Alert
   }
 }
 
-class $$AlertsTableFilterComposer extends Composer<_$AppDatabase, $AlertsTable> {
+class $$AlertsTableFilterComposer
+    extends Composer<_$AppDatabase, $AlertsTable> {
   $$AlertsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5305,14 +5459,16 @@ class $$AlertsTableFilterComposer extends Composer<_$AppDatabase, $AlertsTable> 
             $table: $db.platforms,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
   }
 }
 
-class $$AlertsTableOrderingComposer extends Composer<_$AppDatabase, $AlertsTable> {
+class $$AlertsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AlertsTable> {
   $$AlertsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5371,14 +5527,16 @@ class $$AlertsTableOrderingComposer extends Composer<_$AppDatabase, $AlertsTable
             $table: $db.platforms,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
   }
 }
 
-class $$AlertsTableAnnotationComposer extends Composer<_$AppDatabase, $AlertsTable> {
+class $$AlertsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AlertsTable> {
   $$AlertsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5386,15 +5544,20 @@ class $$AlertsTableAnnotationComposer extends Composer<_$AppDatabase, $AlertsTab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get event => $composableBuilder(column: $table.event, builder: (column) => column);
+  GeneratedColumn<String> get event =>
+      $composableBuilder(column: $table.event, builder: (column) => column);
 
-  GeneratedColumn<String> get severity => $composableBuilder(column: $table.severity, builder: (column) => column);
+  GeneratedColumn<String> get severity =>
+      $composableBuilder(column: $table.severity, builder: (column) => column);
 
-  GeneratedColumn<String> get status => $composableBuilder(column: $table.status, builder: (column) => column);
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<String> get value => $composableBuilder(column: $table.value, builder: (column) => column);
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createTime => $composableBuilder(
     column: $table.createTime,
@@ -5422,7 +5585,8 @@ class $$AlertsTableAnnotationComposer extends Composer<_$AppDatabase, $AlertsTab
             $table: $db.platforms,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -5449,9 +5613,12 @@ class $$AlertsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$AlertsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$AlertsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$AlertsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AlertsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AlertsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AlertsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
@@ -5498,7 +5665,8 @@ class $$AlertsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) => (e.readTable(table), $$AlertsTableReferences(db, table, e)),
+                (e) =>
+                    (e.readTable(table), $$AlertsTableReferences(db, table, e)),
               )
               .toList(),
           prefetchHooksCallback: ({resource = false}) {
@@ -5526,8 +5694,11 @@ class $$AlertsTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.resource,
-                                referencedTable: $$AlertsTableReferences._resourceTable(db),
-                                referencedColumn: $$AlertsTableReferences._resourceTable(db).ref,
+                                referencedTable: $$AlertsTableReferences
+                                    ._resourceTable(db),
+                                referencedColumn: $$AlertsTableReferences
+                                    ._resourceTable(db)
+                                    .ref,
                               )
                               as T;
                     }
@@ -5592,12 +5763,12 @@ typedef $$UserProfilesTableUpdateCompanionBuilder =
       Value<bool> hideContactInfoFromPublic,
     });
 
-final class $$UserProfilesTableReferences extends BaseReferences<_$AppDatabase, $UserProfilesTable, UserEntity> {
+final class $$UserProfilesTableReferences
+    extends BaseReferences<_$AppDatabase, $UserProfilesTable, UserEntity> {
   $$UserProfilesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>> _userProgramRolesRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
+  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>>
+  _userProgramRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.userProgramRoles,
     aliasName: $_aliasNameGenerator(
       db.userProfiles.id,
@@ -5619,11 +5790,11 @@ final class $$UserProfilesTableReferences extends BaseReferences<_$AppDatabase, 
     );
   }
 
-  static MultiTypedResultKey<$UserRolesTable, List<UserRole>> _userRolesRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.userRoles,
-        aliasName: $_aliasNameGenerator(db.userProfiles.id, db.userRoles.userId),
-      );
+  static MultiTypedResultKey<$UserRolesTable, List<UserRole>>
+  _userRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userRoles,
+    aliasName: $_aliasNameGenerator(db.userProfiles.id, db.userRoles.userId),
+  );
 
   $$UserRolesTableProcessedTableManager get userRolesRefs {
     final manager = $$UserRolesTableTableManager(
@@ -5638,7 +5809,8 @@ final class $$UserProfilesTableReferences extends BaseReferences<_$AppDatabase, 
   }
 }
 
-class $$UserProfilesTableFilterComposer extends Composer<_$AppDatabase, $UserProfilesTable> {
+class $$UserProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
   $$UserProfilesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -5734,7 +5906,8 @@ class $$UserProfilesTableFilterComposer extends Composer<_$AppDatabase, $UserPro
             $table: $db.userProgramRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
@@ -5758,14 +5931,16 @@ class $$UserProfilesTableFilterComposer extends Composer<_$AppDatabase, $UserPro
             $table: $db.userRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
   }
 }
 
-class $$UserProfilesTableOrderingComposer extends Composer<_$AppDatabase, $UserProfilesTable> {
+class $$UserProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
   $$UserProfilesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -5844,7 +6019,8 @@ class $$UserProfilesTableOrderingComposer extends Composer<_$AppDatabase, $UserP
   );
 }
 
-class $$UserProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $UserProfilesTable> {
+class $$UserProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserProfilesTable> {
   $$UserProfilesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -5852,31 +6028,44 @@ class $$UserProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Use
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<int> get ref => $composableBuilder(column: $table.ref, builder: (column) => column);
+  GeneratedColumn<int> get ref =>
+      $composableBuilder(column: $table.ref, builder: (column) => column);
 
-  GeneratedColumn<String> get email => $composableBuilder(column: $table.email, builder: (column) => column);
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
 
-  GeneratedColumn<String> get email2 => $composableBuilder(column: $table.email2, builder: (column) => column);
+  GeneratedColumn<String> get email2 =>
+      $composableBuilder(column: $table.email2, builder: (column) => column);
 
-  GeneratedColumn<String> get fullName => $composableBuilder(column: $table.fullName, builder: (column) => column);
+  GeneratedColumn<String> get fullName =>
+      $composableBuilder(column: $table.fullName, builder: (column) => column);
 
-  GeneratedColumn<String> get firstName => $composableBuilder(column: $table.firstName, builder: (column) => column);
+  GeneratedColumn<String> get firstName =>
+      $composableBuilder(column: $table.firstName, builder: (column) => column);
 
-  GeneratedColumn<String> get lastName => $composableBuilder(column: $table.lastName, builder: (column) => column);
+  GeneratedColumn<String> get lastName =>
+      $composableBuilder(column: $table.lastName, builder: (column) => column);
 
-  GeneratedColumn<String> get title => $composableBuilder(column: $table.title, builder: (column) => column);
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
 
-  GeneratedColumn<String> get orcid => $composableBuilder(column: $table.orcid, builder: (column) => column);
+  GeneratedColumn<String> get orcid =>
+      $composableBuilder(column: $table.orcid, builder: (column) => column);
 
-  GeneratedColumn<String> get tel => $composableBuilder(column: $table.tel, builder: (column) => column);
+  GeneratedColumn<String> get tel =>
+      $composableBuilder(column: $table.tel, builder: (column) => column);
 
-  GeneratedColumn<String> get tel2 => $composableBuilder(column: $table.tel2, builder: (column) => column);
+  GeneratedColumn<String> get tel2 =>
+      $composableBuilder(column: $table.tel2, builder: (column) => column);
 
-  GeneratedColumn<String> get address => $composableBuilder(column: $table.address, builder: (column) => column);
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
 
-  GeneratedColumn<String> get country => $composableBuilder(column: $table.country, builder: (column) => column);
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
 
   GeneratedColumn<bool> get hideContactInfoFromPublic => $composableBuilder(
     column: $table.hideContactInfoFromPublic,
@@ -5901,7 +6090,8 @@ class $$UserProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Use
             $table: $db.userProgramRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
@@ -5925,7 +6115,8 @@ class $$UserProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Use
             $table: $db.userRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
@@ -5955,9 +6146,12 @@ class $$UserProfilesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$UserProfilesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$UserProfilesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$UserProfilesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$UserProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProfilesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -6030,48 +6224,63 @@ class $$UserProfilesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({userProgramRolesRefs = false, userRolesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (userProgramRolesRefs) db.userProgramRoles,
-                if (userRolesRefs) db.userRoles,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (userProgramRolesRefs)
-                    await $_getPrefetchedData<UserEntity, $UserProfilesTable, UserProgramRole>(
-                      currentTable: table,
-                      referencedTable: $$UserProfilesTableReferences._userProgramRolesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$UserProfilesTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).userProgramRolesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) => referencedItems.where(
-                        (e) => e.userId == item.id,
-                      ),
-                      typedResults: items,
-                    ),
-                  if (userRolesRefs)
-                    await $_getPrefetchedData<UserEntity, $UserProfilesTable, UserRole>(
-                      currentTable: table,
-                      referencedTable: $$UserProfilesTableReferences._userRolesRefsTable(db),
-                      managerFromTypedResult: (p0) => $$UserProfilesTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).userRolesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) => referencedItems.where(
-                        (e) => e.userId == item.id,
-                      ),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({userProgramRolesRefs = false, userRolesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (userProgramRolesRefs) db.userProgramRoles,
+                    if (userRolesRefs) db.userRoles,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (userProgramRolesRefs)
+                        await $_getPrefetchedData<
+                          UserEntity,
+                          $UserProfilesTable,
+                          UserProgramRole
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserProfilesTableReferences
+                              ._userProgramRolesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userProgramRolesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (userRolesRefs)
+                        await $_getPrefetchedData<
+                          UserEntity,
+                          $UserProfilesTable,
+                          UserRole
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserProfilesTableReferences
+                              ._userRolesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userRolesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -6103,12 +6312,12 @@ typedef $$ProgramsTableUpdateCompanionBuilder =
       Value<String> code,
     });
 
-final class $$ProgramsTableReferences extends BaseReferences<_$AppDatabase, $ProgramsTable, ProgramEntity> {
+final class $$ProgramsTableReferences
+    extends BaseReferences<_$AppDatabase, $ProgramsTable, ProgramEntity> {
   $$ProgramsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>> _userProgramRolesRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
+  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>>
+  _userProgramRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.userProgramRoles,
     aliasName: $_aliasNameGenerator(
       db.programs.id,
@@ -6131,7 +6340,8 @@ final class $$ProgramsTableReferences extends BaseReferences<_$AppDatabase, $Pro
   }
 }
 
-class $$ProgramsTableFilterComposer extends Composer<_$AppDatabase, $ProgramsTable> {
+class $$ProgramsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProgramsTable> {
   $$ProgramsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6172,14 +6382,16 @@ class $$ProgramsTableFilterComposer extends Composer<_$AppDatabase, $ProgramsTab
             $table: $db.userProgramRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
   }
 }
 
-class $$ProgramsTableOrderingComposer extends Composer<_$AppDatabase, $ProgramsTable> {
+class $$ProgramsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProgramsTable> {
   $$ProgramsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6203,7 +6415,8 @@ class $$ProgramsTableOrderingComposer extends Composer<_$AppDatabase, $ProgramsT
   );
 }
 
-class $$ProgramsTableAnnotationComposer extends Composer<_$AppDatabase, $ProgramsTable> {
+class $$ProgramsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProgramsTable> {
   $$ProgramsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6211,11 +6424,14 @@ class $$ProgramsTableAnnotationComposer extends Composer<_$AppDatabase, $Program
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get code => $composableBuilder(column: $table.code, builder: (column) => column);
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
 
   Expression<T> userProgramRolesRefs<T extends Object>(
     Expression<T> Function($$UserProgramRolesTableAnnotationComposer a) f,
@@ -6235,7 +6451,8 @@ class $$ProgramsTableAnnotationComposer extends Composer<_$AppDatabase, $Program
             $table: $db.userProgramRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
@@ -6262,9 +6479,12 @@ class $$ProgramsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$ProgramsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$ProgramsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$ProgramsTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$ProgramsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProgramsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProgramsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -6295,9 +6515,14 @@ class $$ProgramsTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (userProgramRolesRefs)
-                    await $_getPrefetchedData<ProgramEntity, $ProgramsTable, UserProgramRole>(
+                    await $_getPrefetchedData<
+                      ProgramEntity,
+                      $ProgramsTable,
+                      UserProgramRole
+                    >(
                       currentTable: table,
-                      referencedTable: $$ProgramsTableReferences._userProgramRolesRefsTable(db),
+                      referencedTable: $$ProgramsTableReferences
+                          ._userProgramRolesRefsTable(db),
                       managerFromTypedResult: (p0) => $$ProgramsTableReferences(
                         db,
                         table,
@@ -6342,12 +6567,12 @@ typedef $$RolesTableUpdateCompanionBuilder =
       Value<String> code,
     });
 
-final class $$RolesTableReferences extends BaseReferences<_$AppDatabase, $RolesTable, RoleEntity> {
+final class $$RolesTableReferences
+    extends BaseReferences<_$AppDatabase, $RolesTable, RoleEntity> {
   $$RolesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>> _userProgramRolesRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
+  static MultiTypedResultKey<$UserProgramRolesTable, List<UserProgramRole>>
+  _userProgramRolesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.userProgramRoles,
     aliasName: $_aliasNameGenerator(db.roles.id, db.userProgramRoles.roleId),
   );
@@ -6408,14 +6633,16 @@ class $$RolesTableFilterComposer extends Composer<_$AppDatabase, $RolesTable> {
             $table: $db.userProgramRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
   }
 }
 
-class $$RolesTableOrderingComposer extends Composer<_$AppDatabase, $RolesTable> {
+class $$RolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RolesTable> {
   $$RolesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6439,7 +6666,8 @@ class $$RolesTableOrderingComposer extends Composer<_$AppDatabase, $RolesTable> 
   );
 }
 
-class $$RolesTableAnnotationComposer extends Composer<_$AppDatabase, $RolesTable> {
+class $$RolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RolesTable> {
   $$RolesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6447,11 +6675,14 @@ class $$RolesTableAnnotationComposer extends Composer<_$AppDatabase, $RolesTable
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get code => $composableBuilder(column: $table.code, builder: (column) => column);
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
 
   Expression<T> userProgramRolesRefs<T extends Object>(
     Expression<T> Function($$UserProgramRolesTableAnnotationComposer a) f,
@@ -6471,7 +6702,8 @@ class $$RolesTableAnnotationComposer extends Composer<_$AppDatabase, $RolesTable
             $table: $db.userProgramRoles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return f(composer);
@@ -6498,9 +6730,12 @@ class $$RolesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$RolesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$RolesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$RolesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$RolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RolesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -6515,7 +6750,8 @@ class $$RolesTableTableManager
               }) => RolesCompanion.insert(id: id, name: name, code: code),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) => (e.readTable(table), $$RolesTableReferences(db, table, e)),
+                (e) =>
+                    (e.readTable(table), $$RolesTableReferences(db, table, e)),
               )
               .toList(),
           prefetchHooksCallback: ({userProgramRolesRefs = false}) {
@@ -6528,9 +6764,14 @@ class $$RolesTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (userProgramRolesRefs)
-                    await $_getPrefetchedData<RoleEntity, $RolesTable, UserProgramRole>(
+                    await $_getPrefetchedData<
+                      RoleEntity,
+                      $RolesTable,
+                      UserProgramRole
+                    >(
                       currentTable: table,
-                      referencedTable: $$RolesTableReferences._userProgramRolesRefsTable(db),
+                      referencedTable: $$RolesTableReferences
+                          ._userProgramRolesRefsTable(db),
                       managerFromTypedResult: (p0) => $$RolesTableReferences(
                         db,
                         table,
@@ -6578,16 +6819,18 @@ typedef $$UserProgramRolesTableUpdateCompanionBuilder =
     });
 
 final class $$UserProgramRolesTableReferences
-    extends BaseReferences<_$AppDatabase, $UserProgramRolesTable, UserProgramRole> {
+    extends
+        BaseReferences<_$AppDatabase, $UserProgramRolesTable, UserProgramRole> {
   $$UserProgramRolesTableReferences(
     super.$_db,
     super.$_table,
     super.$_typedResult,
   );
 
-  static $UserProfilesTable _userIdTable(_$AppDatabase db) => db.userProfiles.createAlias(
-    $_aliasNameGenerator(db.userProgramRoles.userId, db.userProfiles.id),
-  );
+  static $UserProfilesTable _userIdTable(_$AppDatabase db) =>
+      db.userProfiles.createAlias(
+        $_aliasNameGenerator(db.userProgramRoles.userId, db.userProfiles.id),
+      );
 
   $$UserProfilesTableProcessedTableManager get userId {
     final $_column = $_itemColumn<int>('user_id')!;
@@ -6603,9 +6846,10 @@ final class $$UserProgramRolesTableReferences
     );
   }
 
-  static $ProgramsTable _programIdTable(_$AppDatabase db) => db.programs.createAlias(
-    $_aliasNameGenerator(db.userProgramRoles.programId, db.programs.id),
-  );
+  static $ProgramsTable _programIdTable(_$AppDatabase db) =>
+      db.programs.createAlias(
+        $_aliasNameGenerator(db.userProgramRoles.programId, db.programs.id),
+      );
 
   $$ProgramsTableProcessedTableManager get programId {
     final $_column = $_itemColumn<int>('program_id')!;
@@ -6640,7 +6884,8 @@ final class $$UserProgramRolesTableReferences
   }
 }
 
-class $$UserProgramRolesTableFilterComposer extends Composer<_$AppDatabase, $UserProgramRolesTable> {
+class $$UserProgramRolesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserProgramRolesTable> {
   $$UserProgramRolesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -6664,7 +6909,8 @@ class $$UserProgramRolesTableFilterComposer extends Composer<_$AppDatabase, $Use
             $table: $db.userProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6686,7 +6932,8 @@ class $$UserProgramRolesTableFilterComposer extends Composer<_$AppDatabase, $Use
             $table: $db.programs,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6708,14 +6955,16 @@ class $$UserProgramRolesTableFilterComposer extends Composer<_$AppDatabase, $Use
             $table: $db.roles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
   }
 }
 
-class $$UserProgramRolesTableOrderingComposer extends Composer<_$AppDatabase, $UserProgramRolesTable> {
+class $$UserProgramRolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserProgramRolesTable> {
   $$UserProgramRolesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -6739,7 +6988,8 @@ class $$UserProgramRolesTableOrderingComposer extends Composer<_$AppDatabase, $U
             $table: $db.userProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6761,7 +7011,8 @@ class $$UserProgramRolesTableOrderingComposer extends Composer<_$AppDatabase, $U
             $table: $db.programs,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6783,14 +7034,16 @@ class $$UserProgramRolesTableOrderingComposer extends Composer<_$AppDatabase, $U
             $table: $db.roles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
   }
 }
 
-class $$UserProgramRolesTableAnnotationComposer extends Composer<_$AppDatabase, $UserProgramRolesTable> {
+class $$UserProgramRolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserProgramRolesTable> {
   $$UserProgramRolesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -6814,7 +7067,8 @@ class $$UserProgramRolesTableAnnotationComposer extends Composer<_$AppDatabase, 
             $table: $db.userProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6836,7 +7090,8 @@ class $$UserProgramRolesTableAnnotationComposer extends Composer<_$AppDatabase, 
             $table: $db.programs,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6858,7 +7113,8 @@ class $$UserProgramRolesTableAnnotationComposer extends Composer<_$AppDatabase, 
             $table: $db.roles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -6887,9 +7143,12 @@ class $$UserProgramRolesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$UserProgramRolesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$UserProgramRolesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$UserProgramRolesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$UserProgramRolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProgramRolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProgramRolesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> userId = const Value.absent(),
@@ -6922,64 +7181,80 @@ class $$UserProgramRolesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({userId = false, programId = false, roleId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (userId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.userId,
-                                referencedTable: $$UserProgramRolesTableReferences._userIdTable(db),
-                                referencedColumn: $$UserProgramRolesTableReferences._userIdTable(db).id,
-                              )
-                              as T;
-                    }
-                    if (programId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.programId,
-                                referencedTable: $$UserProgramRolesTableReferences._programIdTable(db),
-                                referencedColumn: $$UserProgramRolesTableReferences._programIdTable(db).id,
-                              )
-                              as T;
-                    }
-                    if (roleId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.roleId,
-                                referencedTable: $$UserProgramRolesTableReferences._roleIdTable(db),
-                                referencedColumn: $$UserProgramRolesTableReferences._roleIdTable(db).id,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({userId = false, programId = false, roleId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (userId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.userId,
+                                    referencedTable:
+                                        $$UserProgramRolesTableReferences
+                                            ._userIdTable(db),
+                                    referencedColumn:
+                                        $$UserProgramRolesTableReferences
+                                            ._userIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (programId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.programId,
+                                    referencedTable:
+                                        $$UserProgramRolesTableReferences
+                                            ._programIdTable(db),
+                                    referencedColumn:
+                                        $$UserProgramRolesTableReferences
+                                            ._programIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (roleId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.roleId,
+                                    referencedTable:
+                                        $$UserProgramRolesTableReferences
+                                            ._roleIdTable(db),
+                                    referencedColumn:
+                                        $$UserProgramRolesTableReferences
+                                            ._roleIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -7011,12 +7286,14 @@ typedef $$UserRolesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-final class $$UserRolesTableReferences extends BaseReferences<_$AppDatabase, $UserRolesTable, UserRole> {
+final class $$UserRolesTableReferences
+    extends BaseReferences<_$AppDatabase, $UserRolesTable, UserRole> {
   $$UserRolesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $UserProfilesTable _userIdTable(_$AppDatabase db) => db.userProfiles.createAlias(
-    $_aliasNameGenerator(db.userRoles.userId, db.userProfiles.id),
-  );
+  static $UserProfilesTable _userIdTable(_$AppDatabase db) =>
+      db.userProfiles.createAlias(
+        $_aliasNameGenerator(db.userRoles.userId, db.userProfiles.id),
+      );
 
   $$UserProfilesTableProcessedTableManager get userId {
     final $_column = $_itemColumn<int>('user_id')!;
@@ -7033,7 +7310,8 @@ final class $$UserRolesTableReferences extends BaseReferences<_$AppDatabase, $Us
   }
 }
 
-class $$UserRolesTableFilterComposer extends Composer<_$AppDatabase, $UserRolesTable> {
+class $$UserRolesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserRolesTable> {
   $$UserRolesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7062,14 +7340,16 @@ class $$UserRolesTableFilterComposer extends Composer<_$AppDatabase, $UserRolesT
             $table: $db.userProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
   }
 }
 
-class $$UserRolesTableOrderingComposer extends Composer<_$AppDatabase, $UserRolesTable> {
+class $$UserRolesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserRolesTable> {
   $$UserRolesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7098,14 +7378,16 @@ class $$UserRolesTableOrderingComposer extends Composer<_$AppDatabase, $UserRole
             $table: $db.userProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
   }
 }
 
-class $$UserRolesTableAnnotationComposer extends Composer<_$AppDatabase, $UserRolesTable> {
+class $$UserRolesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserRolesTable> {
   $$UserRolesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7113,7 +7395,8 @@ class $$UserRolesTableAnnotationComposer extends Composer<_$AppDatabase, $UserRo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get roleCode => $composableBuilder(column: $table.roleCode, builder: (column) => column);
+  GeneratedColumn<String> get roleCode =>
+      $composableBuilder(column: $table.roleCode, builder: (column) => column);
 
   $$UserProfilesTableAnnotationComposer get userId {
     final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
@@ -7131,7 +7414,8 @@ class $$UserRolesTableAnnotationComposer extends Composer<_$AppDatabase, $UserRo
             $table: $db.userProfiles,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer: $removeJoinBuilderFromRootComposer,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
           ),
     );
     return composer;
@@ -7158,9 +7442,12 @@ class $$UserRolesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$UserRolesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$UserRolesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$UserRolesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$UserRolesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserRolesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserRolesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> userId = const Value.absent(),
@@ -7214,8 +7501,11 @@ class $$UserRolesTableTableManager
                           state.withJoin(
                                 currentTable: table,
                                 currentColumn: table.userId,
-                                referencedTable: $$UserRolesTableReferences._userIdTable(db),
-                                referencedColumn: $$UserRolesTableReferences._userIdTable(db).id,
+                                referencedTable: $$UserRolesTableReferences
+                                    ._userIdTable(db),
+                                referencedColumn: $$UserRolesTableReferences
+                                    ._userIdTable(db)
+                                    .id,
                               )
                               as T;
                     }
@@ -7268,7 +7558,8 @@ typedef $$PendingOperationsTableUpdateCompanionBuilder =
       Value<int> attempts,
     });
 
-class $$PendingOperationsTableFilterComposer extends Composer<_$AppDatabase, $PendingOperationsTable> {
+class $$PendingOperationsTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
   $$PendingOperationsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7317,7 +7608,8 @@ class $$PendingOperationsTableFilterComposer extends Composer<_$AppDatabase, $Pe
   );
 }
 
-class $$PendingOperationsTableOrderingComposer extends Composer<_$AppDatabase, $PendingOperationsTable> {
+class $$PendingOperationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
   $$PendingOperationsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7366,7 +7658,8 @@ class $$PendingOperationsTableOrderingComposer extends Composer<_$AppDatabase, $
   );
 }
 
-class $$PendingOperationsTableAnnotationComposer extends Composer<_$AppDatabase, $PendingOperationsTable> {
+class $$PendingOperationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
   $$PendingOperationsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7374,27 +7667,33 @@ class $$PendingOperationsTableAnnotationComposer extends Composer<_$AppDatabase,
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<String> get platformRef => $composableBuilder(
     column: $table.platformRef,
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get action => $composableBuilder(column: $table.action, builder: (column) => column);
+  GeneratedColumn<String> get action =>
+      $composableBuilder(column: $table.action, builder: (column) => column);
 
   GeneratedColumn<String> get payloadJson => $composableBuilder(
     column: $table.payloadJson,
     builder: (column) => column,
   );
 
-  GeneratedColumn<DateTime> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get status => $composableBuilder(column: $table.status, builder: (column) => column);
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<String> get lastError => $composableBuilder(column: $table.lastError, builder: (column) => column);
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
 
-  GeneratedColumn<int> get attempts => $composableBuilder(column: $table.attempts, builder: (column) => column);
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
 }
 
 class $$PendingOperationsTableTableManager
@@ -7410,7 +7709,11 @@ class $$PendingOperationsTableTableManager
           $$PendingOperationsTableUpdateCompanionBuilder,
           (
             PendingOperation,
-            BaseReferences<_$AppDatabase, $PendingOperationsTable, PendingOperation>,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingOperationsTable,
+              PendingOperation
+            >,
           ),
           PendingOperation,
           PrefetchHooks Function()
@@ -7422,12 +7725,15 @@ class $$PendingOperationsTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$PendingOperationsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$PendingOperationsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$PendingOperationsTableAnnotationComposer(
-            $db: db,
-            $table: table,
-          ),
+          createFilteringComposer: () =>
+              $$PendingOperationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingOperationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingOperationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -7468,7 +7774,9 @@ class $$PendingOperationsTableTableManager
                 lastError: lastError,
                 attempts: attempts,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7486,7 +7794,11 @@ typedef $$PendingOperationsTableProcessedTableManager =
       $$PendingOperationsTableUpdateCompanionBuilder,
       (
         PendingOperation,
-        BaseReferences<_$AppDatabase, $PendingOperationsTable, PendingOperation>,
+        BaseReferences<
+          _$AppDatabase,
+          $PendingOperationsTable,
+          PendingOperation
+        >,
       ),
       PendingOperation,
       PrefetchHooks Function()
@@ -7502,7 +7814,8 @@ typedef $$SyncMetadataTableUpdateCompanionBuilder =
       Value<DateTime?> lastPlatformsRefresh,
     });
 
-class $$SyncMetadataTableFilterComposer extends Composer<_$AppDatabase, $SyncMetadataTable> {
+class $$SyncMetadataTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncMetadataTable> {
   $$SyncMetadataTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -7521,7 +7834,8 @@ class $$SyncMetadataTableFilterComposer extends Composer<_$AppDatabase, $SyncMet
   );
 }
 
-class $$SyncMetadataTableOrderingComposer extends Composer<_$AppDatabase, $SyncMetadataTable> {
+class $$SyncMetadataTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncMetadataTable> {
   $$SyncMetadataTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -7540,7 +7854,8 @@ class $$SyncMetadataTableOrderingComposer extends Composer<_$AppDatabase, $SyncM
   );
 }
 
-class $$SyncMetadataTableAnnotationComposer extends Composer<_$AppDatabase, $SyncMetadataTable> {
+class $$SyncMetadataTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncMetadataTable> {
   $$SyncMetadataTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -7548,7 +7863,8 @@ class $$SyncMetadataTableAnnotationComposer extends Composer<_$AppDatabase, $Syn
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
   GeneratedColumn<DateTime> get lastPlatformsRefresh => $composableBuilder(
     column: $table.lastPlatformsRefresh,
@@ -7579,9 +7895,12 @@ class $$SyncMetadataTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$SyncMetadataTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$SyncMetadataTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$SyncMetadataTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SyncMetadataTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncMetadataTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncMetadataTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -7598,7 +7917,9 @@ class $$SyncMetadataTableTableManager
                 id: id,
                 lastPlatformsRefresh: lastPlatformsRefresh,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -7625,15 +7946,22 @@ typedef $$SyncMetadataTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$PlatformsTableTableManager get platforms => $$PlatformsTableTableManager(_db, _db.platforms);
-  $$AlertsTableTableManager get alerts => $$AlertsTableTableManager(_db, _db.alerts);
-  $$UserProfilesTableTableManager get userProfiles => $$UserProfilesTableTableManager(_db, _db.userProfiles);
-  $$ProgramsTableTableManager get programs => $$ProgramsTableTableManager(_db, _db.programs);
-  $$RolesTableTableManager get roles => $$RolesTableTableManager(_db, _db.roles);
+  $$PlatformsTableTableManager get platforms =>
+      $$PlatformsTableTableManager(_db, _db.platforms);
+  $$AlertsTableTableManager get alerts =>
+      $$AlertsTableTableManager(_db, _db.alerts);
+  $$UserProfilesTableTableManager get userProfiles =>
+      $$UserProfilesTableTableManager(_db, _db.userProfiles);
+  $$ProgramsTableTableManager get programs =>
+      $$ProgramsTableTableManager(_db, _db.programs);
+  $$RolesTableTableManager get roles =>
+      $$RolesTableTableManager(_db, _db.roles);
   $$UserProgramRolesTableTableManager get userProgramRoles =>
       $$UserProgramRolesTableTableManager(_db, _db.userProgramRoles);
-  $$UserRolesTableTableManager get userRoles => $$UserRolesTableTableManager(_db, _db.userRoles);
+  $$UserRolesTableTableManager get userRoles =>
+      $$UserRolesTableTableManager(_db, _db.userRoles);
   $$PendingOperationsTableTableManager get pendingOperations =>
       $$PendingOperationsTableTableManager(_db, _db.pendingOperations);
-  $$SyncMetadataTableTableManager get syncMetadata => $$SyncMetadataTableTableManager(_db, _db.syncMetadata);
+  $$SyncMetadataTableTableManager get syncMetadata =>
+      $$SyncMetadataTableTableManager(_db, _db.syncMetadata);
 }

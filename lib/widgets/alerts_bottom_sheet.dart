@@ -3,13 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/models/alert.dart';
 
-/// Whether [alert] is still requiring attention (open or acknowledged).
-bool isActiveAlert(Alert alert) => alert.status == AlertStatus.open || alert.status == AlertStatus.acknowledged;
+/// Whether [alert] is open.
+bool isOpenAlert(Alert alert) => alert.status == AlertStatus.open;
 
-/// Returns the open/acknowledged [alerts], ordered by severity (most severe
-/// first) then last receive time (most recent first).
+/// Returns the open [alerts], or the acknowledged ones when none is open,
+/// ordered by severity (most severe first) then last receive time (most
+/// recent first).
 List<Alert> sortActiveAlerts(Iterable<Alert> alerts) {
-  return alerts.where(isActiveAlert).toList()..sort((a, b) {
+  final open = alerts.where(isOpenAlert).toList();
+  final shown = open.isNotEmpty ? open : alerts.where((a) => a.status == AlertStatus.acknowledged).toList();
+  return shown..sort((a, b) {
     final bySeverity = a.severity.index.compareTo(b.severity.index);
     if (bySeverity != 0) return bySeverity;
     final aTime = a.lastReceiveTime;
@@ -21,7 +24,7 @@ List<Alert> sortActiveAlerts(Iterable<Alert> alerts) {
   });
 }
 
-/// Shows the bottom sheet listing the open/acknowledged [alerts] of a platform.
+/// Shows the bottom sheet listing the open [alerts] of a platform.
 ///
 /// [totalAlertCount] is the number shown in the "See all alerts (n)" action.
 Future<void> showAlertsBottomSheet(
@@ -52,7 +55,9 @@ class AlertsBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final active = sortActiveAlerts(alerts);
-    final openCount = active.where((a) => a.status == AlertStatus.open).length;
+    final openCount = active.length;
+    final onlyAcknowledged = active.isNotEmpty && !isOpenAlert(active.first);
+    final headerStyle = onlyAcknowledged ? AlertStatusPalette.acknowledged : AlertStatusPalette.open;
 
     return SafeArea(
       child: ConstrainedBox(
@@ -65,7 +70,7 @@ class AlertsBottomSheet extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(AlertStatusPalette.open.displayIcon, color: AlertStatusPalette.open.color),
+                  Icon(headerStyle.displayIcon, color: headerStyle.color),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -73,7 +78,7 @@ class AlertsBottomSheet extends StatelessWidget {
                       children: [
                         Text('Alerts', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                         Text(
-                          '$openCount open ${openCount == 1 ? 'alert' : 'alerts'}',
+                          '$openCount ${onlyAcknowledged ? 'acknowledged' : 'open'} ${openCount == 1 ? 'alert' : 'alerts'}',
                           style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
@@ -92,16 +97,16 @@ class AlertsBottomSheet extends StatelessWidget {
                   shrinkWrap: true,
                   children: [
                     for (final alert in active) _AlertTile(alert: alert),
-                    Card(
-                      margin: const EdgeInsets.only(top: 4),
-                      child: ListTile(
-                        leading: const Icon(Icons.description_outlined),
-                        title: Text('See all alerts ($totalAlertCount)'),
-                        trailing: const Icon(Icons.chevron_right),
-                        // Navigation to the alert history is out of scope for now.
-                        onTap: () {},
+                    if (totalAlertCount > openCount)
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.description_outlined),
+                          title: Text('See all alerts ($totalAlertCount)'),
+                          trailing: const Icon(Icons.chevron_right),
+                          // Navigation to the alert history is out of scope for now.
+                          onTap: () {},
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -133,8 +138,6 @@ class _AlertTile extends StatelessWidget {
     final severityStyle = AlertSeverityPalette.forSeverity(alert.severity);
     final subtle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
     final lastReceive = alert.lastReceiveTime;
-    final created = alert.createTime;
-    final value = alert.value?.trim();
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -142,50 +145,59 @@ class _AlertTile extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(left: BorderSide(color: statusStyle.color, width: 4)),
         ),
-        child: ListTile(
+        child: InkWell(
           // Navigation to the alert details is out of scope for now.
           onTap: () {},
-          leading: Icon(statusStyle.displayIcon, color: statusStyle.color, size: 32),
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(alert.event, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-              ),
-              _Chip(
-                label: severityStyle.label,
-                background: severityStyle.chipColor,
-                foreground: severityStyle.textColor,
-              ),
-              const SizedBox(width: 6),
-              _Chip(
-                label: statusStyle.label,
-                background: statusStyle.color.withValues(alpha: 0.2),
-                foreground: statusStyle.color,
-              ),
-            ],
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (value != null && value.isNotEmpty) Text('Value: $value', style: subtle),
-              if (lastReceive != null)
-                Row(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.schedule, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text('Last received ${_dateFormat.format(lastReceive.toUtc())} UTC', style: subtle),
+                    Icon(statusStyle.displayIcon, color: statusStyle.color, size: 32),
+                    const SizedBox(height: 4),
+                    _Chip(
+                      label: alert.status == AlertStatus.acknowledged ? 'Ack' : statusStyle.label,
+                      background: statusStyle.color.withValues(alpha: 0.2),
+                      foreground: statusStyle.color,
+                    ),
+                    const SizedBox(height: 4),
+                    _Chip(
+                      label: severityStyle.label,
+                      background: severityStyle.chipColor,
+                      foreground: severityStyle.textColor,
                     ),
                   ],
                 ),
-              if (created != null)
-                Text(
-                  'Duration: ${_duration(DateTime.now().difference(created))}',
-                  style: subtle,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(alert.event, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      if (lastReceive != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Last received ${_dateFormat.format(lastReceive.toUtc())} UTC (${_duration(DateTime.now().difference(lastReceive))} ago)',
+                                style: subtle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-            ],
+                const Icon(Icons.chevron_right),
+              ],
+            ),
           ),
-          trailing: const Icon(Icons.chevron_right),
         ),
       ),
     );
