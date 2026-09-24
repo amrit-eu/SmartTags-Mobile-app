@@ -35,6 +35,7 @@ PlatformsCompanion _samplePlatform({String ref = 'PLT-001'}) {
     lastUpdated: DateTime.utc(2025),
     operationLat: 0,
     operationLon: 0,
+    category: 'Profiling Float',
   );
 }
 
@@ -128,45 +129,48 @@ void main() {
       expect(await db.getLastPlatformsRefresh(), isNotNull);
     });
 
-    test('subsequent refresh sends cachedSince/paginationEnabled and upserts without touching untouched rows', () async {
-      final fakeRepository = _FakeGatewayRepository(
-        unclosedMissions: [_samplePlatform()],
-        searchResults: [_samplePlatform(ref: 'PLT-002')],
-      );
-      final container = ProviderContainer(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          checkConnectionProvider.overrideWith(
-            () => _FixedConnectivity(ConnectivityResult.wifi),
-          ),
-          gatewayRepositoryProvider.overrideWithValue(fakeRepository),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'subsequent refresh sends cachedSince/paginationEnabled and upserts without touching untouched rows',
+      () async {
+        final fakeRepository = _FakeGatewayRepository(
+          unclosedMissions: [_samplePlatform()],
+          searchResults: [_samplePlatform(ref: 'PLT-002')],
+        );
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            checkConnectionProvider.overrideWith(
+              () => _FixedConnectivity(ConnectivityResult.wifi),
+            ),
+            gatewayRepositoryProvider.overrideWithValue(fakeRepository),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      container.listen(platformsRefreshProvider, (_, _) {});
-      await container.read(platformsRefreshProvider.future);
+        container.listen(platformsRefreshProvider, (_, _) {});
+        await container.read(platformsRefreshProvider.future);
 
-      // First refresh: no baseline yet -> fetchUnclosedMissions, seeds PLT-001.
-      await container.read(platformsRefreshProvider.notifier).refresh();
-      final firstRefresh = await db.getLastPlatformsRefresh();
+        // First refresh: no baseline yet -> fetchUnclosedMissions, seeds PLT-001.
+        await container.read(platformsRefreshProvider.notifier).refresh();
+        final firstRefresh = await db.getLastPlatformsRefresh();
 
-      // Second refresh: baseline present -> delta search + upsert.
-      await container.read(platformsRefreshProvider.notifier).refresh();
+        // Second refresh: baseline present -> delta search + upsert.
+        await container.read(platformsRefreshProvider.notifier).refresh();
 
-      expect(fakeRepository.fetchUnclosedMissionsCallCount, 1);
-      expect(fakeRepository.capturedSearchDtos, hasLength(1));
-      final searchDto = fakeRepository.capturedSearchDtos.single!;
-      expect(searchDto.cachedSince, firstRefresh!.toUtc().toIso8601String());
-      expect(searchDto.paginationEnabled, isFalse);
-      expect(searchDto.filters, isNull);
+        expect(fakeRepository.fetchUnclosedMissionsCallCount, 1);
+        expect(fakeRepository.capturedSearchDtos, hasLength(1));
+        final searchDto = fakeRepository.capturedSearchDtos.single!;
+        expect(searchDto.cachedSince, firstRefresh!.toUtc().toIso8601String());
+        expect(searchDto.paginationEnabled, isFalse);
+        expect(searchDto.filters, isNull);
 
-      // The delta result (PLT-002) is upserted; PLT-001 (absent from the
-      // delta response) is left untouched, not deleted.
-      final rows = await db.select(db.platforms).get();
-      expect(rows.map((r) => r.ref), containsAll(['PLT-001', 'PLT-002']));
-      expect(rows, hasLength(2));
-    });
+        // The delta result (PLT-002) is upserted; PLT-001 (absent from the
+        // delta response) is left untouched, not deleted.
+        final rows = await db.select(db.platforms).get();
+        expect(rows.map((r) => r.ref), containsAll(['PLT-001', 'PLT-002']));
+        expect(rows, hasLength(2));
+      },
+    );
 
     test('errors when offline', () async {
       final container = ProviderContainer(

@@ -24,6 +24,7 @@ Platform _platform({
     latestOperationDate: latestOperationDate,
     endingCauseId: endingCauseId,
     hasLatestObservation: hasLatestObservation,
+    category: 'test-category',
   );
 }
 

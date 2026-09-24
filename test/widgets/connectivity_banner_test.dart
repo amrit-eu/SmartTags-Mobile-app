@@ -37,6 +37,7 @@ Platform _samplePlatform() {
     operationLat: 0,
     operationLon: 0,
     hasLatestObservation: false,
+    category: 'Profiling Float',
   );
 }
 

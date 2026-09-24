@@ -172,6 +172,7 @@ void main() {
               status: 'OPERATIONAL',
               operationalStatus: 'Deployed',
               lastUpdated: DateTime.now(),
+              category: 'Profiling Float',
             ),
           );
 
@@ -234,6 +235,7 @@ void main() {
               status: 'OPERATIONAL',
               operationalStatus: 'Deployed',
               lastUpdated: DateTime.now(),
+              category: 'Profiling Float',
             ),
           );
 
@@ -289,6 +291,7 @@ void main() {
               status: 'OPERATIONAL',
               operationalStatus: 'Deployed',
               lastUpdated: DateTime.now(),
+              category: 'Profiling Float',
             ),
           );
 
@@ -335,20 +338,23 @@ void main() {
     (tester) async {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
-      await db.into(db.platforms).insert(
-        PlatformsCompanion.insert(
-          ref: 'TEST-006',
-          model: 'First Platform',
-          network: 'Test Network',
-          lat: 45.5,
-          lon: -5.5,
-          operationLat: 45.5,
-          operationLon: -5.5,
-          status: 'OPERATIONAL',
-          operationalStatus: 'Deployed',
-          lastUpdated: DateTime.now(),
-        ),
-      );
+      await db
+          .into(db.platforms)
+          .insert(
+            PlatformsCompanion.insert(
+              ref: 'TEST-006',
+              model: 'First Platform',
+              network: 'Test Network',
+              lat: 45.5,
+              lon: -5.5,
+              operationLat: 45.5,
+              operationLon: -5.5,
+              status: 'OPERATIONAL',
+              operationalStatus: 'Deployed',
+              lastUpdated: DateTime.now(),
+              category: 'Profiling Float',
+            ),
+          );
 
       await tester.pumpWidget(
         ProviderScope(

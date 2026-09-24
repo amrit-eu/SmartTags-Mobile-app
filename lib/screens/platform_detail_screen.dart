@@ -234,7 +234,7 @@ class _PlatformSummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _dash(platform.platformCategory),
+                      _dash(platform.category),
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

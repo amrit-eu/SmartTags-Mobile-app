@@ -124,17 +124,19 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
       final result = await repository.searchPassports(
         PassportFilterDto(cachedSince: cachedSince, paginationEnabled: false),
       );
-      if (result.platforms.isNotEmpty) {
+      if (result.platforms.isNotEmpty || result.alerts.isNotEmpty) {
         phase.setSaving();
         await db.upsertPlatforms(result.platforms);
         await db.upsertAlerts(result.alerts);
         await db.deleteOrphanedAlerts();
         if (kDebugMode) {
-          debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
+          debugPrint(
+            'Platforms/alerts refresh: synced ${result.platforms.length} platforms and ${result.alerts.length} alerts',
+          );
         }
       } else if (kDebugMode) {
         debugPrint(
-          'Platforms refresh: gateway returned 0 platforms (local DB unchanged)',
+          'Platforms refresh: gateway returned 0 platforms and 0 alerts (local DB unchanged)',
         );
       }
       await db.setLastPlatformsRefresh(now);

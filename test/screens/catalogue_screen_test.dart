@@ -31,6 +31,7 @@ void main() {
         lastUpdated: DateTime.now(),
         operationLat: 10,
         operationLon: 10,
+        category: 'Profiling Float',
       ),
       PlatformsCompanion.insert(
         ref: 'PLT-002',
@@ -43,6 +44,7 @@ void main() {
         lastUpdated: DateTime.now(),
         operationLat: 20,
         operationLon: 20,
+        category: 'Profiling Float',
       ),
     ]);
   }
@@ -79,7 +81,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    
+
     // Verify initial state
     expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
 
@@ -90,7 +92,7 @@ void main() {
     // Verify results show one PlatformCard
     expect(find.byType(PlatformCard), findsOneWidget);
     expect(find.text('Drifting Buoy'), findsNothing);
-    
+
     // Cleanup
     await tester.pumpWidget(Container());
     await tester.pumpAndSettle();
@@ -117,7 +119,7 @@ void main() {
 
     expect(find.text('No results found'), findsOneWidget);
     expect(find.byType(PlatformCard), findsNothing);
-    
+
     // Cleanup
     await tester.pumpWidget(Container());
     await tester.pumpAndSettle();

@@ -98,6 +98,7 @@ void main() {
       operationLat: 0,
       operationLon: 0,
       hasLatestObservation: false,
+      category: 'Profiling Float',
     );
 
     await tester.pumpWidget(
@@ -139,6 +140,7 @@ void main() {
       operationLat: 0,
       operationLon: 0,
       hasLatestObservation: false,
+      category: 'Profiling Float',
     );
 
     await tester.pumpWidget(
@@ -201,6 +203,7 @@ void main() {
       operationLat: 0,
       operationLon: 0,
       hasLatestObservation: false,
+      category: 'Profiling Float',
     );
 
     await tester.pumpWidget(
@@ -246,6 +249,7 @@ void main() {
       operationLat: 0,
       operationLon: 0,
       hasLatestObservation: false,
+      category: 'Profiling Float',
     );
 
     await tester.pumpWidget(

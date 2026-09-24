@@ -38,7 +38,7 @@ abstract final class GatewayPassportMapper {
     final platformHardware = hardware['platform'] as Map<String, dynamic>? ?? {};
     final asset = platformHardware['asset'] as Map<String, dynamic>? ?? {};
     final assetModel = asset['model'] as Map<String, dynamic>? ?? {};
-    final assetType = assetModel['type'] as Map<String, dynamic>? ?? {};
+    final category = identification['platformCategory'] as Map<String, dynamic>? ?? {};
 
     final reportingStatus = status['reportingStatus'] as Map<String, dynamic>? ?? {};
     final latestObservation = status['latestObservation'] as Map<String, dynamic>? ?? {};
@@ -60,6 +60,7 @@ abstract final class GatewayPassportMapper {
       ref: (item['reference'] as String?) ?? (identification['reference'] as String?) ?? 'Unknown',
       ptfId: Value(_asPtfId(item['ptfId'])),
       model: (assetModel['name'] as String?) ?? 'Unknown',
+      category: (category['name'] as String?) ?? 'Unknown',
       network: observingNetworks.isNotEmpty ? observingNetworks.first : 'Unknown',
       lat: latestLat,
       lon: latestLon,
@@ -69,7 +70,6 @@ abstract final class GatewayPassportMapper {
       operationLat: operationLat,
       operationLon: operationLon,
       wigosId: Value(identification['passportId'] as String?),
-      platformCategory: Value(assetType['name'] as String?),
       reportingStatus: Value(reportingStatus['name'] as String?),
       observingNetwork: Value(observingNetworks.join(', ')),
       latestOperationType: Value(latestOperation?.type),
