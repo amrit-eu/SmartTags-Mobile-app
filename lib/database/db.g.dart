@@ -200,19 +200,6 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-<<<<<<< HEAD
-=======
-  static const VerificationMeta _platformCategoryMeta = const VerificationMeta(
-    'platformCategory',
-  );
-  @override
-  late final GeneratedColumn<String> platformCategory = GeneratedColumn<String>(
-    'platform_category',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _serialMeta = const VerificationMeta('serial');
   @override
   late final GeneratedColumn<String> serial = GeneratedColumn<String>(
@@ -222,7 +209,6 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
   static const VerificationMeta _reportingStatusMeta = const VerificationMeta(
     'reportingStatus',
   );
@@ -354,11 +340,7 @@ class $PlatformsTable extends Platforms
     gtsId,
     batchRef,
     operationNotes,
-<<<<<<< HEAD
-=======
-    platformCategory,
     serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     reportingStatus,
     observingNetwork,
     latestOperationType,
@@ -524,24 +506,12 @@ class $PlatformsTable extends Platforms
         ),
       );
     }
-<<<<<<< HEAD
-=======
-    if (data.containsKey('platform_category')) {
-      context.handle(
-        _platformCategoryMeta,
-        platformCategory.isAcceptableOrUnknown(
-          data['platform_category']!,
-          _platformCategoryMeta,
-        ),
-      );
-    }
     if (data.containsKey('serial')) {
       context.handle(
         _serialMeta,
         serial.isAcceptableOrUnknown(data['serial']!, _serialMeta),
       );
     }
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     if (data.containsKey('reporting_status')) {
       context.handle(
         _reportingStatusMeta,
@@ -707,17 +677,10 @@ class $PlatformsTable extends Platforms
         DriftSqlType.string,
         data['${effectivePrefix}operation_notes'],
       ),
-<<<<<<< HEAD
-=======
-      platformCategory: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}platform_category'],
-      ),
       serial: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}serial'],
       ),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       reportingStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}reporting_status'],
@@ -822,15 +785,9 @@ class Platform extends DataClass implements Insertable<Platform> {
   /// Additional notes about the latest operation (optional).
   final String? operationNotes;
 
-<<<<<<< HEAD
-=======
-  /// Platform category from passport (e.g. Float, Drifting buoy).
-  final String? platformCategory;
-
   /// Platform serial number.
   final String? serial;
 
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
   /// Passport reporting status for display chips (#97).
   final String? reportingStatus;
 
@@ -883,11 +840,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     this.gtsId,
     this.batchRef,
     this.operationNotes,
-<<<<<<< HEAD
-=======
-    this.platformCategory,
     this.serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     this.reportingStatus,
     this.observingNetwork,
     this.latestOperationType,
@@ -932,15 +885,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     if (!nullToAbsent || operationNotes != null) {
       map['operation_notes'] = Variable<String>(operationNotes);
     }
-<<<<<<< HEAD
-=======
-    if (!nullToAbsent || platformCategory != null) {
-      map['platform_category'] = Variable<String>(platformCategory);
-    }
     if (!nullToAbsent || serial != null) {
       map['serial'] = Variable<String>(serial);
     }
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     if (!nullToAbsent || reportingStatus != null) {
       map['reporting_status'] = Variable<String>(reportingStatus);
     }
@@ -1002,15 +949,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       operationNotes: operationNotes == null && nullToAbsent
           ? const Value.absent()
           : Value(operationNotes),
-<<<<<<< HEAD
-=======
-      platformCategory: platformCategory == null && nullToAbsent
-          ? const Value.absent()
-          : Value(platformCategory),
       serial: serial == null && nullToAbsent
           ? const Value.absent()
           : Value(serial),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       reportingStatus: reportingStatus == null && nullToAbsent
           ? const Value.absent()
           : Value(reportingStatus),
@@ -1066,11 +1007,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       gtsId: serializer.fromJson<String?>(json['gtsId']),
       batchRef: serializer.fromJson<String?>(json['batchRef']),
       operationNotes: serializer.fromJson<String?>(json['operationNotes']),
-<<<<<<< HEAD
-=======
-      platformCategory: serializer.fromJson<String?>(json['platformCategory']),
       serial: serializer.fromJson<String?>(json['serial']),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       reportingStatus: serializer.fromJson<String?>(json['reportingStatus']),
       observingNetwork: serializer.fromJson<String?>(json['observingNetwork']),
       latestOperationType: serializer.fromJson<String?>(
@@ -1111,11 +1048,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       'gtsId': serializer.toJson<String?>(gtsId),
       'batchRef': serializer.toJson<String?>(batchRef),
       'operationNotes': serializer.toJson<String?>(operationNotes),
-<<<<<<< HEAD
-=======
-      'platformCategory': serializer.toJson<String?>(platformCategory),
       'serial': serializer.toJson<String?>(serial),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       'reportingStatus': serializer.toJson<String?>(reportingStatus),
       'observingNetwork': serializer.toJson<String?>(observingNetwork),
       'latestOperationType': serializer.toJson<String?>(latestOperationType),
@@ -1148,11 +1081,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     Value<String?> gtsId = const Value.absent(),
     Value<String?> batchRef = const Value.absent(),
     Value<String?> operationNotes = const Value.absent(),
-<<<<<<< HEAD
-=======
-    Value<String?> platformCategory = const Value.absent(),
     Value<String?> serial = const Value.absent(),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     Value<String?> reportingStatus = const Value.absent(),
     Value<String?> observingNetwork = const Value.absent(),
     Value<String?> latestOperationType = const Value.absent(),
@@ -1184,13 +1113,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     operationNotes: operationNotes.present
         ? operationNotes.value
         : this.operationNotes,
-<<<<<<< HEAD
-=======
-    platformCategory: platformCategory.present
-        ? platformCategory.value
-        : this.platformCategory,
     serial: serial.present ? serial.value : this.serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     reportingStatus: reportingStatus.present
         ? reportingStatus.value
         : this.reportingStatus,
@@ -1244,13 +1167,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       operationNotes: data.operationNotes.present
           ? data.operationNotes.value
           : this.operationNotes,
-<<<<<<< HEAD
-=======
-      platformCategory: data.platformCategory.present
-          ? data.platformCategory.value
-          : this.platformCategory,
       serial: data.serial.present ? data.serial.value : this.serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       reportingStatus: data.reportingStatus.present
           ? data.reportingStatus.value
           : this.reportingStatus,
@@ -1301,11 +1218,7 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
           ..write('operationNotes: $operationNotes, ')
-<<<<<<< HEAD
-=======
-          ..write('platformCategory: $platformCategory, ')
           ..write('serial: $serial, ')
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
           ..write('reportingStatus: $reportingStatus, ')
           ..write('observingNetwork: $observingNetwork, ')
           ..write('latestOperationType: $latestOperationType, ')
@@ -1340,11 +1253,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     gtsId,
     batchRef,
     operationNotes,
-<<<<<<< HEAD
-=======
-    platformCategory,
     serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     reportingStatus,
     observingNetwork,
     latestOperationType,
@@ -1378,11 +1287,7 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.gtsId == this.gtsId &&
           other.batchRef == this.batchRef &&
           other.operationNotes == this.operationNotes &&
-<<<<<<< HEAD
-=======
-          other.platformCategory == this.platformCategory &&
           other.serial == this.serial &&
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
           other.reportingStatus == this.reportingStatus &&
           other.observingNetwork == this.observingNetwork &&
           other.latestOperationType == this.latestOperationType &&
@@ -1414,11 +1319,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<String?> gtsId;
   final Value<String?> batchRef;
   final Value<String?> operationNotes;
-<<<<<<< HEAD
-=======
-  final Value<String?> platformCategory;
   final Value<String?> serial;
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
   final Value<String?> reportingStatus;
   final Value<String?> observingNetwork;
   final Value<String?> latestOperationType;
@@ -1448,11 +1349,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
     this.operationNotes = const Value.absent(),
-<<<<<<< HEAD
-=======
-    this.platformCategory = const Value.absent(),
     this.serial = const Value.absent(),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     this.reportingStatus = const Value.absent(),
     this.observingNetwork = const Value.absent(),
     this.latestOperationType = const Value.absent(),
@@ -1483,11 +1380,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
     this.operationNotes = const Value.absent(),
-<<<<<<< HEAD
-=======
-    this.platformCategory = const Value.absent(),
     this.serial = const Value.absent(),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     this.reportingStatus = const Value.absent(),
     this.observingNetwork = const Value.absent(),
     this.latestOperationType = const Value.absent(),
@@ -1528,11 +1421,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<String>? gtsId,
     Expression<String>? batchRef,
     Expression<String>? operationNotes,
-<<<<<<< HEAD
-=======
-    Expression<String>? platformCategory,
     Expression<String>? serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     Expression<String>? reportingStatus,
     Expression<String>? observingNetwork,
     Expression<String>? latestOperationType,
@@ -1563,11 +1452,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (gtsId != null) 'gts_id': gtsId,
       if (batchRef != null) 'batch_ref': batchRef,
       if (operationNotes != null) 'operation_notes': operationNotes,
-<<<<<<< HEAD
-=======
-      if (platformCategory != null) 'platform_category': platformCategory,
       if (serial != null) 'serial': serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       if (reportingStatus != null) 'reporting_status': reportingStatus,
       if (observingNetwork != null) 'observing_network': observingNetwork,
       if (latestOperationType != null)
@@ -1603,11 +1488,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<String?>? gtsId,
     Value<String?>? batchRef,
     Value<String?>? operationNotes,
-<<<<<<< HEAD
-=======
-    Value<String?>? platformCategory,
     Value<String?>? serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     Value<String?>? reportingStatus,
     Value<String?>? observingNetwork,
     Value<String?>? latestOperationType,
@@ -1638,11 +1519,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       gtsId: gtsId ?? this.gtsId,
       batchRef: batchRef ?? this.batchRef,
       operationNotes: operationNotes ?? this.operationNotes,
-<<<<<<< HEAD
-=======
-      platformCategory: platformCategory ?? this.platformCategory,
       serial: serial ?? this.serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       reportingStatus: reportingStatus ?? this.reportingStatus,
       observingNetwork: observingNetwork ?? this.observingNetwork,
       latestOperationType: latestOperationType ?? this.latestOperationType,
@@ -1713,15 +1590,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     if (operationNotes.present) {
       map['operation_notes'] = Variable<String>(operationNotes.value);
     }
-<<<<<<< HEAD
-=======
-    if (platformCategory.present) {
-      map['platform_category'] = Variable<String>(platformCategory.value);
-    }
     if (serial.present) {
       map['serial'] = Variable<String>(serial.value);
     }
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
     if (reportingStatus.present) {
       map['reporting_status'] = Variable<String>(reportingStatus.value);
     }
@@ -1782,11 +1653,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
           ..write('operationNotes: $operationNotes, ')
-<<<<<<< HEAD
-=======
-          ..write('platformCategory: $platformCategory, ')
           ..write('serial: $serial, ')
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
           ..write('reportingStatus: $reportingStatus, ')
           ..write('observingNetwork: $observingNetwork, ')
           ..write('latestOperationType: $latestOperationType, ')
@@ -4764,11 +4631,7 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       Value<String?> gtsId,
       Value<String?> batchRef,
       Value<String?> operationNotes,
-<<<<<<< HEAD
-=======
-      Value<String?> platformCategory,
       Value<String?> serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       Value<String?> reportingStatus,
       Value<String?> observingNetwork,
       Value<String?> latestOperationType,
@@ -4800,11 +4663,7 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<String?> gtsId,
       Value<String?> batchRef,
       Value<String?> operationNotes,
-<<<<<<< HEAD
-=======
-      Value<String?> platformCategory,
       Value<String?> serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
       Value<String?> reportingStatus,
       Value<String?> observingNetwork,
       Value<String?> latestOperationType,
@@ -4940,19 +4799,11 @@ class $$PlatformsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-<<<<<<< HEAD
-=======
-  ColumnFilters<String> get platformCategory => $composableBuilder(
-    column: $table.platformCategory,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get serial => $composableBuilder(
     column: $table.serial,
     builder: (column) => ColumnFilters(column),
   );
 
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
   ColumnFilters<String> get reportingStatus => $composableBuilder(
     column: $table.reportingStatus,
     builder: (column) => ColumnFilters(column),
@@ -5128,19 +4979,11 @@ class $$PlatformsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-<<<<<<< HEAD
-=======
-  ColumnOrderings<String> get platformCategory => $composableBuilder(
-    column: $table.platformCategory,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get serial => $composableBuilder(
     column: $table.serial,
     builder: (column) => ColumnOrderings(column),
   );
 
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
   ColumnOrderings<String> get reportingStatus => $composableBuilder(
     column: $table.reportingStatus,
     builder: (column) => ColumnOrderings(column),
@@ -5267,17 +5110,9 @@ class $$PlatformsTableAnnotationComposer
     builder: (column) => column,
   );
 
-<<<<<<< HEAD
-=======
-  GeneratedColumn<String> get platformCategory => $composableBuilder(
-    column: $table.platformCategory,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get serial =>
       $composableBuilder(column: $table.serial, builder: (column) => column);
 
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
   GeneratedColumn<String> get reportingStatus => $composableBuilder(
     column: $table.reportingStatus,
     builder: (column) => column,
@@ -5396,11 +5231,7 @@ class $$PlatformsTableTableManager
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
                 Value<String?> operationNotes = const Value.absent(),
-<<<<<<< HEAD
-=======
-                Value<String?> platformCategory = const Value.absent(),
                 Value<String?> serial = const Value.absent(),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
                 Value<String?> reportingStatus = const Value.absent(),
                 Value<String?> observingNetwork = const Value.absent(),
                 Value<String?> latestOperationType = const Value.absent(),
@@ -5430,11 +5261,7 @@ class $$PlatformsTableTableManager
                 gtsId: gtsId,
                 batchRef: batchRef,
                 operationNotes: operationNotes,
-<<<<<<< HEAD
-=======
-                platformCategory: platformCategory,
                 serial: serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
                 reportingStatus: reportingStatus,
                 observingNetwork: observingNetwork,
                 latestOperationType: latestOperationType,
@@ -5466,11 +5293,7 @@ class $$PlatformsTableTableManager
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
                 Value<String?> operationNotes = const Value.absent(),
-<<<<<<< HEAD
-=======
-                Value<String?> platformCategory = const Value.absent(),
                 Value<String?> serial = const Value.absent(),
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
                 Value<String?> reportingStatus = const Value.absent(),
                 Value<String?> observingNetwork = const Value.absent(),
                 Value<String?> latestOperationType = const Value.absent(),
@@ -5500,11 +5323,7 @@ class $$PlatformsTableTableManager
                 gtsId: gtsId,
                 batchRef: batchRef,
                 operationNotes: operationNotes,
-<<<<<<< HEAD
-=======
-                platformCategory: platformCategory,
                 serial: serial,
->>>>>>> 84c287c (update db model with name, serial, internalid. Add a bottom sheet when tap on the wigos id field)
                 reportingStatus: reportingStatus,
                 observingNetwork: observingNetwork,
                 latestOperationType: latestOperationType,
