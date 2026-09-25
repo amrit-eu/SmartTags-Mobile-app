@@ -6,8 +6,8 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/alert_tile.dart';
-import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
+import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// Status filter applied on the [AlertsScreen] list.

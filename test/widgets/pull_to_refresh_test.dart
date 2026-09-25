@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
-import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
+import 'package:smart_tags/widgets/pull_to_refresh.dart';
 
 void main() {
   testWidgets('shows refresh arrow while pulling before fetch starts', (tester) async {

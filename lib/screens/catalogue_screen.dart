@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
-import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
+import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that displays a searchable catalogue of platforms.
