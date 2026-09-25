@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/alert.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/alert_tile.dart';
+import 'package:smart_tags/widgets/pull_to_refresh.dart';
+import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// Status filter applied on the [AlertsScreen] list.
@@ -72,6 +77,11 @@ class AlertsScreen extends ConsumerStatefulWidget {
 class _AlertsScreenState extends ConsumerState<AlertsScreen> {
   AlertsFilter _filter = AlertsFilter.all;
 
+  Future<void> _refreshPlatforms() async {
+    // Errors are shown by [InitialSyncShell] (top banner + Retry).
+    await ref.read(platformsRefreshProvider.notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -79,53 +89,77 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     final alerts = sortAlertsByStatus(alertsAsync.value ?? const <Alert>[]);
     final visible = alerts.where(_filter.matches).toList();
 
+    // This screen is pushed above the main shell, so its sync banner is hidden.
+    final phase = ref.watch(platformsSyncPhaseProvider);
+
+    final isLoading = alertsAsync.isLoading && !alertsAsync.hasValue;
+
     return Scaffold(
-      appBar: TopNavigation(title: const Text('Alerts'), leading: const BackButton()),
-      body: alertsAsync.isLoading && !alertsAsync.hasValue
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    widget.platformRef,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            if (phase != PlatformsSyncPhase.idle)
+              PlatformsLoadingBanner(message: phase.bannerMessage ?? 'Downloading platforms…'),
+            Expanded(
+              child: PullToRefresh(
+                // App bar + platform title + filter chips: pull-from-top chrome.
+                edgeStartMaxY: kToolbarHeight + 100,
+                onRefresh: _refreshPlatforms,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: kToolbarHeight,
+                      child: TopNavigation(title: const Text('Alerts'), leading: const BackButton()),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        widget.platformRef,
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          for (final filter in AlertsFilter.values) ...[
+                            ChoiceChip(
+                              label: Text('${filter.label} (${alerts.where(filter.matches).length})'),
+                              selected: _filter == filter,
+                              onSelected: (_) => setState(() => _filter = filter),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                      child: Text(
+                        '${visible.length} ${visible.length == 1 ? 'alert' : 'alerts'}',
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                    Expanded(
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : visible.isEmpty
+                          ? const _EmptyState()
+                          : ListView(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              children: [for (final alert in visible) AlertTile(alert: alert)],
+                            ),
+                    ),
+                  ],
                 ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      for (final filter in AlertsFilter.values) ...[
-                        ChoiceChip(
-                          label: Text('${filter.label} (${alerts.where(filter.matches).length})'),
-                          selected: _filter == filter,
-                          onSelected: (_) => setState(() => _filter = filter),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Text(
-                    '${visible.length} ${visible.length == 1 ? 'alert' : 'alerts'}',
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ),
-                Expanded(
-                  child: visible.isEmpty
-                      ? const _EmptyState()
-                      : ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          children: [for (final alert in visible) AlertTile(alert: alert)],
-                        ),
-                ),
-              ],
+              ),
             ),
+          ],
+        ),
+      ),
     );
   }
 }

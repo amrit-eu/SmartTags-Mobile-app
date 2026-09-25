@@ -17,7 +17,7 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           home: Scaffold(
-            body: MapPullToRefresh(
+            body: PullToRefresh(
               onRefresh: () async {
                 refreshStarted.complete();
                 await refreshFinished.future;
@@ -62,7 +62,7 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           home: Scaffold(
-            body: MapPullToRefresh(
+            body: PullToRefresh(
               onRefresh: () async {
                 refreshed = true;
               },
@@ -97,7 +97,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            body: MapPullToRefresh(
+            body: PullToRefresh(
               onRefresh: () async {
                 refreshed = true;
               },

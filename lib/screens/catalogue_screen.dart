@@ -44,7 +44,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: MapPullToRefresh(
+      body: PullToRefresh(
         // Header + search bar: same pull-from-top chrome as the map.
         edgeStartMaxY: kToolbarHeight + 88,
         onRefresh: _refreshPlatforms,

@@ -13,9 +13,9 @@ import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 ///
 /// Uses a [Listener] (not a [ScrollView] / [CustomScrollView]) so map rendering
 /// is never nested in a scrollable — avoiding `debugFrameWasSentToEngine` floods.
-class MapPullToRefresh extends ConsumerStatefulWidget {
-  /// Creates a [MapPullToRefresh].
-  const MapPullToRefresh({
+class PullToRefresh extends ConsumerStatefulWidget {
+  /// Creates a [PullToRefresh].
+  const PullToRefresh({
     required this.onRefresh,
     required this.child,
     super.key,
@@ -37,10 +37,10 @@ class MapPullToRefresh extends ConsumerStatefulWidget {
   final double edgeStartMaxY;
 
   @override
-  ConsumerState<MapPullToRefresh> createState() => _MapPullToRefreshState();
+  ConsumerState<PullToRefresh> createState() => _PullToRefreshState();
 }
 
-class _MapPullToRefreshState extends ConsumerState<MapPullToRefresh> {
+class _PullToRefreshState extends ConsumerState<PullToRefresh> {
   /// Pull distance that triggers refresh (arrow fully revealed).
   static const double _triggerDistance = 48;
 

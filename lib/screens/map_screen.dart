@@ -17,7 +17,7 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
-import 'package:smart_tags/widgets/map_pull_to_refresh.dart';
+import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/map_skeleton_loader.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -606,7 +606,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         },
         child: const Icon(Icons.my_location),
       ),
-      body: MapPullToRefresh(
+      body: PullToRefresh(
         enabled: !_mapSkeletonVisible,
         // Header only — do not start a pull from the map tiles.
         edgeStartMaxY: kToolbarHeight,
