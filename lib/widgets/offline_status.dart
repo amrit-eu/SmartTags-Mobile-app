@@ -20,12 +20,14 @@ class OfflineStatus extends StatelessWidget {
         children: [
           Icon(Icons.signal_wifi_off, color: Colors.white),
           SizedBox(width: 8),
-          Expanded(child: Text(
-            'You are offline. Changes will be saved locally and synced when you are back online.',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            softWrap: true,
-            textAlign: TextAlign.center,
-          ),)
+          Expanded(
+            child: Text(
+              'You are offline. Changes will be saved locally and synced when you are back online.',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              softWrap: true,
+              textAlign: TextAlign.center,
+            ),
+          ),
         ],
       ),
     );

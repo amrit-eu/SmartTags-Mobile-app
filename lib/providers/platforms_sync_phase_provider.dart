@@ -2,8 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
 
 /// Current Gateway sync phase for shared loading banners.
-final platformsSyncPhaseProvider =
-    NotifierProvider<PlatformsSyncPhaseNotifier, PlatformsSyncPhase>(
+final platformsSyncPhaseProvider = NotifierProvider<PlatformsSyncPhaseNotifier, PlatformsSyncPhase>(
   PlatformsSyncPhaseNotifier.new,
 );
 

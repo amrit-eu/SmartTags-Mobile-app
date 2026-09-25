@@ -1726,8 +1726,49 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
   @override
-  List<GeneratedColumn> get $columns => [id, resource, event, severity, status];
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createTimeMeta = const VerificationMeta(
+    'createTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createTime = GeneratedColumn<DateTime>(
+    'create_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastReceiveTimeMeta = const VerificationMeta(
+    'lastReceiveTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastReceiveTime =
+      GeneratedColumn<DateTime>(
+        'last_receive_time',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    resource,
+    event,
+    severity,
+    status,
+    value,
+    createTime,
+    lastReceiveTime,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1777,6 +1818,27 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     } else if (isInserting) {
       context.missing(_statusMeta);
     }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    }
+    if (data.containsKey('create_time')) {
+      context.handle(
+        _createTimeMeta,
+        createTime.isAcceptableOrUnknown(data['create_time']!, _createTimeMeta),
+      );
+    }
+    if (data.containsKey('last_receive_time')) {
+      context.handle(
+        _lastReceiveTimeMeta,
+        lastReceiveTime.isAcceptableOrUnknown(
+          data['last_receive_time']!,
+          _lastReceiveTimeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1806,6 +1868,18 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      ),
+      createTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}create_time'],
+      ),
+      lastReceiveTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_receive_time'],
+      ),
     );
   }
 
@@ -1830,12 +1904,24 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
 
   /// Alerts's status
   final String status;
+
+  /// Alert's value (e.g. "12%"), as sent by Alerta
+  final String? value;
+
+  /// When the alert was first created
+  final DateTime? createTime;
+
+  /// When the alert was last received
+  final DateTime? lastReceiveTime;
   const AlertEntity({
     required this.id,
     required this.resource,
     required this.event,
     required this.severity,
     required this.status,
+    this.value,
+    this.createTime,
+    this.lastReceiveTime,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1845,6 +1931,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     map['event'] = Variable<String>(event);
     map['severity'] = Variable<String>(severity);
     map['status'] = Variable<String>(status);
+    if (!nullToAbsent || value != null) {
+      map['value'] = Variable<String>(value);
+    }
+    if (!nullToAbsent || createTime != null) {
+      map['create_time'] = Variable<DateTime>(createTime);
+    }
+    if (!nullToAbsent || lastReceiveTime != null) {
+      map['last_receive_time'] = Variable<DateTime>(lastReceiveTime);
+    }
     return map;
   }
 
@@ -1855,6 +1950,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       event: Value(event),
       severity: Value(severity),
       status: Value(status),
+      value: value == null && nullToAbsent
+          ? const Value.absent()
+          : Value(value),
+      createTime: createTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createTime),
+      lastReceiveTime: lastReceiveTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReceiveTime),
     );
   }
 
@@ -1869,6 +1973,9 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       event: serializer.fromJson<String>(json['event']),
       severity: serializer.fromJson<String>(json['severity']),
       status: serializer.fromJson<String>(json['status']),
+      value: serializer.fromJson<String?>(json['value']),
+      createTime: serializer.fromJson<DateTime?>(json['createTime']),
+      lastReceiveTime: serializer.fromJson<DateTime?>(json['lastReceiveTime']),
     );
   }
   @override
@@ -1880,6 +1987,9 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       'event': serializer.toJson<String>(event),
       'severity': serializer.toJson<String>(severity),
       'status': serializer.toJson<String>(status),
+      'value': serializer.toJson<String?>(value),
+      'createTime': serializer.toJson<DateTime?>(createTime),
+      'lastReceiveTime': serializer.toJson<DateTime?>(lastReceiveTime),
     };
   }
 
@@ -1889,12 +1999,20 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     String? event,
     String? severity,
     String? status,
+    Value<String?> value = const Value.absent(),
+    Value<DateTime?> createTime = const Value.absent(),
+    Value<DateTime?> lastReceiveTime = const Value.absent(),
   }) => AlertEntity(
     id: id ?? this.id,
     resource: resource ?? this.resource,
     event: event ?? this.event,
     severity: severity ?? this.severity,
     status: status ?? this.status,
+    value: value.present ? value.value : this.value,
+    createTime: createTime.present ? createTime.value : this.createTime,
+    lastReceiveTime: lastReceiveTime.present
+        ? lastReceiveTime.value
+        : this.lastReceiveTime,
   );
   AlertEntity copyWithCompanion(AlertsCompanion data) {
     return AlertEntity(
@@ -1903,6 +2021,13 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       event: data.event.present ? data.event.value : this.event,
       severity: data.severity.present ? data.severity.value : this.severity,
       status: data.status.present ? data.status.value : this.status,
+      value: data.value.present ? data.value.value : this.value,
+      createTime: data.createTime.present
+          ? data.createTime.value
+          : this.createTime,
+      lastReceiveTime: data.lastReceiveTime.present
+          ? data.lastReceiveTime.value
+          : this.lastReceiveTime,
     );
   }
 
@@ -1913,13 +2038,25 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           ..write('resource: $resource, ')
           ..write('event: $event, ')
           ..write('severity: $severity, ')
-          ..write('status: $status')
+          ..write('status: $status, ')
+          ..write('value: $value, ')
+          ..write('createTime: $createTime, ')
+          ..write('lastReceiveTime: $lastReceiveTime')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, resource, event, severity, status);
+  int get hashCode => Object.hash(
+    id,
+    resource,
+    event,
+    severity,
+    status,
+    value,
+    createTime,
+    lastReceiveTime,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1928,7 +2065,10 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           other.resource == this.resource &&
           other.event == this.event &&
           other.severity == this.severity &&
-          other.status == this.status);
+          other.status == this.status &&
+          other.value == this.value &&
+          other.createTime == this.createTime &&
+          other.lastReceiveTime == this.lastReceiveTime);
 }
 
 class AlertsCompanion extends UpdateCompanion<AlertEntity> {
@@ -1937,6 +2077,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
   final Value<String> event;
   final Value<String> severity;
   final Value<String> status;
+  final Value<String?> value;
+  final Value<DateTime?> createTime;
+  final Value<DateTime?> lastReceiveTime;
   final Value<int> rowid;
   const AlertsCompanion({
     this.id = const Value.absent(),
@@ -1944,6 +2087,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     this.event = const Value.absent(),
     this.severity = const Value.absent(),
     this.status = const Value.absent(),
+    this.value = const Value.absent(),
+    this.createTime = const Value.absent(),
+    this.lastReceiveTime = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AlertsCompanion.insert({
@@ -1952,6 +2098,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     required String event,
     required String severity,
     required String status,
+    this.value = const Value.absent(),
+    this.createTime = const Value.absent(),
+    this.lastReceiveTime = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        resource = Value(resource),
@@ -1964,6 +2113,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     Expression<String>? event,
     Expression<String>? severity,
     Expression<String>? status,
+    Expression<String>? value,
+    Expression<DateTime>? createTime,
+    Expression<DateTime>? lastReceiveTime,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1972,6 +2124,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
       if (event != null) 'event': event,
       if (severity != null) 'severity': severity,
       if (status != null) 'status': status,
+      if (value != null) 'value': value,
+      if (createTime != null) 'create_time': createTime,
+      if (lastReceiveTime != null) 'last_receive_time': lastReceiveTime,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1982,6 +2137,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     Value<String>? event,
     Value<String>? severity,
     Value<String>? status,
+    Value<String?>? value,
+    Value<DateTime?>? createTime,
+    Value<DateTime?>? lastReceiveTime,
     Value<int>? rowid,
   }) {
     return AlertsCompanion(
@@ -1990,6 +2148,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
       event: event ?? this.event,
       severity: severity ?? this.severity,
       status: status ?? this.status,
+      value: value ?? this.value,
+      createTime: createTime ?? this.createTime,
+      lastReceiveTime: lastReceiveTime ?? this.lastReceiveTime,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2012,6 +2173,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (createTime.present) {
+      map['create_time'] = Variable<DateTime>(createTime.value);
+    }
+    if (lastReceiveTime.present) {
+      map['last_receive_time'] = Variable<DateTime>(lastReceiveTime.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2026,6 +2196,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
           ..write('event: $event, ')
           ..write('severity: $severity, ')
           ..write('status: $status, ')
+          ..write('value: $value, ')
+          ..write('createTime: $createTime, ')
+          ..write('lastReceiveTime: $lastReceiveTime, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5394,6 +5567,9 @@ typedef $$AlertsTableCreateCompanionBuilder =
       required String event,
       required String severity,
       required String status,
+      Value<String?> value,
+      Value<DateTime?> createTime,
+      Value<DateTime?> lastReceiveTime,
       Value<int> rowid,
     });
 typedef $$AlertsTableUpdateCompanionBuilder =
@@ -5403,6 +5579,9 @@ typedef $$AlertsTableUpdateCompanionBuilder =
       Value<String> event,
       Value<String> severity,
       Value<String> status,
+      Value<String?> value,
+      Value<DateTime?> createTime,
+      Value<DateTime?> lastReceiveTime,
       Value<int> rowid,
     });
 
@@ -5454,6 +5633,21 @@ class $$AlertsTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createTime => $composableBuilder(
+    column: $table.createTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastReceiveTime => $composableBuilder(
+    column: $table.lastReceiveTime,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5510,6 +5704,21 @@ class $$AlertsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createTime => $composableBuilder(
+    column: $table.createTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastReceiveTime => $composableBuilder(
+    column: $table.lastReceiveTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlatformsTableOrderingComposer get resource {
     final $$PlatformsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5554,6 +5763,19 @@ class $$AlertsTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createTime => $composableBuilder(
+    column: $table.createTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastReceiveTime => $composableBuilder(
+    column: $table.lastReceiveTime,
+    builder: (column) => column,
+  );
 
   $$PlatformsTableAnnotationComposer get resource {
     final $$PlatformsTableAnnotationComposer composer = $composerBuilder(
@@ -5612,6 +5834,9 @@ class $$AlertsTableTableManager
                 Value<String> event = const Value.absent(),
                 Value<String> severity = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<String?> value = const Value.absent(),
+                Value<DateTime?> createTime = const Value.absent(),
+                Value<DateTime?> lastReceiveTime = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AlertsCompanion(
                 id: id,
@@ -5619,6 +5844,9 @@ class $$AlertsTableTableManager
                 event: event,
                 severity: severity,
                 status: status,
+                value: value,
+                createTime: createTime,
+                lastReceiveTime: lastReceiveTime,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5628,6 +5856,9 @@ class $$AlertsTableTableManager
                 required String event,
                 required String severity,
                 required String status,
+                Value<String?> value = const Value.absent(),
+                Value<DateTime?> createTime = const Value.absent(),
+                Value<DateTime?> lastReceiveTime = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AlertsCompanion.insert(
                 id: id,
@@ -5635,6 +5866,9 @@ class $$AlertsTableTableManager
                 event: event,
                 severity: severity,
                 status: status,
+                value: value,
+                createTime: createTime,
+                lastReceiveTime: lastReceiveTime,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

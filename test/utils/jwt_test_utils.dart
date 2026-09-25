@@ -6,11 +6,9 @@ import 'package:smart_tags/models/user.dart';
 import 'test_user.dart';
 
 /// Helper to produce Base64URL (RFC 7515) without padding
-String b64UrlNoPad(List<int> bytes) =>
-    base64Url.encode(bytes).replaceAll('=', '');
+String b64UrlNoPad(List<int> bytes) => base64Url.encode(bytes).replaceAll('=', '');
 
-String encodeJsonNoPad(Map<String, dynamic> json) =>
-    b64UrlNoPad(utf8.encode(jsonEncode(json)));
+String encodeJsonNoPad(Map<String, dynamic> json) => b64UrlNoPad(utf8.encode(jsonEncode(json)));
 
 User testUser = createTestUser();
 
@@ -47,11 +45,11 @@ Map<String, dynamic> buildAuthResponse({
   );
   contact ??= createTestUser();
   return AuthResponse(
-      success: success,
-      accessTokenRs256: accessTokenRs256,
-      refreshToken: refreshToken,
-      refreshExpiresIn: refreshExpiresIn,
-      expiresIn: expiresIn,
-      contact: contact
+    success: success,
+    accessTokenRs256: accessTokenRs256,
+    refreshToken: refreshToken,
+    refreshExpiresIn: refreshExpiresIn,
+    expiresIn: expiresIn,
+    contact: contact,
   ).toJson();
 }

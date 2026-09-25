@@ -11,6 +11,9 @@ extension AlertMapper on AlertEntity {
       event: event,
       severity: domain.AlertSeverity.fromDb(severity),
       status: domain.AlertStatus.fromDb(status),
+      value: value,
+      createTime: createTime,
+      lastReceiveTime: lastReceiveTime,
     );
   }
 }

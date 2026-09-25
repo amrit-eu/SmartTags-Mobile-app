@@ -9,22 +9,24 @@ abstract class ApiObject {
 
   /// The objects's unique numeric identifier.
   final int id;
+
   /// The objects's display name.
   final String name;
+
   /// The object's unique lowercase, hyphenated identifier (e.g. "argo-australia")
   final String code;
 
   /// Shared JSON validation/parsing helper.
   static ({int id, String name, String code}) parseJson(
-      Map<String, dynamic> json,
-      ) {
+    Map<String, dynamic> json,
+  ) {
     return switch (json) {
       {
-      'id': final int id,
-      'name': final String name,
-      'code': final String code,
+        'id': final int id,
+        'name': final String name,
+        'code': final String code,
       } =>
-      (id: id, name: name, code: code),
+        (id: id, name: name, code: code),
       _ => throw const FormatException('Failed to parse ApiObject.'),
     };
   }

@@ -117,6 +117,15 @@ class Alerts extends Table {
   /// Alerts's status
   TextColumn get status => text()();
 
+  /// Alert's value (e.g. "12%"), as sent by Alerta
+  TextColumn get value => text().nullable()();
+
+  /// When the alert was first created
+  DateTimeColumn get createTime => dateTime().nullable()();
+
+  /// When the alert was last received
+  DateTimeColumn get lastReceiveTime => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
