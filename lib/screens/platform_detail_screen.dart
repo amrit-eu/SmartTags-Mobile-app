@@ -15,6 +15,7 @@ import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
+import 'package:smart_tags/screens/alerts_screen.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -319,7 +320,16 @@ class _AlertsSummaryRow extends ConsumerWidget {
     return SectionContainer(
       child: InkWell(
         onTap: hasActiveAlerts
-            ? () => showAlertsBottomSheet(context, alerts: alerts, totalAlertCount: alerts.length)
+            ? () => showAlertsBottomSheet(
+                context,
+                alerts: alerts,
+                totalAlertCount: alerts.length,
+                platformRef: platformRef,
+              )
+            : alerts.isNotEmpty
+            ? () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => AlertsScreen(platformRef: platformRef)),
+              )
             : null,
         child: Row(
           children: [
