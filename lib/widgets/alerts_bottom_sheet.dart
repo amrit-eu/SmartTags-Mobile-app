@@ -141,64 +141,72 @@ class _AlertTile extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: statusStyle.color, width: 4)),
-        ),
-        child: InkWell(
-          // Navigation to the alert details is out of scope for now.
-          onTap: () {},
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: statusStyle.color, width: 4)),
+            ),
+            child: InkWell(
+              onTap: () {},
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
                   children: [
-                    Icon(statusStyle.displayIcon, color: statusStyle.color, size: 32),
-                    const SizedBox(height: 4),
-                    _Chip(
-                      label: alert.status == AlertStatus.acknowledged ? 'Ack' : statusStyle.label,
-                      background: statusStyle.color.withValues(alpha: 0.2),
-                      foreground: statusStyle.color,
-                    ),
-                    const SizedBox(height: 4),
-                    _Chip(
-                      label: severityStyle.label,
-                      background: severityStyle.chipColor,
-                      foreground: severityStyle.textColor,
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(alert.event, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-                      if (lastReceive != null) ...[
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusStyle.displayIcon, color: statusStyle.color, size: 32),
                         const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.schedule, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'Last received ${_dateFormat.format(lastReceive.toUtc())} UTC (${_duration(DateTime.now().difference(lastReceive))} ago)',
-                                style: subtle,
-                              ),
-                            ),
-                          ],
+                        _Chip(
+                          label: alert.status == AlertStatus.acknowledged ? 'Ack' : statusStyle.label,
+                          background: statusStyle.color.withValues(alpha: 0.2),
+                          foreground: statusStyle.color,
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Leave a line for the severity chip pinned to the top right.
+                          const SizedBox(height: 20),
+                          Text(alert.event, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                          if (lastReceive != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.schedule, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    'Last received ${_dateFormat.format(lastReceive.toUtc())} UTC (${_duration(DateTime.now().difference(lastReceive))} ago)',
+                                    style: subtle,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right),
+                  ],
                 ),
-                const Icon(Icons.chevron_right),
-              ],
+              ),
             ),
           ),
-        ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: _Chip(
+              label: severityStyle.label,
+              background: severityStyle.chipColor,
+              foreground: severityStyle.textColor,
+            ),
+          ),
+        ],
       ),
     );
   }
