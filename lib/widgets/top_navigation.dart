@@ -12,6 +12,6 @@ class TopNavigation extends AppBar {
     : super(
         title: title ?? const Text('Smart Tags'),
         leading: leading ?? const UserIconButton(),
-        actions: actions ?? [const SettingsMenu()]
+        actions: actions ?? [const SettingsMenu()],
       );
 }

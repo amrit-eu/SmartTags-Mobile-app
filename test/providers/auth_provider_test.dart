@@ -30,7 +30,6 @@ void main() {
     container.dispose();
   });
 
-
   test('initial state is null if no user is authenticated', () async {
     when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
     final result = await container.read(authProvider.future);
@@ -69,8 +68,9 @@ void main() {
 
   test('login failure sets AsyncError', () async {
     when(mockService.getAuthenticatedUser()).thenAnswer((_) async => null);
-    when(mockService.login(email: 'test@test.com', password: 'password'))
-        .thenThrow(const AuthException('Invalid Credentials'));
+    when(
+      mockService.login(email: 'test@test.com', password: 'password'),
+    ).thenThrow(const AuthException('Invalid Credentials'));
 
     final notifier = container.read(authProvider.notifier);
 
@@ -105,13 +105,12 @@ void main() {
   test('logout failure emits error, then returns to logged in user value', () async {
     when(mockService.getAuthenticatedUser()).thenAnswer((_) async => testUser);
     when(mockService.logout()).thenThrow(PlatformException(message: "Couldn't delete token", code: '1'));
-    final notifier = container.read(authProvider.notifier)
-    ..state = AsyncData<User?>(testUser);
+    final notifier = container.read(authProvider.notifier)..state = AsyncData<User?>(testUser);
 
     final states = <AsyncValue<User?>>[];
     final sub = container.listen(
       authProvider,
-          (prev, next) => states.add(next),
+      (prev, next) => states.add(next),
     );
 
     await notifier.logout();
@@ -123,6 +122,5 @@ void main() {
     expect(states[0], isA<AsyncLoading<User?>>());
     expect(states[1], isA<AsyncError<User?>>());
     expect(states[2], AsyncData<User?>(testUser));
-
   });
 }

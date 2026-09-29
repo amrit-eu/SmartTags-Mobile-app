@@ -73,9 +73,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (refresh.hasError) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       final error = refresh.error!;
-      final message = error is StateError
-          ? error.message
-          : 'Could not refresh platforms';
+      final message = error is StateError ? error.message : 'Could not refresh platforms';
       return _SyncFailedBanner(
         message: message,
         onRetry: () {

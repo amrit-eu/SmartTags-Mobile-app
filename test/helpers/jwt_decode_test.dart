@@ -12,7 +12,7 @@ void main() {
           'sub': 'joe.bloggs@test.com',
           'name': 'Joe Bloggs',
           'exp': 1767225600, // token expiry 01-Jan-2026 00:00:00
-          'contactId': 123456
+          'contactId': 123456,
         },
       );
 
@@ -20,15 +20,24 @@ void main() {
 
       expect(claims, isNotNull);
       expect(claims['sub'], 'joe.bloggs@test.com');
-      expect(claims['name'],  'Joe Bloggs');
+      expect(claims['name'], 'Joe Bloggs');
       expect(claims['exp'], 1767225600);
       expect(claims['contactId'], 123456);
     });
 
     test('throws when JWT does not have 3 parts', () {
-        expect(() => decodeJwtClaims('a.b'), throwsA(isA<JwtDecodingException>()),);
-        expect(() => decodeJwtClaims('a'), throwsA(isA<JwtDecodingException>()),);
-        expect(() => decodeJwtClaims(''), throwsA(isA<JwtDecodingException>()),);
+      expect(
+        () => decodeJwtClaims('a.b'),
+        throwsA(isA<JwtDecodingException>()),
+      );
+      expect(
+        () => decodeJwtClaims('a'),
+        throwsA(isA<JwtDecodingException>()),
+      );
+      expect(
+        () => decodeJwtClaims(''),
+        throwsA(isA<JwtDecodingException>()),
+      );
     });
 
     test('throws if unable to decode payload', () {
@@ -39,7 +48,10 @@ void main() {
 
       final jwt = '$header.$invalidPayload.$sig';
 
-      expect(() => decodeJwtClaims(jwt), throwsA(isA<JwtDecodingException>()),);
+      expect(
+        () => decodeJwtClaims(jwt),
+        throwsA(isA<JwtDecodingException>()),
+      );
     });
 
     test('throws if payload decodes but is not valid UTF-8 JSON', () {
@@ -55,7 +67,10 @@ void main() {
 
       // _decodePayload will try utf8.decode; may throw/catch FormatException and return null.
       // Overall decodeJwtClaims should return null.
-      expect(() => decodeJwtClaims(jwt), throwsA(isA<JwtDecodingException>()),);
+      expect(
+        () => decodeJwtClaims(jwt),
+        throwsA(isA<JwtDecodingException>()),
+      );
     });
 
     test('throws if unable to parse claims', () {
@@ -66,7 +81,10 @@ void main() {
       final sig = b64UrlNoPad(utf8.encode('sig'));
       final jwt = '$header.$payloadPart.$sig';
 
-      expect(() => decodeJwtClaims(jwt), throwsA(isA<JwtDecodingException>()),);
+      expect(
+        () => decodeJwtClaims(jwt),
+        throwsA(isA<JwtDecodingException>()),
+      );
     });
   });
 }

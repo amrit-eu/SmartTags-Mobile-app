@@ -11,8 +11,8 @@ enum PlatformsSyncPhase {
 
   /// User-facing banner copy, or null when idle.
   String? get bannerMessage => switch (this) {
-        PlatformsSyncPhase.idle => null,
-        PlatformsSyncPhase.downloading => 'Downloading platforms…',
-        PlatformsSyncPhase.saving => 'Saving platforms…',
-      };
+    PlatformsSyncPhase.idle => null,
+    PlatformsSyncPhase.downloading => 'Downloading platforms…',
+    PlatformsSyncPhase.saving => 'Saving platforms…',
+  };
 }

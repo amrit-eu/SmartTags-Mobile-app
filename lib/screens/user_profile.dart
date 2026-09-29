@@ -31,21 +31,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<User?>>(authProvider, (prev, next) async {
       _authState = next;
-      unawaited(next.whenOrNull(
-        data: (user) async {
-          // If the user becomes null, it means they have logged out, so navigate back to the login screen.
-          if (!context.mounted) return;
+      unawaited(
+        next.whenOrNull(
+          data: (user) async {
+            // If the user becomes null, it means they have logged out, so navigate back to the login screen.
+            if (!context.mounted) return;
             await Navigator.of(context).pushReplacement(
               MaterialPageRoute<MainNavigation>(
                 builder: (BuildContext ctx) => const UserLoginScreen(),
-              )
+              ),
             );
-        },
-        error: (err, _) {
-          ref.read(errorNotificationProvider.notifier).setError('Logout failed: $err');
-          return null;
-        },
-      ));
+          },
+          error: (err, _) {
+            ref.read(errorNotificationProvider.notifier).setError('Logout failed: $err');
+            return null;
+          },
+        ),
+      );
     });
 
     return Scaffold(
@@ -80,7 +82,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ContainerRow(
                     label: 'Full Name',
                     value: widget.user.fullName,
-                  )
+                  ),
                 ],
               ),
             ),

@@ -32,10 +32,13 @@ class Country {
 
   /// The country's unique identifier.
   final int id;
+
   /// The country's full name.
   final String name;
+
   /// The country's ISO 3166-1 alpha-2 code.
   final String code2;
+
   /// The country's short name.
   final String nameShort;
 }

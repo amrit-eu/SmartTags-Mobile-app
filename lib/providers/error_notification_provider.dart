@@ -15,12 +15,11 @@ class ErrorNotification {
   final String type;
 }
 
-
 /// This provider holds the current error notification to be displayed to the user.
 /// When an error occurs, it should be set via [ErrorNotificationNotifier].
-final errorNotificationProvider =
-    NotifierProvider<ErrorNotificationNotifier, ErrorNotification?>(
-        ErrorNotificationNotifier.new);
+final errorNotificationProvider = NotifierProvider<ErrorNotificationNotifier, ErrorNotification?>(
+  ErrorNotificationNotifier.new,
+);
 
 /// Notifier for managing error notifications.
 class ErrorNotificationNotifier extends Notifier<ErrorNotification?> {

@@ -48,7 +48,9 @@ void main() {
 
     test('clearProfile does not throw when duplicate rows exist and removes them all', () async {
       // Simulate a corrupted local DB from before the fix, with two rows sharing the same ref.
-      await db.into(db.userProfiles).insert(
+      await db
+          .into(db.userProfiles)
+          .insert(
             UserProfilesCompanion.insert(
               ref: 7,
               email: 'a@example.com',
@@ -63,7 +65,9 @@ void main() {
               hideContactInfoFromPublic: false,
             ),
           );
-      await db.into(db.userProfiles).insert(
+      await db
+          .into(db.userProfiles)
+          .insert(
             UserProfilesCompanion.insert(
               ref: 7,
               email: 'b@example.com',

@@ -32,12 +32,12 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
           onChanged: ref.watch(themeProvider) == ThemeMode.system
               ? null // disables the switch
               : (bool value) {
-            if (value) {
-              ref.read(themeProvider.notifier).setDark();
-            } else {
-              ref.read(themeProvider.notifier).setLight();
-            }
-          },
+                  if (value) {
+                    ref.read(themeProvider.notifier).setDark();
+                  } else {
+                    ref.read(themeProvider.notifier).setLight();
+                  }
+                },
         ),
         CheckboxListTile(
           title: const Text('Use system default'),

@@ -22,9 +22,7 @@ OperationCompletionStatus resolveOperationCompletionStatus(Platform platform) {
   final operationType = _normalizedOperationType(platform);
 
   if (operationType == 'recovery') {
-    return _isRecoveryCompleted(platform)
-        ? OperationCompletionStatus.completed
-        : OperationCompletionStatus.unknown;
+    return _isRecoveryCompleted(platform) ? OperationCompletionStatus.completed : OperationCompletionStatus.unknown;
   }
 
   if (_isDeploymentCompleted(platform)) {
@@ -58,9 +56,7 @@ String _normalizedOperationType(Platform platform) {
   if (type == 'deployment' || type == 'recovery') {
     return type!;
   }
-  return platform.operationalStatus == OperationalStatus.recovered
-      ? 'recovery'
-      : 'deployment';
+  return platform.operationalStatus == OperationalStatus.recovered ? 'recovery' : 'deployment';
 }
 
 bool _isDeploymentPlanned(Platform platform) {
@@ -72,16 +68,12 @@ bool _isDeploymentCompleted(Platform platform) {
 }
 
 bool _isRecoveryCompleted(Platform platform) {
-  return platform.latestOperationDate != null &&
-      platform.endingCauseId == voluntaryRecoveryEndingCauseId;
+  return platform.latestOperationDate != null && platform.endingCauseId == voluntaryRecoveryEndingCauseId;
 }
 
 bool _isPreOperational(PlatformStatus status) {
   return switch (status) {
-    PlatformStatus.registered ||
-    PlatformStatus.probable ||
-    PlatformStatus.confirmed =>
-      true,
+    PlatformStatus.registered || PlatformStatus.probable || PlatformStatus.confirmed => true,
     _ => false,
   };
 }

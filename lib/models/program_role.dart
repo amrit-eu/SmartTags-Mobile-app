@@ -13,13 +13,13 @@ class ProgramRole {
   factory ProgramRole.fromJson(Map<String, dynamic> json) {
     return switch (json) {
       {
-      'program': final Map<String, dynamic> program,
-      'role': final Map<String, dynamic> role,
+        'program': final Map<String, dynamic> program,
+        'role': final Map<String, dynamic> role,
       } =>
-          ProgramRole(
-            program: Program.fromJson(program),
-            role: Role.fromJson(role),
-          ),
+        ProgramRole(
+          program: Program.fromJson(program),
+          role: Role.fromJson(role),
+        ),
       _ => throw const FormatException('Failed to create ProgramRole.'),
     };
   }
@@ -32,6 +32,7 @@ class ProgramRole {
 
   /// The program this role assignment applies to.
   final Program program;
+
   /// The role assigned to the user for [program].
   final Role role;
 }

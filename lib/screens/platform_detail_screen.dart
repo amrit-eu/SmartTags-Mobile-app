@@ -15,7 +15,9 @@ import 'package:smart_tags/models/platform.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
+import 'package:smart_tags/screens/alerts_screen.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
+import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
@@ -300,8 +302,13 @@ class _AlertsSummaryRow extends ConsumerWidget {
   final String platformRef;
 
   static String _label({required int openCount, required int acknowledgedCount}) {
+    if (openCount > 0 && acknowledgedCount > 0) {
+      final totalCount = openCount + acknowledgedCount;
+      return '$totalCount Active ${totalCount == 1 ? 'alert' : 'alerts'}';
+    }
+
     if (openCount > 0) {
-      return '$openCount Active ${openCount == 1 ? 'alert' : 'alerts'}';
+      return '$openCount Open ${openCount == 1 ? 'alert' : 'alerts'}';
     }
     if (acknowledgedCount > 0) {
       return '$acknowledgedCount Acknowledged ${acknowledgedCount == 1 ? 'alert' : 'alerts'}';
@@ -319,51 +326,66 @@ class _AlertsSummaryRow extends ConsumerWidget {
     final label = _label(openCount: openCount, acknowledgedCount: acknowledgedCount);
     final theme = Theme.of(context);
 
+    final hasActiveAlerts = openCount + acknowledgedCount > 0;
+
     return SectionContainer(
-      child: Row(
-        children: [
-          Icon(style.displayIcon, color: style.color),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Alerts',
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          if (openCount > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: style.color,
-                borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: hasActiveAlerts
+            ? () => showAlertsBottomSheet(
+                context,
+                alerts: alerts,
+                totalAlertCount: alerts.length,
+                platformRef: platformRef,
+              )
+            : alerts.isNotEmpty
+            ? () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => AlertsScreen(platformRef: platformRef)),
+              )
+            : null,
+        child: Row(
+          children: [
+            Icon(style.displayIcon, color: style.color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Alerts',
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(style.displayIcon, size: 16, color: Colors.black87),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
+            ),
+            if (openCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: style.color,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(style.displayIcon, size: 16, color: Colors.black87),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              )
+            else
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: style.color,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            )
-          else
-            Text(
-              label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: style.color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          const SizedBox(width: 8),
-          // TODO(ylubac): chevron Icon to display when alert row will be clickable:
-          // Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
-        ],
+            const SizedBox(width: 8),
+            if (hasActiveAlerts) Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }

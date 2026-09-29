@@ -106,6 +106,9 @@ class Alert {
     required this.event,
     required this.severity,
     required this.status,
+    this.value,
+    this.createTime,
+    this.lastReceiveTime,
   });
 
   /// The unique identifier of the alert (Notification Center / Alerta side).
@@ -122,4 +125,13 @@ class Alert {
 
   /// The alert's status.
   final AlertStatus status;
+
+  /// The alert's value (e.g. "12%"), if any.
+  final String? value;
+
+  /// When the alert was first created, if known.
+  final DateTime? createTime;
+
+  /// When the alert was last received, if known.
+  final DateTime? lastReceiveTime;
 }

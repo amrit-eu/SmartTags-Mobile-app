@@ -34,7 +34,7 @@ void main() {
             body: const Center(child: UserIconButton()),
           ),
         ),
-      )
+      ),
     );
 
     // Ensure we're not on the profile screen yet
@@ -51,17 +51,17 @@ void main() {
 
   testWidgets('User Icon Button directs to Profile page if logged in', (tester) async {
     await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authProvider.overrideWith(FakeLoggedInAuthNotifier.new),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              appBar: AppBar(),
-              body: const Center(child: UserIconButton()),
-            ),
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith(FakeLoggedInAuthNotifier.new),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: UserIconButton()),
           ),
-        )
+        ),
+      ),
     );
 
     // Ensure we're not on the profile screen yet

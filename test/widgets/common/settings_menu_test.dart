@@ -14,7 +14,7 @@ void main() {
             body: const Center(child: SettingsMenu()),
           ),
         ),
-      )
+      ),
     );
 
     // Ensure menu is closed
@@ -38,7 +38,7 @@ void main() {
             body: const Center(child: SettingsMenu()),
           ),
         ),
-      )
+      ),
     );
 
     // Tap the ellipsis icon button and wait for menu to open
