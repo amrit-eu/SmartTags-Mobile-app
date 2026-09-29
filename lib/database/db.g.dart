@@ -1758,6 +1758,99 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serviceMeta = const VerificationMeta(
+    'service',
+  );
+  @override
+  late final GeneratedColumn<String> service = GeneratedColumn<String>(
+    'service',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _originMeta = const VerificationMeta('origin');
+  @override
+  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
+    'origin',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _previousSeverityMeta = const VerificationMeta(
+    'previousSeverity',
+  );
+  @override
+  late final GeneratedColumn<String> previousSeverity = GeneratedColumn<String>(
+    'previous_severity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _duplicateCountMeta = const VerificationMeta(
+    'duplicateCount',
+  );
+  @override
+  late final GeneratedColumn<int> duplicateCount = GeneratedColumn<int>(
+    'duplicate_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _alertCategoryMeta = const VerificationMeta(
+    'alertCategory',
+  );
+  @override
+  late final GeneratedColumn<String> alertCategory = GeneratedColumn<String>(
+    'alert_category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countryMeta = const VerificationMeta(
+    'country',
+  );
+  @override
+  late final GeneratedColumn<String> country = GeneratedColumn<String>(
+    'country',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
+  attributes = GeneratedColumn<String>(
+    'attributes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  ).withConverter<Map<String, dynamic>?>($AlertsTable.$converterattributes);
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1768,6 +1861,15 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     value,
     createTime,
     lastReceiveTime,
+    description,
+    url,
+    service,
+    origin,
+    previousSeverity,
+    duplicateCount,
+    alertCategory,
+    country,
+    attributes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1839,6 +1941,78 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
         ),
       );
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(
+        _urlMeta,
+        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
+      );
+    }
+    if (data.containsKey('service')) {
+      context.handle(
+        _serviceMeta,
+        service.isAcceptableOrUnknown(data['service']!, _serviceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serviceMeta);
+    }
+    if (data.containsKey('origin')) {
+      context.handle(
+        _originMeta,
+        origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
+      );
+    }
+    if (data.containsKey('previous_severity')) {
+      context.handle(
+        _previousSeverityMeta,
+        previousSeverity.isAcceptableOrUnknown(
+          data['previous_severity']!,
+          _previousSeverityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_previousSeverityMeta);
+    }
+    if (data.containsKey('duplicate_count')) {
+      context.handle(
+        _duplicateCountMeta,
+        duplicateCount.isAcceptableOrUnknown(
+          data['duplicate_count']!,
+          _duplicateCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_duplicateCountMeta);
+    }
+    if (data.containsKey('alert_category')) {
+      context.handle(
+        _alertCategoryMeta,
+        alertCategory.isAcceptableOrUnknown(
+          data['alert_category']!,
+          _alertCategoryMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_alertCategoryMeta);
+    }
+    if (data.containsKey('country')) {
+      context.handle(
+        _countryMeta,
+        country.isAcceptableOrUnknown(data['country']!, _countryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_countryMeta);
+    }
     return context;
   }
 
@@ -1880,6 +2054,44 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_receive_time'],
       ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      url: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}url'],
+      ),
+      service: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service'],
+      )!,
+      origin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin'],
+      ),
+      previousSeverity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_severity'],
+      )!,
+      duplicateCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duplicate_count'],
+      )!,
+      alertCategory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}alert_category'],
+      )!,
+      country: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}country'],
+      )!,
+      attributes: $AlertsTable.$converterattributes.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}attributes'],
+        ),
+      ),
     );
   }
 
@@ -1887,6 +2099,13 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
   $AlertsTable createAlias(String alias) {
     return $AlertsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<Map<String, dynamic>?, String?> $converterattributes =
+      NullAwareTypeConverter.wrap(
+        TypeConverter.json2<Map<String, dynamic>>(
+          fromJson: (json) => json! as Map<String, dynamic>,
+        ),
+      );
 }
 
 class AlertEntity extends DataClass implements Insertable<AlertEntity> {
@@ -1913,6 +2132,35 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
 
   /// When the alert was last received
   final DateTime? lastReceiveTime;
+
+  /// Alerts's event description
+  final String description;
+
+  /// Alerts's "more info" url
+  final String? url;
+
+  /// Alerts's service origin
+  final String service;
+
+  /// Alerts's service origin
+  final String? origin;
+
+  /// Alerts's previous severity
+  final String previousSeverity;
+
+  /// Alerts's duplicate count
+  final int duplicateCount;
+
+  /// Alerts's category
+  final String alertCategory;
+
+  /// Alerts's category
+  final String country;
+
+  /// Alert's free-form attributes (e.g. `Country`, `wigos_id`, `url`), whose
+  /// keys vary per alert source. Stored as raw JSON rather than dedicated
+  /// columns since the shape isn't fixed.
+  final Map<String, dynamic>? attributes;
   const AlertEntity({
     required this.id,
     required this.resource,
@@ -1922,6 +2170,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     this.value,
     this.createTime,
     this.lastReceiveTime,
+    required this.description,
+    this.url,
+    required this.service,
+    this.origin,
+    required this.previousSeverity,
+    required this.duplicateCount,
+    required this.alertCategory,
+    required this.country,
+    this.attributes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1939,6 +2196,23 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     }
     if (!nullToAbsent || lastReceiveTime != null) {
       map['last_receive_time'] = Variable<DateTime>(lastReceiveTime);
+    }
+    map['description'] = Variable<String>(description);
+    if (!nullToAbsent || url != null) {
+      map['url'] = Variable<String>(url);
+    }
+    map['service'] = Variable<String>(service);
+    if (!nullToAbsent || origin != null) {
+      map['origin'] = Variable<String>(origin);
+    }
+    map['previous_severity'] = Variable<String>(previousSeverity);
+    map['duplicate_count'] = Variable<int>(duplicateCount);
+    map['alert_category'] = Variable<String>(alertCategory);
+    map['country'] = Variable<String>(country);
+    if (!nullToAbsent || attributes != null) {
+      map['attributes'] = Variable<String>(
+        $AlertsTable.$converterattributes.toSql(attributes),
+      );
     }
     return map;
   }
@@ -1959,6 +2233,19 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       lastReceiveTime: lastReceiveTime == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReceiveTime),
+      description: Value(description),
+      url: url == null && nullToAbsent ? const Value.absent() : Value(url),
+      service: Value(service),
+      origin: origin == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origin),
+      previousSeverity: Value(previousSeverity),
+      duplicateCount: Value(duplicateCount),
+      alertCategory: Value(alertCategory),
+      country: Value(country),
+      attributes: attributes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attributes),
     );
   }
 
@@ -1976,6 +2263,17 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       value: serializer.fromJson<String?>(json['value']),
       createTime: serializer.fromJson<DateTime?>(json['createTime']),
       lastReceiveTime: serializer.fromJson<DateTime?>(json['lastReceiveTime']),
+      description: serializer.fromJson<String>(json['description']),
+      url: serializer.fromJson<String?>(json['url']),
+      service: serializer.fromJson<String>(json['service']),
+      origin: serializer.fromJson<String?>(json['origin']),
+      previousSeverity: serializer.fromJson<String>(json['previousSeverity']),
+      duplicateCount: serializer.fromJson<int>(json['duplicateCount']),
+      alertCategory: serializer.fromJson<String>(json['alertCategory']),
+      country: serializer.fromJson<String>(json['country']),
+      attributes: serializer.fromJson<Map<String, dynamic>?>(
+        json['attributes'],
+      ),
     );
   }
   @override
@@ -1990,6 +2288,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       'value': serializer.toJson<String?>(value),
       'createTime': serializer.toJson<DateTime?>(createTime),
       'lastReceiveTime': serializer.toJson<DateTime?>(lastReceiveTime),
+      'description': serializer.toJson<String>(description),
+      'url': serializer.toJson<String?>(url),
+      'service': serializer.toJson<String>(service),
+      'origin': serializer.toJson<String?>(origin),
+      'previousSeverity': serializer.toJson<String>(previousSeverity),
+      'duplicateCount': serializer.toJson<int>(duplicateCount),
+      'alertCategory': serializer.toJson<String>(alertCategory),
+      'country': serializer.toJson<String>(country),
+      'attributes': serializer.toJson<Map<String, dynamic>?>(attributes),
     };
   }
 
@@ -2002,6 +2309,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     Value<String?> value = const Value.absent(),
     Value<DateTime?> createTime = const Value.absent(),
     Value<DateTime?> lastReceiveTime = const Value.absent(),
+    String? description,
+    Value<String?> url = const Value.absent(),
+    String? service,
+    Value<String?> origin = const Value.absent(),
+    String? previousSeverity,
+    int? duplicateCount,
+    String? alertCategory,
+    String? country,
+    Value<Map<String, dynamic>?> attributes = const Value.absent(),
   }) => AlertEntity(
     id: id ?? this.id,
     resource: resource ?? this.resource,
@@ -2013,6 +2329,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     lastReceiveTime: lastReceiveTime.present
         ? lastReceiveTime.value
         : this.lastReceiveTime,
+    description: description ?? this.description,
+    url: url.present ? url.value : this.url,
+    service: service ?? this.service,
+    origin: origin.present ? origin.value : this.origin,
+    previousSeverity: previousSeverity ?? this.previousSeverity,
+    duplicateCount: duplicateCount ?? this.duplicateCount,
+    alertCategory: alertCategory ?? this.alertCategory,
+    country: country ?? this.country,
+    attributes: attributes.present ? attributes.value : this.attributes,
   );
   AlertEntity copyWithCompanion(AlertsCompanion data) {
     return AlertEntity(
@@ -2028,6 +2353,25 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       lastReceiveTime: data.lastReceiveTime.present
           ? data.lastReceiveTime.value
           : this.lastReceiveTime,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      url: data.url.present ? data.url.value : this.url,
+      service: data.service.present ? data.service.value : this.service,
+      origin: data.origin.present ? data.origin.value : this.origin,
+      previousSeverity: data.previousSeverity.present
+          ? data.previousSeverity.value
+          : this.previousSeverity,
+      duplicateCount: data.duplicateCount.present
+          ? data.duplicateCount.value
+          : this.duplicateCount,
+      alertCategory: data.alertCategory.present
+          ? data.alertCategory.value
+          : this.alertCategory,
+      country: data.country.present ? data.country.value : this.country,
+      attributes: data.attributes.present
+          ? data.attributes.value
+          : this.attributes,
     );
   }
 
@@ -2041,7 +2385,16 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           ..write('status: $status, ')
           ..write('value: $value, ')
           ..write('createTime: $createTime, ')
-          ..write('lastReceiveTime: $lastReceiveTime')
+          ..write('lastReceiveTime: $lastReceiveTime, ')
+          ..write('description: $description, ')
+          ..write('url: $url, ')
+          ..write('service: $service, ')
+          ..write('origin: $origin, ')
+          ..write('previousSeverity: $previousSeverity, ')
+          ..write('duplicateCount: $duplicateCount, ')
+          ..write('alertCategory: $alertCategory, ')
+          ..write('country: $country, ')
+          ..write('attributes: $attributes')
           ..write(')'))
         .toString();
   }
@@ -2056,6 +2409,15 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     value,
     createTime,
     lastReceiveTime,
+    description,
+    url,
+    service,
+    origin,
+    previousSeverity,
+    duplicateCount,
+    alertCategory,
+    country,
+    attributes,
   );
   @override
   bool operator ==(Object other) =>
@@ -2068,7 +2430,16 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           other.status == this.status &&
           other.value == this.value &&
           other.createTime == this.createTime &&
-          other.lastReceiveTime == this.lastReceiveTime);
+          other.lastReceiveTime == this.lastReceiveTime &&
+          other.description == this.description &&
+          other.url == this.url &&
+          other.service == this.service &&
+          other.origin == this.origin &&
+          other.previousSeverity == this.previousSeverity &&
+          other.duplicateCount == this.duplicateCount &&
+          other.alertCategory == this.alertCategory &&
+          other.country == this.country &&
+          other.attributes == this.attributes);
 }
 
 class AlertsCompanion extends UpdateCompanion<AlertEntity> {
@@ -2080,6 +2451,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
   final Value<String?> value;
   final Value<DateTime?> createTime;
   final Value<DateTime?> lastReceiveTime;
+  final Value<String> description;
+  final Value<String?> url;
+  final Value<String> service;
+  final Value<String?> origin;
+  final Value<String> previousSeverity;
+  final Value<int> duplicateCount;
+  final Value<String> alertCategory;
+  final Value<String> country;
+  final Value<Map<String, dynamic>?> attributes;
   final Value<int> rowid;
   const AlertsCompanion({
     this.id = const Value.absent(),
@@ -2090,6 +2470,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     this.value = const Value.absent(),
     this.createTime = const Value.absent(),
     this.lastReceiveTime = const Value.absent(),
+    this.description = const Value.absent(),
+    this.url = const Value.absent(),
+    this.service = const Value.absent(),
+    this.origin = const Value.absent(),
+    this.previousSeverity = const Value.absent(),
+    this.duplicateCount = const Value.absent(),
+    this.alertCategory = const Value.absent(),
+    this.country = const Value.absent(),
+    this.attributes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AlertsCompanion.insert({
@@ -2101,12 +2490,27 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     this.value = const Value.absent(),
     this.createTime = const Value.absent(),
     this.lastReceiveTime = const Value.absent(),
+    required String description,
+    this.url = const Value.absent(),
+    required String service,
+    this.origin = const Value.absent(),
+    required String previousSeverity,
+    required int duplicateCount,
+    required String alertCategory,
+    required String country,
+    this.attributes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        resource = Value(resource),
        event = Value(event),
        severity = Value(severity),
-       status = Value(status);
+       status = Value(status),
+       description = Value(description),
+       service = Value(service),
+       previousSeverity = Value(previousSeverity),
+       duplicateCount = Value(duplicateCount),
+       alertCategory = Value(alertCategory),
+       country = Value(country);
   static Insertable<AlertEntity> custom({
     Expression<String>? id,
     Expression<String>? resource,
@@ -2116,6 +2520,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     Expression<String>? value,
     Expression<DateTime>? createTime,
     Expression<DateTime>? lastReceiveTime,
+    Expression<String>? description,
+    Expression<String>? url,
+    Expression<String>? service,
+    Expression<String>? origin,
+    Expression<String>? previousSeverity,
+    Expression<int>? duplicateCount,
+    Expression<String>? alertCategory,
+    Expression<String>? country,
+    Expression<String>? attributes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2127,6 +2540,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
       if (value != null) 'value': value,
       if (createTime != null) 'create_time': createTime,
       if (lastReceiveTime != null) 'last_receive_time': lastReceiveTime,
+      if (description != null) 'description': description,
+      if (url != null) 'url': url,
+      if (service != null) 'service': service,
+      if (origin != null) 'origin': origin,
+      if (previousSeverity != null) 'previous_severity': previousSeverity,
+      if (duplicateCount != null) 'duplicate_count': duplicateCount,
+      if (alertCategory != null) 'alert_category': alertCategory,
+      if (country != null) 'country': country,
+      if (attributes != null) 'attributes': attributes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2140,6 +2562,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     Value<String?>? value,
     Value<DateTime?>? createTime,
     Value<DateTime?>? lastReceiveTime,
+    Value<String>? description,
+    Value<String?>? url,
+    Value<String>? service,
+    Value<String?>? origin,
+    Value<String>? previousSeverity,
+    Value<int>? duplicateCount,
+    Value<String>? alertCategory,
+    Value<String>? country,
+    Value<Map<String, dynamic>?>? attributes,
     Value<int>? rowid,
   }) {
     return AlertsCompanion(
@@ -2151,6 +2582,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
       value: value ?? this.value,
       createTime: createTime ?? this.createTime,
       lastReceiveTime: lastReceiveTime ?? this.lastReceiveTime,
+      description: description ?? this.description,
+      url: url ?? this.url,
+      service: service ?? this.service,
+      origin: origin ?? this.origin,
+      previousSeverity: previousSeverity ?? this.previousSeverity,
+      duplicateCount: duplicateCount ?? this.duplicateCount,
+      alertCategory: alertCategory ?? this.alertCategory,
+      country: country ?? this.country,
+      attributes: attributes ?? this.attributes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2182,6 +2622,35 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     if (lastReceiveTime.present) {
       map['last_receive_time'] = Variable<DateTime>(lastReceiveTime.value);
     }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (service.present) {
+      map['service'] = Variable<String>(service.value);
+    }
+    if (origin.present) {
+      map['origin'] = Variable<String>(origin.value);
+    }
+    if (previousSeverity.present) {
+      map['previous_severity'] = Variable<String>(previousSeverity.value);
+    }
+    if (duplicateCount.present) {
+      map['duplicate_count'] = Variable<int>(duplicateCount.value);
+    }
+    if (alertCategory.present) {
+      map['alert_category'] = Variable<String>(alertCategory.value);
+    }
+    if (country.present) {
+      map['country'] = Variable<String>(country.value);
+    }
+    if (attributes.present) {
+      map['attributes'] = Variable<String>(
+        $AlertsTable.$converterattributes.toSql(attributes.value),
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2199,6 +2668,15 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
           ..write('value: $value, ')
           ..write('createTime: $createTime, ')
           ..write('lastReceiveTime: $lastReceiveTime, ')
+          ..write('description: $description, ')
+          ..write('url: $url, ')
+          ..write('service: $service, ')
+          ..write('origin: $origin, ')
+          ..write('previousSeverity: $previousSeverity, ')
+          ..write('duplicateCount: $duplicateCount, ')
+          ..write('alertCategory: $alertCategory, ')
+          ..write('country: $country, ')
+          ..write('attributes: $attributes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5570,6 +6048,15 @@ typedef $$AlertsTableCreateCompanionBuilder =
       Value<String?> value,
       Value<DateTime?> createTime,
       Value<DateTime?> lastReceiveTime,
+      required String description,
+      Value<String?> url,
+      required String service,
+      Value<String?> origin,
+      required String previousSeverity,
+      required int duplicateCount,
+      required String alertCategory,
+      required String country,
+      Value<Map<String, dynamic>?> attributes,
       Value<int> rowid,
     });
 typedef $$AlertsTableUpdateCompanionBuilder =
@@ -5582,6 +6069,15 @@ typedef $$AlertsTableUpdateCompanionBuilder =
       Value<String?> value,
       Value<DateTime?> createTime,
       Value<DateTime?> lastReceiveTime,
+      Value<String> description,
+      Value<String?> url,
+      Value<String> service,
+      Value<String?> origin,
+      Value<String> previousSeverity,
+      Value<int> duplicateCount,
+      Value<String> alertCategory,
+      Value<String> country,
+      Value<Map<String, dynamic>?> attributes,
       Value<int> rowid,
     });
 
@@ -5649,6 +6145,56 @@ class $$AlertsTableFilterComposer
   ColumnFilters<DateTime> get lastReceiveTime => $composableBuilder(
     column: $table.lastReceiveTime,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get service => $composableBuilder(
+    column: $table.service,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousSeverity => $composableBuilder(
+    column: $table.previousSeverity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get duplicateCount => $composableBuilder(
+    column: $table.duplicateCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get alertCategory => $composableBuilder(
+    column: $table.alertCategory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    Map<String, dynamic>?,
+    Map<String, dynamic>,
+    String
+  >
+  get attributes => $composableBuilder(
+    column: $table.attributes,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$PlatformsTableFilterComposer get resource {
@@ -5719,6 +6265,51 @@ class $$AlertsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get service => $composableBuilder(
+    column: $table.service,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previousSeverity => $composableBuilder(
+    column: $table.previousSeverity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get duplicateCount => $composableBuilder(
+    column: $table.duplicateCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get alertCategory => $composableBuilder(
+    column: $table.alertCategory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get attributes => $composableBuilder(
+    column: $table.attributes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PlatformsTableOrderingComposer get resource {
     final $$PlatformsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5774,6 +6365,44 @@ class $$AlertsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastReceiveTime => $composableBuilder(
     column: $table.lastReceiveTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get service =>
+      $composableBuilder(column: $table.service, builder: (column) => column);
+
+  GeneratedColumn<String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+
+  GeneratedColumn<String> get previousSeverity => $composableBuilder(
+    column: $table.previousSeverity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get duplicateCount => $composableBuilder(
+    column: $table.duplicateCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get alertCategory => $composableBuilder(
+    column: $table.alertCategory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
+  get attributes => $composableBuilder(
+    column: $table.attributes,
     builder: (column) => column,
   );
 
@@ -5837,6 +6466,15 @@ class $$AlertsTableTableManager
                 Value<String?> value = const Value.absent(),
                 Value<DateTime?> createTime = const Value.absent(),
                 Value<DateTime?> lastReceiveTime = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String?> url = const Value.absent(),
+                Value<String> service = const Value.absent(),
+                Value<String?> origin = const Value.absent(),
+                Value<String> previousSeverity = const Value.absent(),
+                Value<int> duplicateCount = const Value.absent(),
+                Value<String> alertCategory = const Value.absent(),
+                Value<String> country = const Value.absent(),
+                Value<Map<String, dynamic>?> attributes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AlertsCompanion(
                 id: id,
@@ -5847,6 +6485,15 @@ class $$AlertsTableTableManager
                 value: value,
                 createTime: createTime,
                 lastReceiveTime: lastReceiveTime,
+                description: description,
+                url: url,
+                service: service,
+                origin: origin,
+                previousSeverity: previousSeverity,
+                duplicateCount: duplicateCount,
+                alertCategory: alertCategory,
+                country: country,
+                attributes: attributes,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5859,6 +6506,15 @@ class $$AlertsTableTableManager
                 Value<String?> value = const Value.absent(),
                 Value<DateTime?> createTime = const Value.absent(),
                 Value<DateTime?> lastReceiveTime = const Value.absent(),
+                required String description,
+                Value<String?> url = const Value.absent(),
+                required String service,
+                Value<String?> origin = const Value.absent(),
+                required String previousSeverity,
+                required int duplicateCount,
+                required String alertCategory,
+                required String country,
+                Value<Map<String, dynamic>?> attributes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AlertsCompanion.insert(
                 id: id,
@@ -5869,6 +6525,15 @@ class $$AlertsTableTableManager
                 value: value,
                 createTime: createTime,
                 lastReceiveTime: lastReceiveTime,
+                description: description,
+                url: url,
+                service: service,
+                origin: origin,
+                previousSeverity: previousSeverity,
+                duplicateCount: duplicateCount,
+                alertCategory: alertCategory,
+                country: country,
+                attributes: attributes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

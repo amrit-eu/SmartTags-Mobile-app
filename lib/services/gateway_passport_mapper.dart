@@ -100,7 +100,20 @@ abstract final class GatewayPassportMapper {
     final event = alert['event'] as String?;
     final severity = alert['severity'] as String?;
     final status = alert['status'] as String?;
-    if (id == null || resource == null || event == null || severity == null || status == null) {
+    final eventDescription = alert['text'] as String?;
+    final service = alert['service'] as String?;
+    final previousSeverity = alert['previousSeverity'] as String?;
+    final duplicateCount = alert['duplicateCount'] as int?;
+
+    if (id == null ||
+        resource == null ||
+        event == null ||
+        severity == null ||
+        previousSeverity == null ||
+        status == null ||
+        eventDescription == null ||
+        service == null ||
+        duplicateCount == null) {
       return null;
     }
     return AlertsCompanion.insert(
@@ -112,6 +125,11 @@ abstract final class GatewayPassportMapper {
       value: Value(alert['value']?.toString()),
       createTime: Value(_parseDateTime(alert['createTime'] as String?)),
       lastReceiveTime: Value(_parseDateTime(alert['lastReceiveTime'] as String?)),
+      description: eventDescription,
+      service: service,
+      origin: Value(alert['origin']?.toString()),
+      previousSeverity: previousSeverity,
+      duplicateCount: '',
     );
   }
 
