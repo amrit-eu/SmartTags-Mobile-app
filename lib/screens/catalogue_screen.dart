@@ -24,6 +24,12 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
 
+  /// Keeps the latest-viewed panel open after clear history (#143).
+  bool _keepLatestViewedPanelOpen = false;
+
+  /// While the clear-history dialog is open, ignore focus loss on the search field.
+  bool _clearHistoryDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,7 +38,12 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
         _searchQuery = _searchController.text;
       });
     });
-    _searchFocusNode.addListener(() => setState(() {}));
+    _searchFocusNode.addListener(() {
+      if (!_searchFocusNode.hasFocus && !_clearHistoryDialogOpen) {
+        _keepLatestViewedPanelOpen = false;
+      }
+      setState(() {});
+    });
   }
 
   @override
@@ -55,12 +66,21 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   }
 
   void _closeSearchHistory() {
+    if (_clearHistoryDialogOpen) {
+      return;
+    }
+    _keepLatestViewedPanelOpen = false;
     if (_searchFocusNode.hasFocus) {
       _searchFocusNode.unfocus();
     }
   }
 
   Future<void> _confirmClearSearchHistory() async {
+    setState(() {
+      _keepLatestViewedPanelOpen = true;
+      _clearHistoryDialogOpen = true;
+    });
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -78,8 +98,20 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
         ],
       ),
     );
-    if (confirmed == true && mounted) {
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _clearHistoryDialogOpen = false);
+    _searchFocusNode.requestFocus();
+
+    if (confirmed ?? false) {
       await clearCatalogueSearchHistory(ref);
+      if (mounted) {
+        setState(() => _keepLatestViewedPanelOpen = true);
+        _searchFocusNode.requestFocus();
+      }
     }
   }
 
@@ -88,7 +120,8 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     final historyAsync = ref.watch(catalogueSearchHistoryProvider);
     final history = historyAsync.value ?? const [];
     final suggestions = filterCatalogueSearchHistory(history, _searchQuery);
-    final showHistory = _searchFocusNode.hasFocus && suggestions.isNotEmpty;
+    final showHistory =
+        _keepLatestViewedPanelOpen || (_searchFocusNode.hasFocus && suggestions.isNotEmpty);
 
     return Scaffold(
       body: PullToRefresh(
@@ -352,10 +385,12 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final suggestions = widget.suggestions;
+    final isEmpty = suggestions.isEmpty;
     final canScroll = suggestions.length > _LatestViewedPlatformsPanel.maxVisibleRows;
-    final visibleRowCount = suggestions.length.clamp(0, _LatestViewedPlatformsPanel.maxVisibleRows);
+    final visibleRowCount =
+        isEmpty ? 1 : suggestions.length.clamp(0, _LatestViewedPlatformsPanel.maxVisibleRows);
     final listViewportHeight = visibleRowCount * _LatestViewedPlatformsPanel.historyRowHeight +
-        (visibleRowCount > 0 ? visibleRowCount - 1 : 0);
+        (visibleRowCount > 1 ? visibleRowCount - 1 : 0);
 
     return Material(
       elevation: 2,
@@ -381,55 +416,70 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
                     ),
                   ),
                 ),
-                IconButton(
-                  key: const Key('catalogue-clear-search-history'),
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Clear history',
-                  onPressed: widget.onClearHistory,
-                ),
+                if (suggestions.isNotEmpty)
+                  IconButton(
+                    key: const Key('catalogue-clear-search-history'),
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Clear history',
+                    onPressed: widget.onClearHistory,
+                  )
+                else
+                  const SizedBox(width: 48),
               ],
             ),
           ),
           const Divider(height: 1),
           SizedBox(
             height: listViewportHeight,
-            child: ScrollbarTheme(
-              data: theme.scrollbarTheme.copyWith(
-                thumbVisibility: WidgetStateProperty.all(canScroll),
-                trackVisibility: WidgetStateProperty.all(canScroll),
-                thickness: WidgetStateProperty.all(canScroll ? 6.0 : null),
-                radius: const Radius.circular(8),
-                crossAxisMargin: 2,
-                mainAxisMargin: 4,
-              ),
-              child: Scrollbar(
-                controller: _historyScrollController,
-                thumbVisibility: canScroll,
-                trackVisibility: canScroll,
-                interactive: true,
-                child: ListView.separated(
-                  controller: _historyScrollController,
-                  primary: false,
-                  padding: EdgeInsets.zero,
-                  itemCount: suggestions.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final entry = suggestions[index];
-                    final subtitle = catalogueSearchHistorySubtitle(entry);
-                    return SizedBox(
-                      height: _LatestViewedPlatformsPanel.historyRowHeight,
-                      child: ListTile(
-                        key: Key('catalogue-search-history-${entry.platformRef}'),
-                        leading: const Icon(Icons.history),
-                        title: Text(entry.platformRef),
-                        subtitle: subtitle != null ? Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis) : null,
-                        onTap: () => widget.onSelect(entry.platformRef),
+            child: isEmpty
+                ? Center(
+                    child: Text(
+                      'No recent platforms',
+                      key: const Key('catalogue-search-history-empty'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
+                    ),
+                  )
+                : ScrollbarTheme(
+                    data: theme.scrollbarTheme.copyWith(
+                      thumbVisibility: WidgetStateProperty.all(canScroll),
+                      trackVisibility: WidgetStateProperty.all(canScroll),
+                      thickness: WidgetStateProperty.all(canScroll ? 6.0 : null),
+                      radius: const Radius.circular(8),
+                      crossAxisMargin: 2,
+                      mainAxisMargin: 4,
+                    ),
+                    child: Scrollbar(
+                      controller: _historyScrollController,
+                      thumbVisibility: canScroll,
+                      trackVisibility: canScroll,
+                      interactive: true,
+                      child: ListView.separated(
+                        controller: _historyScrollController,
+                        primary: false,
+                        padding: EdgeInsets.zero,
+                        itemCount: suggestions.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final entry = suggestions[index];
+                          final subtitle = catalogueSearchHistorySubtitle(entry);
+                          return SizedBox(
+                            height: _LatestViewedPlatformsPanel.historyRowHeight,
+                            child: ListTile(
+                              key: Key('catalogue-search-history-${entry.platformRef}'),
+                              leading: const Icon(Icons.history),
+                              title: Text(entry.platformRef),
+                              subtitle: subtitle != null
+                                  ? Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis)
+                                  : null,
+                              onTap: () => widget.onSelect(entry.platformRef),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),

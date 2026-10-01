@@ -238,7 +238,8 @@ void main() {
     await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Latest viewed platforms'), findsNothing);
+    expect(find.text('Latest viewed platforms'), findsOneWidget);
+    expect(find.byKey(const Key('catalogue-search-history-empty')), findsOneWidget);
     expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsNothing);
 
     final rows = await db.select(db.catalogueSearchHistories).get();
