@@ -8,10 +8,19 @@ class TopNavigation extends AppBar {
   /// widget and [actions] widgets.
   /// [leading] defaults to a user icon button if not provided.
   /// A settings icon button is displayed as one of the actions if not provided.
-  TopNavigation({super.key, Widget? title, Widget? leading, List<Widget>? actions})
-    : super(
+  TopNavigation({
+    super.key,
+    Widget? title,
+    Widget? leading,
+    List<Widget>? actions,
+    Color? backgroundColor,
+    Color? surfaceTintColor,
+  }) : super(
         title: title ?? const Text('Smart Tags'),
         leading: leading ?? const UserIconButton(),
         actions: actions ?? [const SettingsMenu()],
+        backgroundColor: backgroundColor,
+        surfaceTintColor: surfaceTintColor,
+        scrolledUnderElevation: 0,
       );
 }

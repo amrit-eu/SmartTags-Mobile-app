@@ -235,7 +235,12 @@ void main() {
 
     await tester.tap(find.byKey(const Key('catalogue-clear-search-history')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Clear'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextButton, 'Clear'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Latest viewed platforms'), findsOneWidget);
