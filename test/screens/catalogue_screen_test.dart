@@ -18,6 +18,12 @@ void main() {
     await db.close();
   });
 
+  Future<void> disposeCatalogue(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+
   Future<void> populateDb() async {
     await db.insertPlatforms([
       PlatformsCompanion.insert(
@@ -65,6 +71,8 @@ void main() {
 
     expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
     expect(find.byType(PlatformCard), findsNothing);
+
+    await disposeCatalogue(tester);
   });
 
   testWidgets('CatalogueScreen filters platforms by text', (tester) async {
@@ -93,9 +101,7 @@ void main() {
     expect(find.byType(PlatformCard), findsOneWidget);
     expect(find.text('Drifting Buoy'), findsNothing);
 
-    // Cleanup
-    await tester.pumpWidget(Container());
-    await tester.pumpAndSettle();
+    await disposeCatalogue(tester);
   });
 
   testWidgets('CatalogueScreen shows no results message', (tester) async {
@@ -120,8 +126,159 @@ void main() {
     expect(find.text('No results found'), findsOneWidget);
     expect(find.byType(PlatformCard), findsNothing);
 
-    // Cleanup
-    await tester.pumpWidget(Container());
+    await disposeCatalogue(tester);
+  });
+
+  testWidgets('Catalogue shows search history when field is focused (#143)', (tester) async {
+    await populateDb();
+    await db.recordCatalogueSearchEntry(
+      platformRef: 'PLT-001',
+      platformModel: 'Argo Float',
+      wigosId: '0-22000-0-5904198',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: CatalogueScreen(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Latest viewed platforms'), findsOneWidget);
+    expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsOneWidget);
+    expect(find.text('Argo Float · 0-22000-0-5904198'), findsOneWidget);
+
+    await disposeCatalogue(tester);
+  });
+
+  testWidgets('History panel stays visible while typing and pushes results (#143)', (tester) async {
+    await populateDb();
+    await db.recordCatalogueSearchEntry(platformRef: 'PLT-001', platformModel: 'Argo Float');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: CatalogueScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Argo');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Latest viewed platforms'), findsOneWidget);
+    expect(find.byType(PlatformCard), findsOneWidget);
+
+    await disposeCatalogue(tester);
+  });
+
+  testWidgets('Tapping outside search dismisses history panel (#143)', (tester) async {
+    await populateDb();
+    await db.recordCatalogueSearchEntry(platformRef: 'PLT-001', platformModel: 'Argo Float');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: CatalogueScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsOneWidget);
+
+    await tester.tapAt(const Offset(200, 550));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsNothing);
+
+    await disposeCatalogue(tester);
+  });
+
+  testWidgets('Clear history removes latest viewed platforms (#143)', (tester) async {
+    await populateDb();
+    await db.recordCatalogueSearchEntry(platformRef: 'PLT-001', platformModel: 'Argo Float');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: CatalogueScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('catalogue-clear-search-history')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextButton, 'Clear'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Latest viewed platforms'), findsOneWidget);
+    expect(find.byKey(const Key('catalogue-search-history-empty')), findsOneWidget);
+    expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsNothing);
+
+    final rows = await db.select(db.catalogueSearchHistories).get();
+    expect(rows, isEmpty);
+
+    await disposeCatalogue(tester);
+  });
+
+  testWidgets('Opening a platform from search records platform ref in history (#143)', (tester) async {
+    await populateDb();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+        ],
+        child: const MaterialApp(
+          home: CatalogueScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Argo');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PlatformCard));
+    await tester.pump();
+
+    final rows = await db.select(db.catalogueSearchHistories).get();
+    expect(rows, hasLength(1));
+    expect(rows.single.platformRef, 'PLT-001');
+    expect(rows.single.platformModel, 'Argo Float');
+
+    await disposeCatalogue(tester);
   });
 }

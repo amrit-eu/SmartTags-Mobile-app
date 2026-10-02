@@ -11,11 +11,15 @@ class PlatformCard extends ConsumerWidget {
   /// Creates a [PlatformCard].
   const PlatformCard({
     required this.platform,
+    this.onBeforeOpen,
     super.key,
   });
 
   /// The platform data to be displayed in this card.
   final Platform platform;
+
+  /// Optional hook invoked before navigating to platform detail (e.g. catalogue history).
+  final Future<void> Function()? onBeforeOpen;
 
   static String _dash(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -38,7 +42,9 @@ class PlatformCard extends ConsumerWidget {
     final acknowledgedCount = counts.acknowledged;
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        await onBeforeOpen?.call();
+        if (!context.mounted) return;
         Navigator.of(context)
             .push(
               MaterialPageRoute<void>(
