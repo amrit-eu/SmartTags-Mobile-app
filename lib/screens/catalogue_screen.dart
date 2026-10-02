@@ -331,22 +331,34 @@ class _CatalogueSearchChrome extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     const borderRadius = BorderRadius.all(Radius.circular(28));
-    final menuColor = colorScheme.brightness == Brightness.light
-        ? Colors.white
-        : colorScheme.surfaceContainerHigh;
+    const closedShadow = [
+      BoxShadow(
+        color: Color(0x0D000000),
+        blurRadius: 10,
+        offset: Offset(0, 4),
+      ),
+    ];
+    const openShadow = [
+      BoxShadow(
+        color: Color(0x14000000),
+        blurRadius: 16,
+        offset: Offset(0, 6),
+      ),
+      BoxShadow(
+        color: Color(0x08000000),
+        blurRadius: 4,
+        offset: Offset(0, 1),
+      ),
+    ];
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: menuColor,
+        color: colorScheme.surface,
         borderRadius: borderRadius,
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: showHistory
+            ? null
+            : Border.all(color: colorScheme.outline.withValues(alpha: 0.35)),
+        boxShadow: showHistory ? openShadow : closedShadow,
       ),
       child: ClipRRect(
         borderRadius: borderRadius,
@@ -359,7 +371,7 @@ class _CatalogueSearchChrome extends StatelessWidget {
               controller: searchController,
               hintText: 'Search by ID or Model',
               elevation: const WidgetStatePropertyAll(0),
-              backgroundColor: WidgetStatePropertyAll(menuColor),
+              backgroundColor: WidgetStatePropertyAll(colorScheme.surface),
               side: const WidgetStatePropertyAll(BorderSide.none),
               overlayColor: const WidgetStatePropertyAll(Colors.transparent),
               leading: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
@@ -377,7 +389,7 @@ class _CatalogueSearchChrome extends StatelessWidget {
               onChanged: (_) {},
             ),
             if (showHistory) ...[
-              Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.6)),
+              Divider(height: 1, thickness: 1, color: colorScheme.outline.withValues(alpha: 0.45)),
               _LatestViewedPlatformsPanel(
                 suggestions: suggestions,
                 onSelect: onSelectHistory,
