@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/catalogue_search_history_filter.dart';
-import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/providers/catalogue_search_history_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';

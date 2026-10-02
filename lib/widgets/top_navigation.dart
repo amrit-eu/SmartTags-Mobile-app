@@ -13,14 +13,12 @@ class TopNavigation extends AppBar {
     Widget? title,
     Widget? leading,
     List<Widget>? actions,
-    Color? backgroundColor,
-    Color? surfaceTintColor,
+    super.backgroundColor,
+    super.surfaceTintColor,
   }) : super(
         title: title ?? const Text('Smart Tags'),
         leading: leading ?? const UserIconButton(),
         actions: actions ?? [const SettingsMenu()],
-        backgroundColor: backgroundColor,
-        surfaceTintColor: surfaceTintColor,
         scrolledUnderElevation: 0,
       );
 }
