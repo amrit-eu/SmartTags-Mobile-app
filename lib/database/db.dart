@@ -49,6 +49,9 @@ class Platforms extends Table {
   /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
   TextColumn get internalId => text().nullable()();
 
+  /// OceanTags QR code reference for the physical platform.
+  TextColumn get qrCode => text().nullable()();
+
   /// WIGOS identifier (optional).
   TextColumn get wigosId => text().nullable()();
 
@@ -503,6 +506,22 @@ class AppDatabase extends _$AppDatabase {
   /// Helper function to select a specific platform by its reference. Returns a list
   Future<List<Platform>> getPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref))).get();
+  }
+
+  /// Returns every passport/deployment stored for the physical platform
+  /// identified by [qrCode].
+  Future<List<Platform>> getPlatformsByQrCode(String qrCode) {
+    return (select(platforms)..where((p) => p.qrCode.equals(qrCode))).get();
+  }
+
+  /// Returns alerts associated with every passport/deployment belonging to
+  /// the physical platform identified by [qrCode].
+  Future<List<AlertEntity>> getAlertsByQrCode(String qrCode) {
+    final query = select(alerts).join([
+      innerJoin(platforms, platforms.ref.equalsExp(alerts.resource)),
+    ])..where(platforms.qrCode.equals(qrCode));
+
+    return query.map((row) => row.readTable(alerts)).get();
   }
 
   /// Watches a single platform by its reference, emitting updates on changes.

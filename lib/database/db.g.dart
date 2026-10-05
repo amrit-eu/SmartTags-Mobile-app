@@ -158,6 +158,15 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _qrCodeMeta = const VerificationMeta('qrCode');
+  @override
+  late final GeneratedColumn<String> qrCode = GeneratedColumn<String>(
+    'qr_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _wigosIdMeta = const VerificationMeta(
     'wigosId',
   );
@@ -336,6 +345,7 @@ class $PlatformsTable extends Platforms
     operationLon,
     name,
     internalId,
+    qrCode,
     wigosId,
     gtsId,
     batchRef,
@@ -477,6 +487,12 @@ class $PlatformsTable extends Platforms
       context.handle(
         _internalIdMeta,
         internalId.isAcceptableOrUnknown(data['internal_id']!, _internalIdMeta),
+      );
+    }
+    if (data.containsKey('qr_code')) {
+      context.handle(
+        _qrCodeMeta,
+        qrCode.isAcceptableOrUnknown(data['qr_code']!, _qrCodeMeta),
       );
     }
     if (data.containsKey('wigos_id')) {
@@ -661,6 +677,10 @@ class $PlatformsTable extends Platforms
         DriftSqlType.string,
         data['${effectivePrefix}internal_id'],
       ),
+      qrCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}qr_code'],
+      ),
       wigosId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}wigos_id'],
@@ -773,6 +793,9 @@ class Platform extends DataClass implements Insertable<Platform> {
   /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
   final String? internalId;
 
+  /// OceanTags QR code reference for the physical platform.
+  final String? qrCode;
+
   /// WIGOS identifier (optional).
   final String? wigosId;
 
@@ -836,6 +859,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     required this.operationLon,
     this.name,
     this.internalId,
+    this.qrCode,
     this.wigosId,
     this.gtsId,
     this.batchRef,
@@ -872,6 +896,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     }
     if (!nullToAbsent || internalId != null) {
       map['internal_id'] = Variable<String>(internalId);
+    }
+    if (!nullToAbsent || qrCode != null) {
+      map['qr_code'] = Variable<String>(qrCode);
     }
     if (!nullToAbsent || wigosId != null) {
       map['wigos_id'] = Variable<String>(wigosId);
@@ -937,6 +964,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       internalId: internalId == null && nullToAbsent
           ? const Value.absent()
           : Value(internalId),
+      qrCode: qrCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qrCode),
       wigosId: wigosId == null && nullToAbsent
           ? const Value.absent()
           : Value(wigosId),
@@ -1003,6 +1033,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       operationLon: serializer.fromJson<double>(json['operationLon']),
       name: serializer.fromJson<String?>(json['name']),
       internalId: serializer.fromJson<String?>(json['internalId']),
+      qrCode: serializer.fromJson<String?>(json['qrCode']),
       wigosId: serializer.fromJson<String?>(json['wigosId']),
       gtsId: serializer.fromJson<String?>(json['gtsId']),
       batchRef: serializer.fromJson<String?>(json['batchRef']),
@@ -1044,6 +1075,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       'operationLon': serializer.toJson<double>(operationLon),
       'name': serializer.toJson<String?>(name),
       'internalId': serializer.toJson<String?>(internalId),
+      'qrCode': serializer.toJson<String?>(qrCode),
       'wigosId': serializer.toJson<String?>(wigosId),
       'gtsId': serializer.toJson<String?>(gtsId),
       'batchRef': serializer.toJson<String?>(batchRef),
@@ -1077,6 +1109,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     double? operationLon,
     Value<String?> name = const Value.absent(),
     Value<String?> internalId = const Value.absent(),
+    Value<String?> qrCode = const Value.absent(),
     Value<String?> wigosId = const Value.absent(),
     Value<String?> gtsId = const Value.absent(),
     Value<String?> batchRef = const Value.absent(),
@@ -1107,6 +1140,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     operationLon: operationLon ?? this.operationLon,
     name: name.present ? name.value : this.name,
     internalId: internalId.present ? internalId.value : this.internalId,
+    qrCode: qrCode.present ? qrCode.value : this.qrCode,
     wigosId: wigosId.present ? wigosId.value : this.wigosId,
     gtsId: gtsId.present ? gtsId.value : this.gtsId,
     batchRef: batchRef.present ? batchRef.value : this.batchRef,
@@ -1161,6 +1195,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       internalId: data.internalId.present
           ? data.internalId.value
           : this.internalId,
+      qrCode: data.qrCode.present ? data.qrCode.value : this.qrCode,
       wigosId: data.wigosId.present ? data.wigosId.value : this.wigosId,
       gtsId: data.gtsId.present ? data.gtsId.value : this.gtsId,
       batchRef: data.batchRef.present ? data.batchRef.value : this.batchRef,
@@ -1214,6 +1249,7 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('operationLon: $operationLon, ')
           ..write('name: $name, ')
           ..write('internalId: $internalId, ')
+          ..write('qrCode: $qrCode, ')
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
@@ -1249,6 +1285,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     operationLon,
     name,
     internalId,
+    qrCode,
     wigosId,
     gtsId,
     batchRef,
@@ -1283,6 +1320,7 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.operationLon == this.operationLon &&
           other.name == this.name &&
           other.internalId == this.internalId &&
+          other.qrCode == this.qrCode &&
           other.wigosId == this.wigosId &&
           other.gtsId == this.gtsId &&
           other.batchRef == this.batchRef &&
@@ -1315,6 +1353,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<double> operationLon;
   final Value<String?> name;
   final Value<String?> internalId;
+  final Value<String?> qrCode;
   final Value<String?> wigosId;
   final Value<String?> gtsId;
   final Value<String?> batchRef;
@@ -1345,6 +1384,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.operationLon = const Value.absent(),
     this.name = const Value.absent(),
     this.internalId = const Value.absent(),
+    this.qrCode = const Value.absent(),
     this.wigosId = const Value.absent(),
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
@@ -1376,6 +1416,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     required double operationLon,
     this.name = const Value.absent(),
     this.internalId = const Value.absent(),
+    this.qrCode = const Value.absent(),
     this.wigosId = const Value.absent(),
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
@@ -1417,6 +1458,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<double>? operationLon,
     Expression<String>? name,
     Expression<String>? internalId,
+    Expression<String>? qrCode,
     Expression<String>? wigosId,
     Expression<String>? gtsId,
     Expression<String>? batchRef,
@@ -1448,6 +1490,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (operationLon != null) 'operation_lon': operationLon,
       if (name != null) 'name': name,
       if (internalId != null) 'internal_id': internalId,
+      if (qrCode != null) 'qr_code': qrCode,
       if (wigosId != null) 'wigos_id': wigosId,
       if (gtsId != null) 'gts_id': gtsId,
       if (batchRef != null) 'batch_ref': batchRef,
@@ -1484,6 +1527,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<double>? operationLon,
     Value<String?>? name,
     Value<String?>? internalId,
+    Value<String?>? qrCode,
     Value<String?>? wigosId,
     Value<String?>? gtsId,
     Value<String?>? batchRef,
@@ -1515,6 +1559,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       operationLon: operationLon ?? this.operationLon,
       name: name ?? this.name,
       internalId: internalId ?? this.internalId,
+      qrCode: qrCode ?? this.qrCode,
       wigosId: wigosId ?? this.wigosId,
       gtsId: gtsId ?? this.gtsId,
       batchRef: batchRef ?? this.batchRef,
@@ -1577,6 +1622,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     }
     if (internalId.present) {
       map['internal_id'] = Variable<String>(internalId.value);
+    }
+    if (qrCode.present) {
+      map['qr_code'] = Variable<String>(qrCode.value);
     }
     if (wigosId.present) {
       map['wigos_id'] = Variable<String>(wigosId.value);
@@ -1649,6 +1697,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('operationLon: $operationLon, ')
           ..write('name: $name, ')
           ..write('internalId: $internalId, ')
+          ..write('qrCode: $qrCode, ')
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
@@ -5189,6 +5238,7 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       required double operationLon,
       Value<String?> name,
       Value<String?> internalId,
+      Value<String?> qrCode,
       Value<String?> wigosId,
       Value<String?> gtsId,
       Value<String?> batchRef,
@@ -5221,6 +5271,7 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<double> operationLon,
       Value<String?> name,
       Value<String?> internalId,
+      Value<String?> qrCode,
       Value<String?> wigosId,
       Value<String?> gtsId,
       Value<String?> batchRef,
@@ -5338,6 +5389,11 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<String> get internalId => $composableBuilder(
     column: $table.internalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get qrCode => $composableBuilder(
+    column: $table.qrCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5521,6 +5577,11 @@ class $$PlatformsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get qrCode => $composableBuilder(
+    column: $table.qrCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get wigosId => $composableBuilder(
     column: $table.wigosId,
     builder: (column) => ColumnOrderings(column),
@@ -5658,6 +5719,9 @@ class $$PlatformsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get qrCode =>
+      $composableBuilder(column: $table.qrCode, builder: (column) => column);
+
   GeneratedColumn<String> get wigosId =>
       $composableBuilder(column: $table.wigosId, builder: (column) => column);
 
@@ -5789,6 +5853,7 @@ class $$PlatformsTableTableManager
                 Value<double> operationLon = const Value.absent(),
                 Value<String?> name = const Value.absent(),
                 Value<String?> internalId = const Value.absent(),
+                Value<String?> qrCode = const Value.absent(),
                 Value<String?> wigosId = const Value.absent(),
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
@@ -5819,6 +5884,7 @@ class $$PlatformsTableTableManager
                 operationLon: operationLon,
                 name: name,
                 internalId: internalId,
+                qrCode: qrCode,
                 wigosId: wigosId,
                 gtsId: gtsId,
                 batchRef: batchRef,
@@ -5851,6 +5917,7 @@ class $$PlatformsTableTableManager
                 required double operationLon,
                 Value<String?> name = const Value.absent(),
                 Value<String?> internalId = const Value.absent(),
+                Value<String?> qrCode = const Value.absent(),
                 Value<String?> wigosId = const Value.absent(),
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
@@ -5881,6 +5948,7 @@ class $$PlatformsTableTableManager
                 operationLon: operationLon,
                 name: name,
                 internalId: internalId,
+                qrCode: qrCode,
                 wigosId: wigosId,
                 gtsId: gtsId,
                 batchRef: batchRef,
