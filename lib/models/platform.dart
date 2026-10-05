@@ -117,6 +117,7 @@ class Platform {
     this.program,
     this.name,
     this.internalId,
+    this.qrCode,
     this.serial,
   });
 
@@ -155,6 +156,9 @@ class Platform {
 
   /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
   final String? internalId;
+
+  /// QR code reference for the physical platform.
+  final String? qrCode;
 
   /// The Platform serial number..
   final String? serial;
