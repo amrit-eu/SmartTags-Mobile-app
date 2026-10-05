@@ -36,6 +36,7 @@ extension PlatformMapper on Platform {
       serial: serial,
       name: name,
       internalId: internalId,
+      qrCode: qrCode,
     );
   }
 }

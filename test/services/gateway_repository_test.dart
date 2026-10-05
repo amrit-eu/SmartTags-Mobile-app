@@ -34,6 +34,7 @@ const Map<String, dynamic> _samplePassportItem = {
     'identification': {
       'reference': '2900314',
       'passportId': '0-22000-0-2900314',
+      'qrCode': 'RFHCZ3S',
     },
     'status': {
       'reportingStatus': {
@@ -98,6 +99,7 @@ void main() {
       expect(companion.reportingStatus.value, 'OPERATIONAL');
       expect(companion.observingNetwork.value, 'Argo');
       expect(companion.wigosId.value, '0-22000-0-2900314');
+      expect(companion.qrCode.value, 'RFHCZ3S');
       expect(companion.status.value, 'OPERATIONAL');
       expect(companion.latestOperationType.value, 'Deployment');
       expect(companion.operationalStatus.value, 'Deployed');
@@ -197,6 +199,16 @@ void main() {
       final companion = GatewayPassportMapper.fromPassportItem(item);
 
       expect(companion.ptfId.value, isNull);
+    });
+
+    test('leaves qrCode null when passport identification value is null', () {
+      final item = jsonDecode(jsonEncode(_samplePassportItem)) as Map<String, dynamic>;
+      final passport = item['passport'] as Map<String, dynamic>;
+      (passport['identification'] as Map<String, dynamic>)['qrCode'] = null;
+
+      final companion = GatewayPassportMapper.fromPassportItem(item);
+
+      expect(companion.qrCode.value, isNull);
     });
 
     test('alertsFromPassportItem keeps only the Alert model attributes', () {
