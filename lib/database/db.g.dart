@@ -4746,6 +4746,377 @@ class SyncMetadataCompanion extends UpdateCompanion<SyncMetadataData> {
   }
 }
 
+class $MapSessionStatesTable extends MapSessionStates
+    with TableInfo<$MapSessionStatesTable, MapSessionState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MapSessionStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _centerLatMeta = const VerificationMeta(
+    'centerLat',
+  );
+  @override
+  late final GeneratedColumn<double> centerLat = GeneratedColumn<double>(
+    'center_lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _centerLngMeta = const VerificationMeta(
+    'centerLng',
+  );
+  @override
+  late final GeneratedColumn<double> centerLng = GeneratedColumn<double>(
+    'center_lng',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _zoomMeta = const VerificationMeta('zoom');
+  @override
+  late final GeneratedColumn<double> zoom = GeneratedColumn<double>(
+    'zoom',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _selectedPlatformRefMeta =
+      const VerificationMeta('selectedPlatformRef');
+  @override
+  late final GeneratedColumn<String> selectedPlatformRef =
+      GeneratedColumn<String>(
+        'selected_platform_ref',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    centerLat,
+    centerLng,
+    zoom,
+    selectedPlatformRef,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'map_session_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MapSessionState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('center_lat')) {
+      context.handle(
+        _centerLatMeta,
+        centerLat.isAcceptableOrUnknown(data['center_lat']!, _centerLatMeta),
+      );
+    }
+    if (data.containsKey('center_lng')) {
+      context.handle(
+        _centerLngMeta,
+        centerLng.isAcceptableOrUnknown(data['center_lng']!, _centerLngMeta),
+      );
+    }
+    if (data.containsKey('zoom')) {
+      context.handle(
+        _zoomMeta,
+        zoom.isAcceptableOrUnknown(data['zoom']!, _zoomMeta),
+      );
+    }
+    if (data.containsKey('selected_platform_ref')) {
+      context.handle(
+        _selectedPlatformRefMeta,
+        selectedPlatformRef.isAcceptableOrUnknown(
+          data['selected_platform_ref']!,
+          _selectedPlatformRefMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MapSessionState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MapSessionState(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      centerLat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}center_lat'],
+      ),
+      centerLng: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}center_lng'],
+      ),
+      zoom: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}zoom'],
+      ),
+      selectedPlatformRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selected_platform_ref'],
+      ),
+    );
+  }
+
+  @override
+  $MapSessionStatesTable createAlias(String alias) {
+    return $MapSessionStatesTable(attachedDatabase, alias);
+  }
+}
+
+class MapSessionState extends DataClass implements Insertable<MapSessionState> {
+  /// Fixed row id — only row `1` is used.
+  final int id;
+
+  /// Map centre latitude.
+  final double? centerLat;
+
+  /// Map centre longitude.
+  final double? centerLng;
+
+  /// Map zoom level.
+  final double? zoom;
+
+  /// Selected platform ref when a popup was open; null when dismissed.
+  final String? selectedPlatformRef;
+  const MapSessionState({
+    required this.id,
+    this.centerLat,
+    this.centerLng,
+    this.zoom,
+    this.selectedPlatformRef,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || centerLat != null) {
+      map['center_lat'] = Variable<double>(centerLat);
+    }
+    if (!nullToAbsent || centerLng != null) {
+      map['center_lng'] = Variable<double>(centerLng);
+    }
+    if (!nullToAbsent || zoom != null) {
+      map['zoom'] = Variable<double>(zoom);
+    }
+    if (!nullToAbsent || selectedPlatformRef != null) {
+      map['selected_platform_ref'] = Variable<String>(selectedPlatformRef);
+    }
+    return map;
+  }
+
+  MapSessionStatesCompanion toCompanion(bool nullToAbsent) {
+    return MapSessionStatesCompanion(
+      id: Value(id),
+      centerLat: centerLat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(centerLat),
+      centerLng: centerLng == null && nullToAbsent
+          ? const Value.absent()
+          : Value(centerLng),
+      zoom: zoom == null && nullToAbsent ? const Value.absent() : Value(zoom),
+      selectedPlatformRef: selectedPlatformRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(selectedPlatformRef),
+    );
+  }
+
+  factory MapSessionState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MapSessionState(
+      id: serializer.fromJson<int>(json['id']),
+      centerLat: serializer.fromJson<double?>(json['centerLat']),
+      centerLng: serializer.fromJson<double?>(json['centerLng']),
+      zoom: serializer.fromJson<double?>(json['zoom']),
+      selectedPlatformRef: serializer.fromJson<String?>(
+        json['selectedPlatformRef'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'centerLat': serializer.toJson<double?>(centerLat),
+      'centerLng': serializer.toJson<double?>(centerLng),
+      'zoom': serializer.toJson<double?>(zoom),
+      'selectedPlatformRef': serializer.toJson<String?>(selectedPlatformRef),
+    };
+  }
+
+  MapSessionState copyWith({
+    int? id,
+    Value<double?> centerLat = const Value.absent(),
+    Value<double?> centerLng = const Value.absent(),
+    Value<double?> zoom = const Value.absent(),
+    Value<String?> selectedPlatformRef = const Value.absent(),
+  }) => MapSessionState(
+    id: id ?? this.id,
+    centerLat: centerLat.present ? centerLat.value : this.centerLat,
+    centerLng: centerLng.present ? centerLng.value : this.centerLng,
+    zoom: zoom.present ? zoom.value : this.zoom,
+    selectedPlatformRef: selectedPlatformRef.present
+        ? selectedPlatformRef.value
+        : this.selectedPlatformRef,
+  );
+  MapSessionState copyWithCompanion(MapSessionStatesCompanion data) {
+    return MapSessionState(
+      id: data.id.present ? data.id.value : this.id,
+      centerLat: data.centerLat.present ? data.centerLat.value : this.centerLat,
+      centerLng: data.centerLng.present ? data.centerLng.value : this.centerLng,
+      zoom: data.zoom.present ? data.zoom.value : this.zoom,
+      selectedPlatformRef: data.selectedPlatformRef.present
+          ? data.selectedPlatformRef.value
+          : this.selectedPlatformRef,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapSessionState(')
+          ..write('id: $id, ')
+          ..write('centerLat: $centerLat, ')
+          ..write('centerLng: $centerLng, ')
+          ..write('zoom: $zoom, ')
+          ..write('selectedPlatformRef: $selectedPlatformRef')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, centerLat, centerLng, zoom, selectedPlatformRef);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MapSessionState &&
+          other.id == this.id &&
+          other.centerLat == this.centerLat &&
+          other.centerLng == this.centerLng &&
+          other.zoom == this.zoom &&
+          other.selectedPlatformRef == this.selectedPlatformRef);
+}
+
+class MapSessionStatesCompanion extends UpdateCompanion<MapSessionState> {
+  final Value<int> id;
+  final Value<double?> centerLat;
+  final Value<double?> centerLng;
+  final Value<double?> zoom;
+  final Value<String?> selectedPlatformRef;
+  const MapSessionStatesCompanion({
+    this.id = const Value.absent(),
+    this.centerLat = const Value.absent(),
+    this.centerLng = const Value.absent(),
+    this.zoom = const Value.absent(),
+    this.selectedPlatformRef = const Value.absent(),
+  });
+  MapSessionStatesCompanion.insert({
+    this.id = const Value.absent(),
+    this.centerLat = const Value.absent(),
+    this.centerLng = const Value.absent(),
+    this.zoom = const Value.absent(),
+    this.selectedPlatformRef = const Value.absent(),
+  });
+  static Insertable<MapSessionState> custom({
+    Expression<int>? id,
+    Expression<double>? centerLat,
+    Expression<double>? centerLng,
+    Expression<double>? zoom,
+    Expression<String>? selectedPlatformRef,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (centerLat != null) 'center_lat': centerLat,
+      if (centerLng != null) 'center_lng': centerLng,
+      if (zoom != null) 'zoom': zoom,
+      if (selectedPlatformRef != null)
+        'selected_platform_ref': selectedPlatformRef,
+    });
+  }
+
+  MapSessionStatesCompanion copyWith({
+    Value<int>? id,
+    Value<double?>? centerLat,
+    Value<double?>? centerLng,
+    Value<double?>? zoom,
+    Value<String?>? selectedPlatformRef,
+  }) {
+    return MapSessionStatesCompanion(
+      id: id ?? this.id,
+      centerLat: centerLat ?? this.centerLat,
+      centerLng: centerLng ?? this.centerLng,
+      zoom: zoom ?? this.zoom,
+      selectedPlatformRef: selectedPlatformRef ?? this.selectedPlatformRef,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (centerLat.present) {
+      map['center_lat'] = Variable<double>(centerLat.value);
+    }
+    if (centerLng.present) {
+      map['center_lng'] = Variable<double>(centerLng.value);
+    }
+    if (zoom.present) {
+      map['zoom'] = Variable<double>(zoom.value);
+    }
+    if (selectedPlatformRef.present) {
+      map['selected_platform_ref'] = Variable<String>(
+        selectedPlatformRef.value,
+      );
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MapSessionStatesCompanion(')
+          ..write('id: $id, ')
+          ..write('centerLat: $centerLat, ')
+          ..write('centerLng: $centerLng, ')
+          ..write('zoom: $zoom, ')
+          ..write('selectedPlatformRef: $selectedPlatformRef')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4761,6 +5132,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PendingOperationsTable pendingOperations =
       $PendingOperationsTable(this);
   late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
+  late final $MapSessionStatesTable mapSessionStates = $MapSessionStatesTable(
+    this,
+  );
   late final Index idxPlatformsRef = Index(
     'idx_platforms_ref',
     'CREATE UNIQUE INDEX idx_platforms_ref ON platforms (ref)',
@@ -4780,6 +5154,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userRoles,
     pendingOperations,
     syncMetadata,
+    mapSessionStates,
     idxPlatformsRef,
   ];
 }
@@ -8150,6 +8525,208 @@ typedef $$SyncMetadataTableProcessedTableManager =
       SyncMetadataData,
       PrefetchHooks Function()
     >;
+typedef $$MapSessionStatesTableCreateCompanionBuilder =
+    MapSessionStatesCompanion Function({
+      Value<int> id,
+      Value<double?> centerLat,
+      Value<double?> centerLng,
+      Value<double?> zoom,
+      Value<String?> selectedPlatformRef,
+    });
+typedef $$MapSessionStatesTableUpdateCompanionBuilder =
+    MapSessionStatesCompanion Function({
+      Value<int> id,
+      Value<double?> centerLat,
+      Value<double?> centerLng,
+      Value<double?> zoom,
+      Value<String?> selectedPlatformRef,
+    });
+
+class $$MapSessionStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $MapSessionStatesTable> {
+  $$MapSessionStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get centerLat => $composableBuilder(
+    column: $table.centerLat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get centerLng => $composableBuilder(
+    column: $table.centerLng,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get zoom => $composableBuilder(
+    column: $table.zoom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selectedPlatformRef => $composableBuilder(
+    column: $table.selectedPlatformRef,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MapSessionStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MapSessionStatesTable> {
+  $$MapSessionStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get centerLat => $composableBuilder(
+    column: $table.centerLat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get centerLng => $composableBuilder(
+    column: $table.centerLng,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get zoom => $composableBuilder(
+    column: $table.zoom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get selectedPlatformRef => $composableBuilder(
+    column: $table.selectedPlatformRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MapSessionStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MapSessionStatesTable> {
+  $$MapSessionStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get centerLat =>
+      $composableBuilder(column: $table.centerLat, builder: (column) => column);
+
+  GeneratedColumn<double> get centerLng =>
+      $composableBuilder(column: $table.centerLng, builder: (column) => column);
+
+  GeneratedColumn<double> get zoom =>
+      $composableBuilder(column: $table.zoom, builder: (column) => column);
+
+  GeneratedColumn<String> get selectedPlatformRef => $composableBuilder(
+    column: $table.selectedPlatformRef,
+    builder: (column) => column,
+  );
+}
+
+class $$MapSessionStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MapSessionStatesTable,
+          MapSessionState,
+          $$MapSessionStatesTableFilterComposer,
+          $$MapSessionStatesTableOrderingComposer,
+          $$MapSessionStatesTableAnnotationComposer,
+          $$MapSessionStatesTableCreateCompanionBuilder,
+          $$MapSessionStatesTableUpdateCompanionBuilder,
+          (
+            MapSessionState,
+            BaseReferences<
+              _$AppDatabase,
+              $MapSessionStatesTable,
+              MapSessionState
+            >,
+          ),
+          MapSessionState,
+          PrefetchHooks Function()
+        > {
+  $$MapSessionStatesTableTableManager(
+    _$AppDatabase db,
+    $MapSessionStatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MapSessionStatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MapSessionStatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MapSessionStatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<double?> centerLat = const Value.absent(),
+                Value<double?> centerLng = const Value.absent(),
+                Value<double?> zoom = const Value.absent(),
+                Value<String?> selectedPlatformRef = const Value.absent(),
+              }) => MapSessionStatesCompanion(
+                id: id,
+                centerLat: centerLat,
+                centerLng: centerLng,
+                zoom: zoom,
+                selectedPlatformRef: selectedPlatformRef,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<double?> centerLat = const Value.absent(),
+                Value<double?> centerLng = const Value.absent(),
+                Value<double?> zoom = const Value.absent(),
+                Value<String?> selectedPlatformRef = const Value.absent(),
+              }) => MapSessionStatesCompanion.insert(
+                id: id,
+                centerLat: centerLat,
+                centerLng: centerLng,
+                zoom: zoom,
+                selectedPlatformRef: selectedPlatformRef,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MapSessionStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MapSessionStatesTable,
+      MapSessionState,
+      $$MapSessionStatesTableFilterComposer,
+      $$MapSessionStatesTableOrderingComposer,
+      $$MapSessionStatesTableAnnotationComposer,
+      $$MapSessionStatesTableCreateCompanionBuilder,
+      $$MapSessionStatesTableUpdateCompanionBuilder,
+      (
+        MapSessionState,
+        BaseReferences<_$AppDatabase, $MapSessionStatesTable, MapSessionState>,
+      ),
+      MapSessionState,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8172,4 +8749,6 @@ class $AppDatabaseManager {
       $$PendingOperationsTableTableManager(_db, _db.pendingOperations);
   $$SyncMetadataTableTableManager get syncMetadata =>
       $$SyncMetadataTableTableManager(_db, _db.syncMetadata);
+  $$MapSessionStatesTableTableManager get mapSessionStates =>
+      $$MapSessionStatesTableTableManager(_db, _db.mapSessionStates);
 }

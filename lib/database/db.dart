@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/database/db_connection.dart';
+import 'package:smart_tags/models/map_viewport_snapshot.dart';
 
 part 'db.g.dart';
 
@@ -281,6 +282,27 @@ class SyncMetadata extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Single-row table storing last map viewport and popup selection (#132).
+class MapSessionStates extends Table {
+  /// Fixed row id — only row `1` is used.
+  IntColumn get id => integer()();
+
+  /// Map centre latitude.
+  RealColumn get centerLat => real().nullable()();
+
+  /// Map centre longitude.
+  RealColumn get centerLng => real().nullable()();
+
+  /// Map zoom level.
+  RealColumn get zoom => real().nullable()();
+
+  /// Selected platform ref when a popup was open; null when dismissed.
+  TextColumn get selectedPlatformRef => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// The local SQLite database using Drift ORM.
 @DriftDatabase(
   tables: [
@@ -293,6 +315,7 @@ class SyncMetadata extends Table {
     UserRoles,
     PendingOperations,
     SyncMetadata,
+    MapSessionStates,
   ],
   daos: [AuthDao],
 )
@@ -304,7 +327,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   // TODO(ylubac): Once the app's first version has been published, schema
   // changes will need a real onUpgrade migration strategy (bumping
@@ -315,12 +338,11 @@ class AppDatabase extends _$AppDatabase {
     onCreate: (Migrator m) async {
       await m.createAll();
     },
-    // onUpgrade: (Migrator m, int from, int to) async {
-    //   if (from < 2) {
-    //     // here migrations inscructions
-    //     // await m.addColumn(platforms, platforms.platformCategory);
-    //   }
-    // },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.createTable(mapSessionStates);
+      }
+    },
   );
 
   /// Returns true when no platform rows exist locally.
@@ -411,6 +433,33 @@ class AppDatabase extends _$AppDatabase {
       SyncMetadataCompanion.insert(
         id: const Value(1),
         lastPlatformsRefresh: Value(when),
+      ),
+    );
+  }
+
+  /// Reads persisted map viewport / selection (#132).
+  Future<MapViewportSnapshot?> getMapViewportSnapshot() async {
+    final row = await (select(mapSessionStates)..where((t) => t.id.equals(1))).getSingleOrNull();
+    if (row == null) {
+      return null;
+    }
+    return MapViewportSnapshot(
+      centerLat: row.centerLat,
+      centerLng: row.centerLng,
+      zoom: row.zoom,
+      selectedPlatformRef: row.selectedPlatformRef,
+    );
+  }
+
+  /// Persists map viewport / selection (#132).
+  Future<void> setMapViewportSnapshot(MapViewportSnapshot state) async {
+    await into(mapSessionStates).insertOnConflictUpdate(
+      MapSessionStatesCompanion(
+        id: const Value(1),
+        centerLat: Value(state.centerLat),
+        centerLng: Value(state.centerLng),
+        zoom: Value(state.zoom),
+        selectedPlatformRef: Value(state.selectedPlatformRef),
       ),
     );
   }

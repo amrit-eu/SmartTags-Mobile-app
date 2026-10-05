@@ -107,7 +107,12 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
             const InitialSyncShell(),
             const ConnectivityBanner(),
             const PendingOperationsBanner(),
-            Expanded(child: _pages[_selectedIndex]),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _pages,
+              ),
+            ),
           ],
         ),
       ),
