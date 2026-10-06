@@ -33,12 +33,16 @@ class MyApp extends ConsumerWidget {
       ..watch(initialSyncLifecycleProvider)
       ..watch(passportEventQueueLifecycleProvider)
       ..watch(platformsRefreshLifecycleProvider);
-    return MaterialApp(
-      title: 'SmartTags',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: const MainNavigation(),
-      themeMode: ref.watch(themeProvider),
+    const textScaler = TextScaler.linear(2);
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+      child: MaterialApp(
+        title: 'SmartTags',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        home: const MainNavigation(),
+        themeMode: ref.watch(themeProvider),
+      ),
     );
   }
 }
