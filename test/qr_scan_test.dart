@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -17,232 +18,145 @@ import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
+import 'package:smart_tags/widgets/platform_card.dart';
 
 import 'helpers/static_initial_sync_notifier.dart';
 
-class _FixedConnectivity extends ConnectivityStatus {
-  _FixedConnectivity(this.result);
-
-  final ConnectivityResult? result;
-
+class _Online extends ConnectivityStatus {
   @override
-  FutureOr<ConnectivityResult?> build() async => result;
+  FutureOr<ConnectivityResult?> build() => ConnectivityResult.wifi;
+}
+
+void scan(WidgetTester tester, String value) {
+  final scanner = tester.widget<MobileScanner>(find.byType(MobileScanner));
+  scanner.onDetect!(
+    BarcodeCapture(
+      barcodes: [
+        Barcode(rawValue: value, format: BarcodeFormat.qrCode),
+      ],
+    ),
+  );
 }
 
 void main() {
-  testWidgets('Should be able to navigate to QR Scanner page', (
-    WidgetTester tester,
-  ) async {
-    final client = MockClient((request) async {
-      return http.Response('{"items":[]}', 200);
-    });
+  testWidgets('valid tracking scan starts one lookup, opens catalogue and keeps results on return', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
-    final gatewayRepo = GatewayRepository(
-      client: client,
+    final response = Completer<http.Response>();
+    var calls = 0;
+    final gateway = GatewayRepository(
+      client: MockClient((request) {
+        calls++;
+        if (calls == 1) {
+          expectSync(jsonDecode(request.body), {
+            'paginationEnabled': false,
+            'filters': {'qrCode': 'AbC'},
+          });
+          return response.future;
+        }
+        expectSync(jsonDecode(request.body), {
+          'paginationEnabled': false,
+          'filters': {'qrCode': 'Def'},
+        });
+        return Future.value(http.Response(jsonEncode({'items': [
+          {'reference': 'DEP-3', 'passport': {'identification': {'qrCode': 'Def'}}},
+        ]}), 200));
+      }),
       authService: AuthService(authDao: db.authDao),
     );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          gatewayRepositoryProvider.overrideWith((ref) => gatewayRepo),
-          databaseProvider.overrideWith((ref) => db),
-          checkConnectionProvider.overrideWith(
-            () => _FixedConnectivity(ConnectivityResult.wifi),
-          ),
-          initialSyncProvider.overrideWith(
-            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
-          ),
+          databaseProvider.overrideWithValue(db),
+          gatewayRepositoryProvider.overrideWithValue(gateway),
+          checkConnectionProvider.overrideWith(_Online.new),
+          initialSyncProvider.overrideWith(() => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded)),
           platformsStreamProvider.overrideWith((ref) => Stream.value([])),
         ],
-        child: const MaterialApp(
-          home: MyApp(),
-        ),
+        child: const MyApp(),
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Scan'), findsOneWidget);
-
     await tester.tap(find.byIcon(Icons.qr_code_scanner_outlined));
     await tester.pump();
 
-    expect(find.text('Scan QR Code'), findsOneWidget);
-    // Unmount widget before closing the database to ensure StreamBuilder
-    // listeners are disposed and the DB can close cleanly.
-    await tester.pumpWidget(const SizedBox.shrink());
-    // Allow the widget tree to process disposal and cancel streams.
-    await tester.pump(const Duration(milliseconds: 100));
-    await db.close();
-  });
-
-  testWidgets('QR scanner navigates to Platform Details page if a valid OceanTags URL is read from QR code', (
-    WidgetTester tester,
-  ) async {
-    final db = AppDatabase.executor(conn.inMemoryConnection());
-    final now = DateTime.now();
-    const mockPlatformRef = 'PLT-001';
-
-    final platforms = [
-      PlatformsCompanion.insert(
-        ref: mockPlatformRef,
-        model: 'Model A',
-        network: 'Net A',
-        lat: 1,
-        lon: 1,
-        status: 'OPERATIONAL',
-        operationalStatus: 'Deployed',
-        lastUpdated: now,
-        operationLat: 1,
-        operationLon: 1,
-        category: 'Profiling Float',
-      ),
-    ];
-    await db.insertPlatforms(platforms);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWith((ref) => db),
-        ],
-        child: const MaterialApp(
-          home: QrScanScreen(),
-        ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 500));
-    final scanner = tester.widget<MobileScanner>(
-      find.byType(MobileScanner),
-    );
-    const fakeBarcode = Barcode(
-      rawValue: 'https://www.ocean-ops.org/oceantags/$mockPlatformRef',
-      format: BarcodeFormat.qrCode,
-    );
-    scanner.onDetect!(
-      const BarcodeCapture(barcodes: [fakeBarcode]),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(PlatformDetailScreen), findsOneWidget);
-    expect(find.text('Model A'), findsOneWidget);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    // Allow the widget tree to process disposal and cancel streams.
-    await tester.pump(const Duration(milliseconds: 100));
-    await db.close();
-  });
-
-  testWidgets('QR scanner warns if platform not found', (
-    // can resolve a valid OceanTags URL from QR code', (
-    WidgetTester tester,
-  ) async {
-    final db = AppDatabase.executor(conn.inMemoryConnection());
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWith((ref) => db),
-        ],
-        child: const MaterialApp(
-          home: QrScanScreen(),
-        ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 500));
-    final scanner = tester.widget<MobileScanner>(
-      find.byType(MobileScanner),
-    );
-    const fakeBarcode = Barcode(
-      rawValue: 'https://www.ocean-ops.org/oceantags/RFHCZ3S',
-      format: BarcodeFormat.qrCode,
-    );
-    scanner.onDetect!(
-      const BarcodeCapture(barcodes: [fakeBarcode]),
-    );
+    scan(tester, 'https://www.ocean-ops.org/tracking/?code=AbC&source=sticker');
+    scan(tester, 'https://www.ocean-ops.org/tracking/?code=AbC&source=sticker');
     await tester.pump();
+    expect(find.text('Results for scanned QR code'), findsOneWidget);
 
-    expect(find.text('No platforms found'), findsOneWidget);
+    response.complete(
+      http.Response(
+        jsonEncode({
+          'items': [
+            {
+              'reference': 'DEP-1',
+              'passport': {
+                'identification': {'qrCode': 'AbC'},
+                'status': {
+                  'reportingStatus': {'name': 'OPERATIONAL'},
+                },
+              },
+            },
+            {
+              'reference': 'DEP-2',
+              'passport': {
+                'identification': {'qrCode': 'AbC'},
+                'status': {
+                  'reportingStatus': {'name': 'INACTIVE'},
+                },
+              },
+            },
+          ],
+        }),
+        200,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(calls, 1);
+    expect(find.byType(PlatformCard), findsNWidgets(2));
 
-    // teardown
+    final selectedRef = tester.widget<PlatformCard>(find.byType(PlatformCard).last).platform.ref;
+    await tester.tap(find.byType(PlatformCard).last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(PlatformDetailScreen), findsOneWidget);
+    expect(tester.widget<PlatformDetailScreen>(find.byType(PlatformDetailScreen)).platformRef, selectedRef);
+    await tester.pageBack();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(PlatformCard), findsNWidgets(2));
+
+    await tester.tap(find.byIcon(Icons.qr_code_scanner_outlined));
+    await tester.pump();
+    scan(tester, 'https://www.ocean-ops.org/tracking/?code=Def');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(calls, 2);
+    expect(find.byType(PlatformCard), findsOneWidget);
+    expect(tester.widget<PlatformCard>(find.byType(PlatformCard)).platform.ref, 'DEP-3');
+
+    await tester.tap(find.text('Clear scan'));
+    await tester.pump();
+    expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
-    // Allow the widget tree to process disposal and cancel streams.
     await tester.pump(const Duration(milliseconds: 100));
     await db.close();
   });
 
-  testWidgets('QR scanner alerts about invalid QR code', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('invalid tracking URL stays on scanner with scan again action', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          databaseProvider.overrideWith((ref) => db),
-        ],
-        child: const MaterialApp(
-          home: QrScanScreen(),
-        ),
+        overrides: [databaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: Scaffold(body: QrScanScreen())),
       ),
     );
     await tester.pump(const Duration(milliseconds: 500));
-
-    final scanner = tester.widget<MobileScanner>(
-      find.byType(MobileScanner),
-    );
-    const fakeBarcode = Barcode(
-      rawValue: 'https://example.com/ref=ABC123',
-      format: BarcodeFormat.qrCode,
-    );
-    scanner.onDetect!(
-      const BarcodeCapture(barcodes: [fakeBarcode]),
-    );
+    scan(tester, 'https://www.ocean-ops.org/tracking/?code=A&code=B');
     await tester.pump();
     expect(find.text('Invalid QR Code format'), findsOneWidget);
+    expect(find.text('Scan again'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
-    // Allow the widget tree to process disposal and cancel streams.
-    await tester.pump(const Duration(milliseconds: 100));
-    await db.close();
-  });
-
-  testWidgets('QR scanner shows error when DB read fails', (
-    WidgetTester tester,
-  ) async {
-    final db = AppDatabase.executor(conn.inMemoryConnection());
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWith((ref) => db),
-          platformByRefProvider.overrideWith(
-            (ref, reference) => Future<List<Platform>>.error(
-              Exception('DB failure'),
-              StackTrace.current,
-            ),
-          ),
-        ],
-        child: const MaterialApp(
-          home: QrScanScreen(),
-        ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 500));
-
-    final scanner = tester.widget<MobileScanner>(
-      find.byType(MobileScanner),
-    );
-    const fakeBarcode = Barcode(
-      rawValue: 'https://www.ocean-ops.org/oceantags/RFHCZ3S',
-      format: BarcodeFormat.qrCode,
-    );
-    scanner.onDetect!(
-      const BarcodeCapture(barcodes: [fakeBarcode]),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('Error fetching platform'), findsOneWidget);
-    expect(find.byType(PlatformDetailScreen), findsNothing);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    // Allow the widget tree to process disposal and cancel streams.
-    await tester.pump(const Duration(milliseconds: 100));
     await db.close();
   });
 }
