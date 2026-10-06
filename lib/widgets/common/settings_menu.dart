@@ -33,7 +33,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
       menuChildren: <Widget>[
         SwitchListTile(
           title: const Text('Dark Mode'),
-          secondary: const Icon(Icons.dark_mode),
+          secondary: const ExcludeSemantics(child: Icon(Icons.dark_mode)),
           value: Theme.of(context).brightness == Brightness.dark,
           onChanged: ref.watch(themeProvider) == ThemeMode.system
               ? null // disables the switch
@@ -55,17 +55,41 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
               ref.read(themeProvider.notifier).useLight();
             }
           },
-          secondary: const Icon(Icons.light_mode),
+          secondary: const ExcludeSemantics(child: Icon(Icons.light_mode)),
         ),
-        Slider(
-          value: sliderValue,
-          min: AppTextScale.min,
-          max: AppTextScale.max,
-          divisions: 12, // 0.1 steps between 0.8 and 2.0
-          label: '${(sliderValue * 100).round()}%',
-          onChanged: textFollowSystem
-              ? null // disable the slider
-              : (double value) => ref.read(textScaleProvider.notifier).set(value),
+        Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: ExcludeSemantics(
+                child: Icon(
+                  Icons.text_decrease,
+                  color: textFollowSystem ? Theme.of(context).disabledColor : null,
+                ),
+              )
+            ),
+            Expanded(
+              child: Slider(
+                value: sliderValue,
+                min: AppTextScale.min,
+                max: AppTextScale.max,
+                divisions: 12,
+                label: '${(sliderValue * 100).round()}%',
+                onChanged: textFollowSystem
+                    ? null
+                    : (value) => ref.read(textScaleProvider.notifier).set(value),
+              ),
+            ),
+            Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: ExcludeSemantics(
+                  child: Icon(
+                    Icons.text_increase,
+                    color: textFollowSystem ? Theme.of(context).disabledColor : null,
+                  ),
+                )
+            ),
+          ],
         ),
         SwitchListTile(
           title: const Text('Text Size: Use System Default'),
