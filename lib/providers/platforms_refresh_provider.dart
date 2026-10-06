@@ -6,6 +6,7 @@ import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 
 /// Manual / pull-to-refresh Gateway → local platforms sync.
@@ -98,15 +99,22 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
             'unclosed missions instead of an unfiltered search',
           );
         }
-        final result = await repository.fetchUnclosedMissions();
-        if (result.platforms.isNotEmpty) {
-          phase.setSaving();
-          await db.syncPlatforms(result.platforms);
-          await db.syncAlerts(result.alerts);
-          await db.deleteOrphanedAlerts();
-          if (kDebugMode) {
-            debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
-          }
+        final result = await repository.fetchUnclosedMissions(
+          onDownloadProgress: (downloaded, total) {
+            ref.read(platformsSyncProgressProvider.notifier).setProgress(
+                  completed: downloaded,
+                  total: total,
+                );
+          },
+        );
+        await persistGatewayPassportsResult(
+          ref: ref,
+          db: db,
+          result: result,
+          replaceAll: true,
+        );
+        if (kDebugMode && result.platforms.isNotEmpty) {
+          debugPrint('Platforms refresh: synced ${result.platforms.length} platforms');
         }
         await db.setLastPlatformsRefresh(now);
         state = const AsyncValue.data(null);
@@ -125,10 +133,12 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         PassportFilterDto(cachedSince: cachedSince, paginationEnabled: false),
       );
       if (result.platforms.isNotEmpty || result.alerts.isNotEmpty) {
-        phase.setSaving();
-        await db.upsertPlatforms(result.platforms);
-        await db.upsertAlerts(result.alerts);
-        await db.deleteOrphanedAlerts();
+        await persistGatewayPassportsResult(
+          ref: ref,
+          db: db,
+          result: result,
+          replaceAll: false,
+        );
         if (kDebugMode) {
           debugPrint(
             'Platforms/alerts refresh: synced ${result.platforms.length} platforms and ${result.alerts.length} alerts',

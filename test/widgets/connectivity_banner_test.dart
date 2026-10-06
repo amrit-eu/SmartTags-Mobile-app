@@ -54,7 +54,7 @@ void main() {
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
@@ -79,7 +79,7 @@ void main() {
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );

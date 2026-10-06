@@ -56,7 +56,9 @@ class _FakeGatewayRepository extends GatewayRepository {
   final List<PassportFilterDto?> capturedSearchDtos = [];
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     fetchUnclosedMissionsCallCount++;
     return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
   }
@@ -72,7 +74,9 @@ class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     throw Exception('Network error');
   }
 

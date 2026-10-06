@@ -30,6 +30,9 @@ class GatewayAuthException extends GatewayException {
   const GatewayAuthException(super.message);
 }
 
+/// Called after each paginated Gateway page during unclosed-missions download.
+typedef GatewayDownloadProgressCallback = void Function(int downloaded, int total);
+
 /// Fetches platform passport data from, and submits passport events to, the
 /// Amrit Gateway API.
 class GatewayRepository {
@@ -41,25 +44,45 @@ class GatewayRepository {
   final http.Client _client;
   final AuthService _authService;
 
-  /// Loads unclosed missions from the Gateway enriched passposrt endpoint.
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
-    final uri = GatewayConfig.unclosedPassportsUri;
+  static const int _unclosedPageSize = 50;
+
+  /// Loads unclosed missions via paginated enriched passport search.
+  ///
+  /// [onDownloadProgress] receives item counts (`downloaded` / `total`) after
+  /// each page so the UI can show `Downloading platforms N/M` during the
+  /// network phase.
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     try {
-      if (kDebugMode) {
-        debugPrint('Gateway GET $uri');
-      }
-      final response = await _client.get(uri);
+      final allItems = <Map<String, dynamic>>[];
+      var offset = 0;
+      int? reportedTotal;
 
-      if (!_isSuccess(response.statusCode)) {
-        throw Exception(
-          'Failed to load unclosed missions '
-          '(Status ${response.statusCode}, body=${_truncate(response.body)})',
+      while (true) {
+        final dto = PassportFilterDto.unclosedPaginated(
+          limit: _unclosedPageSize,
+          offset: offset,
         );
+        final jsonResponse = await _postPassportSearch(dto);
+        final pageItems =
+            (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
+        reportedTotal ??= jsonResponse['total'] as int?;
+        allItems.addAll(pageItems);
+
+        final total = reportedTotal ?? allItems.length;
+        onDownloadProgress?.call(allItems.length, total);
+
+        if (pageItems.isEmpty || pageItems.length < _unclosedPageSize || allItems.length >= total) {
+          break;
+        }
+        offset += pageItems.length;
       }
 
-      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      final items = (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
-      final result = GatewayPassportMapper.fromEnrichedPassportItems(items);
+      final result = GatewayPassportMapper.fromEnrichedPassportItems(
+        allItems,
+        reportedTotal: reportedTotal,
+      );
 
       if (kDebugMode) {
         debugPrint(
@@ -85,28 +108,14 @@ class GatewayRepository {
       return fetchUnclosedMissions();
     }
 
-    final uri = GatewayConfig.passportsSearchUri;
     try {
-      final body = jsonEncode(searchDto.toJson());
-      if (kDebugMode) {
-        debugPrint('Gateway POST $uri body=$body');
-      }
-      final response = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: body,
-      );
-
-      if (!_isSuccess(response.statusCode)) {
-        throw Exception(
-          'Failed to search passports '
-          '(Status ${response.statusCode}, body=${_truncate(response.body)})',
-        );
-      }
-
-      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+      final jsonResponse = await _postPassportSearch(searchDto);
       final items = (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
-      final result = GatewayPassportMapper.fromEnrichedPassportItems(items);
+      final reportedTotal = jsonResponse['total'] as int?;
+      final result = GatewayPassportMapper.fromEnrichedPassportItems(
+        items,
+        reportedTotal: reportedTotal,
+      );
 
       if (kDebugMode) {
         debugPrint('Gateway returned ${result.platforms.length} passports (${result.alerts.length} alerts)');
@@ -118,6 +127,28 @@ class GatewayRepository {
       }
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> _postPassportSearch(PassportFilterDto searchDto) async {
+    final uri = GatewayConfig.passportsSearchUri;
+    final body = jsonEncode(searchDto.toJson());
+    if (kDebugMode) {
+      debugPrint('Gateway POST $uri body=$body');
+    }
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+
+    if (!_isSuccess(response.statusCode)) {
+      throw Exception(
+        'Failed to search passports '
+        '(Status ${response.statusCode}, body=${_truncate(response.body)})',
+      );
+    }
+
+    return json.decode(response.body) as Map<String, dynamic>;
   }
 
   /// The Gateway returns `201 Created` for some POST endpoints (e.g. the

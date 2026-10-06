@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/database/db_connection.dart';
@@ -395,12 +397,27 @@ class AppDatabase extends _$AppDatabase {
 
   /// Helper to sync platforms to database.
   /// Currently empties and re-inserts, but could be optimized to do upserts in the future.
-  Future<void> syncPlatforms(List<PlatformsCompanion> companions) async {
+  Future<void> syncPlatforms(
+    List<PlatformsCompanion> companions, {
+    void Function(int saved, int total)? onProgress,
+  }) async {
+    final total = companions.length;
+    onProgress?.call(0, total);
+    const chunkSize = 25;
     await transaction(() async {
       await delete(platforms).go();
-      await batch((batch) {
-        batch.insertAll(platforms, companions);
-      });
+      if (companions.isEmpty) {
+        onProgress?.call(0, total);
+        return;
+      }
+      for (var start = 0; start < companions.length; start += chunkSize) {
+        final end = math.min(start + chunkSize, companions.length);
+        final chunk = companions.sublist(start, end);
+        await batch((batch) {
+          batch.insertAll(platforms, chunk);
+        });
+        onProgress?.call(end, total);
+      }
     });
   }
 
@@ -408,10 +425,24 @@ class AppDatabase extends _$AppDatabase {
   /// touching local platforms absent from [companions]. Used by the
   /// delta refresh (`updatedSince`). Requires the unique index on
   /// `platforms.ref`.
-  Future<void> upsertPlatforms(List<PlatformsCompanion> companions) async {
-    await batch((batch) {
-      batch.insertAll(platforms, companions, mode: InsertMode.insertOrReplace);
-    });
+  Future<void> upsertPlatforms(
+    List<PlatformsCompanion> companions, {
+    void Function(int saved, int total)? onProgress,
+  }) async {
+    final total = companions.length;
+    onProgress?.call(0, total);
+    if (companions.isEmpty) {
+      return;
+    }
+    const chunkSize = 25;
+    for (var start = 0; start < companions.length; start += chunkSize) {
+      final end = math.min(start + chunkSize, companions.length);
+      final chunk = companions.sublist(start, end);
+      await batch((batch) {
+        batch.insertAll(platforms, chunk, mode: InsertMode.insertOrReplace);
+      });
+      onProgress?.call(end, total);
+    }
   }
 
   /// Helper to sync alerts to database.
