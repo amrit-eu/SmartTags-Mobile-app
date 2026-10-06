@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Provides updates about changes to the app theme
 final themeProvider = NotifierProvider<AppThemeMode, ThemeMode>(AppThemeMode.new);
 
-/// Defines a provider to change the toggle the app theme (light/dark/system)
+/// Defines a provider to toggle the app theme (light/dark/system)
 class AppThemeMode extends Notifier<ThemeMode> {
   /// Load initial state. Currently statically initialised.
   /// Change to using AsyncNotifier once we load from a DB or similar.
@@ -14,17 +14,39 @@ class AppThemeMode extends Notifier<ThemeMode> {
   }
 
   /// Resets to system theme
-  void setSystem() {
+  void useSystem() {
     state = ThemeMode.system;
   }
 
   /// Enables dark mode
-  void setDark() {
+  void useDark() {
     state = ThemeMode.dark;
   }
 
   /// Enables light mode
-  void setLight() {
+  void useLight() {
     state = ThemeMode.light;
   }
+}
+
+/// Global text scale factor (1.0 = system default size)
+final textScaleProvider = NotifierProvider<AppTextScale, double?>(AppTextScale.new);
+
+/// Defines a provider to set text size in the app (exposed via settings slider)
+class AppTextScale extends Notifier<double?> {
+  /// Minimum text scale factor
+  static const double min = 0.8;
+  /// Maximum text scale factor
+  static const double max = 2.0;
+
+  /// Load initial state. Currently statically initialised.
+  /// Change to using AsyncNotifier once we load from a DB or similar.
+  @override
+  double? build() => null;
+
+  /// Reset text scale factor to system default size
+  void useSystem() => state = null;
+
+  /// Set text scale factor from user input
+  void set(double scale) => state = scale.clamp(min, max);
 }

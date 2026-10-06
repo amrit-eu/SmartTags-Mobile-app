@@ -22,6 +22,12 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
 
   @override
   Widget build(BuildContext context) {
+    final customTextScale = ref.watch(textScaleProvider);
+    final textFollowSystem = customTextScale == null;
+    final systemTextScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final sliderValue = (customTextScale ?? systemTextScale)
+        .clamp(AppTextScale.min, AppTextScale.max);
+
     return MenuAnchor(
       childFocusNode: _buttonFocusNode,
       menuChildren: <Widget>[
@@ -33,23 +39,45 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
               ? null // disables the switch
               : (bool value) {
                   if (value) {
-                    ref.read(themeProvider.notifier).setDark();
+                    ref.read(themeProvider.notifier).useDark();
                   } else {
-                    ref.read(themeProvider.notifier).setLight();
+                    ref.read(themeProvider.notifier).useLight();
                   }
                 },
         ),
-        CheckboxListTile(
-          title: const Text('Use system default'),
+        SwitchListTile(
+          title: const Text('Theme Mode: Use System Default'),
           value: ref.watch(themeProvider) == ThemeMode.system,
           onChanged: (bool? checked) {
             if (checked ?? false) {
-              ref.read(themeProvider.notifier).setSystem();
+              ref.read(themeProvider.notifier).useSystem();
             } else {
-              ref.read(themeProvider.notifier).setLight();
+              ref.read(themeProvider.notifier).useLight();
             }
           },
           secondary: const Icon(Icons.light_mode),
+        ),
+        Slider(
+          value: sliderValue,
+          min: AppTextScale.min,
+          max: AppTextScale.max,
+          divisions: 12, // 0.1 steps between 0.8 and 2.0
+          label: '${(sliderValue * 100).round()}%',
+          onChanged: textFollowSystem
+              ? null // disable the slider
+              : (double value) => ref.read(textScaleProvider.notifier).set(value),
+        ),
+        SwitchListTile(
+          title: const Text('Text Size: Use System Default'),
+          value: textFollowSystem,
+          onChanged: (bool? checked) {
+            if (checked ?? false) {
+              ref.read(textScaleProvider.notifier).useSystem();
+            } else {
+              ref.read(textScaleProvider.notifier).set(sliderValue);
+            }
+          },
+          secondary: const Icon(Icons.format_size),
         ),
       ],
       builder: (_, MenuController controller, Widget? child) {
