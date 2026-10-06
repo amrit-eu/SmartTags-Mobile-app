@@ -32,6 +32,18 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
       childFocusNode: _buttonFocusNode,
       menuChildren: <Widget>[
         SwitchListTile(
+          title: const Text('Theme Mode: Use System Default'),
+          value: ref.watch(themeProvider) == ThemeMode.system,
+          onChanged: (bool? checked) {
+            if (checked ?? false) {
+              ref.read(themeProvider.notifier).useSystem();
+            } else {
+              ref.read(themeProvider.notifier).useLight();
+            }
+          },
+          secondary: const ExcludeSemantics(child: Icon(Icons.light_mode)),
+        ),
+        SwitchListTile(
           title: const Text('Dark Mode'),
           secondary: const ExcludeSemantics(child: Icon(Icons.dark_mode)),
           value: Theme.of(context).brightness == Brightness.dark,
@@ -46,16 +58,16 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                 },
         ),
         SwitchListTile(
-          title: const Text('Theme Mode: Use System Default'),
-          value: ref.watch(themeProvider) == ThemeMode.system,
+          title: const Text('Text Size: Use System Default'),
+          value: textFollowSystem,
           onChanged: (bool? checked) {
             if (checked ?? false) {
-              ref.read(themeProvider.notifier).useSystem();
+              ref.read(textScaleProvider.notifier).useSystem();
             } else {
-              ref.read(themeProvider.notifier).useLight();
+              ref.read(textScaleProvider.notifier).set(sliderValue);
             }
           },
-          secondary: const ExcludeSemantics(child: Icon(Icons.light_mode)),
+          secondary: const Icon(Icons.format_size),
         ),
         Row(
           children: [
@@ -90,18 +102,6 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                 )
             ),
           ],
-        ),
-        SwitchListTile(
-          title: const Text('Text Size: Use System Default'),
-          value: textFollowSystem,
-          onChanged: (bool? checked) {
-            if (checked ?? false) {
-              ref.read(textScaleProvider.notifier).useSystem();
-            } else {
-              ref.read(textScaleProvider.notifier).set(sliderValue);
-            }
-          },
-          secondary: const Icon(Icons.format_size),
         ),
       ],
       builder: (_, MenuController controller, Widget? child) {
