@@ -2,11 +2,11 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
-import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 
 /// Manual / pull-to-refresh Gateway → local platforms sync.

@@ -14,9 +14,7 @@ Future<void> persistGatewayPassportsResult({
     return;
   }
 
-  final phase = ref.read(platformsSyncPhaseProvider.notifier);
-
-  phase.setSaving();
+  ref.read(platformsSyncPhaseProvider.notifier).setSaving();
 
   if (replaceAll) {
     await db.syncPlatforms(result.platforms);

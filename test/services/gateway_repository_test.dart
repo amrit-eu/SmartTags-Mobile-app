@@ -298,7 +298,6 @@ void main() {
         'items': List<Map<String, dynamic>>.filled(
           50,
           _samplePassportItem,
-          growable: false,
         ),
         'total': 75,
       };
@@ -306,7 +305,6 @@ void main() {
         'items': List<Map<String, dynamic>>.filled(
           25,
           _samplePassportItem,
-          growable: false,
         ),
         'total': 75,
       };

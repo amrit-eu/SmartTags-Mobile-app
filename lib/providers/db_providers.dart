@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/alert_mapper.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/models/alert.dart' as domain;
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
-import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 

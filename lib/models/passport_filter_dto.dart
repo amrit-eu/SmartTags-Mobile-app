@@ -1,10 +1,16 @@
 /// Request body for `POST /api/oceanops/data/enriched-goos-passport/search`.
 /// Mirrors the Gateway (NestJS) `PassportFilterDto`.
 class PassportFilterDto {
-  /// Status filter for unclosed missions (Gateway `PASSPORT_QUERY_NOT_CLOSED`).
-  static const Map<String, dynamic> notClosedStatusFilters = {
-    'status': '0,1,2,3,4,6',
-  };
+  /// Creates a [PassportFilterDto].
+  const PassportFilterDto({
+    this.filters,
+    this.ptfIds,
+    this.internalIds,
+    this.cachedSince,
+    this.paginationEnabled,
+    this.limit,
+    this.offset,
+  });
 
   /// Paginated search for unclosed missions.
   factory PassportFilterDto.unclosedPaginated({
@@ -18,16 +24,10 @@ class PassportFilterDto {
         offset: offset,
       );
 
-  /// Creates a [PassportFilterDto].
-  const PassportFilterDto({
-    this.filters,
-    this.ptfIds,
-    this.internalIds,
-    this.cachedSince,
-    this.paginationEnabled,
-    this.limit,
-    this.offset,
-  });
+  /// Status filter for unclosed missions (Gateway `PASSPORT_QUERY_NOT_CLOSED`).
+  static const Map<String, dynamic> notClosedStatusFilters = {
+    'status': '0,1,2,3,4,6',
+  };
 
   /// Free-form filter fields (e.g. `programCodes`, `networkCodes`, `reportingStatusCodes`).
   final Map<String, dynamic>? filters;
