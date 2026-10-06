@@ -1842,6 +1842,17 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _lastNoteMeta = const VerificationMeta(
+    'lastNote',
+  );
+  @override
+  late final GeneratedColumn<String> lastNote = GeneratedColumn<String>(
+    'last_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
   attributes = GeneratedColumn<String>(
@@ -1869,6 +1880,7 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     duplicateCount,
     alertCategory,
     country,
+    lastNote,
     attributes,
   ];
   @override
@@ -2013,6 +2025,12 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
     } else if (isInserting) {
       context.missing(_countryMeta);
     }
+    if (data.containsKey('last_note')) {
+      context.handle(
+        _lastNoteMeta,
+        lastNote.isAcceptableOrUnknown(data['last_note']!, _lastNoteMeta),
+      );
+    }
     return context;
   }
 
@@ -2086,6 +2104,10 @@ class $AlertsTable extends Alerts with TableInfo<$AlertsTable, AlertEntity> {
         DriftSqlType.string,
         data['${effectivePrefix}country'],
       )!,
+      lastNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_note'],
+      ),
       attributes: $AlertsTable.$converterattributes.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -2157,6 +2179,9 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
   /// Alerts's category
   final String country;
 
+  /// Alerts last note
+  final String? lastNote;
+
   /// Alert's free-form attributes (e.g. `Country`, `wigos_id`, `url`), whose
   /// keys vary per alert source. Stored as raw JSON rather than dedicated
   /// columns since the shape isn't fixed.
@@ -2178,6 +2203,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     required this.duplicateCount,
     required this.alertCategory,
     required this.country,
+    this.lastNote,
     this.attributes,
   });
   @override
@@ -2209,6 +2235,9 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     map['duplicate_count'] = Variable<int>(duplicateCount);
     map['alert_category'] = Variable<String>(alertCategory);
     map['country'] = Variable<String>(country);
+    if (!nullToAbsent || lastNote != null) {
+      map['last_note'] = Variable<String>(lastNote);
+    }
     if (!nullToAbsent || attributes != null) {
       map['attributes'] = Variable<String>(
         $AlertsTable.$converterattributes.toSql(attributes),
@@ -2243,6 +2272,9 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       duplicateCount: Value(duplicateCount),
       alertCategory: Value(alertCategory),
       country: Value(country),
+      lastNote: lastNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastNote),
       attributes: attributes == null && nullToAbsent
           ? const Value.absent()
           : Value(attributes),
@@ -2271,6 +2303,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       duplicateCount: serializer.fromJson<int>(json['duplicateCount']),
       alertCategory: serializer.fromJson<String>(json['alertCategory']),
       country: serializer.fromJson<String>(json['country']),
+      lastNote: serializer.fromJson<String?>(json['lastNote']),
       attributes: serializer.fromJson<Map<String, dynamic>?>(
         json['attributes'],
       ),
@@ -2296,6 +2329,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
       'duplicateCount': serializer.toJson<int>(duplicateCount),
       'alertCategory': serializer.toJson<String>(alertCategory),
       'country': serializer.toJson<String>(country),
+      'lastNote': serializer.toJson<String?>(lastNote),
       'attributes': serializer.toJson<Map<String, dynamic>?>(attributes),
     };
   }
@@ -2317,6 +2351,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     int? duplicateCount,
     String? alertCategory,
     String? country,
+    Value<String?> lastNote = const Value.absent(),
     Value<Map<String, dynamic>?> attributes = const Value.absent(),
   }) => AlertEntity(
     id: id ?? this.id,
@@ -2337,6 +2372,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     duplicateCount: duplicateCount ?? this.duplicateCount,
     alertCategory: alertCategory ?? this.alertCategory,
     country: country ?? this.country,
+    lastNote: lastNote.present ? lastNote.value : this.lastNote,
     attributes: attributes.present ? attributes.value : this.attributes,
   );
   AlertEntity copyWithCompanion(AlertsCompanion data) {
@@ -2369,6 +2405,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           ? data.alertCategory.value
           : this.alertCategory,
       country: data.country.present ? data.country.value : this.country,
+      lastNote: data.lastNote.present ? data.lastNote.value : this.lastNote,
       attributes: data.attributes.present
           ? data.attributes.value
           : this.attributes,
@@ -2394,6 +2431,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           ..write('duplicateCount: $duplicateCount, ')
           ..write('alertCategory: $alertCategory, ')
           ..write('country: $country, ')
+          ..write('lastNote: $lastNote, ')
           ..write('attributes: $attributes')
           ..write(')'))
         .toString();
@@ -2417,6 +2455,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
     duplicateCount,
     alertCategory,
     country,
+    lastNote,
     attributes,
   );
   @override
@@ -2439,6 +2478,7 @@ class AlertEntity extends DataClass implements Insertable<AlertEntity> {
           other.duplicateCount == this.duplicateCount &&
           other.alertCategory == this.alertCategory &&
           other.country == this.country &&
+          other.lastNote == this.lastNote &&
           other.attributes == this.attributes);
 }
 
@@ -2459,6 +2499,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
   final Value<int> duplicateCount;
   final Value<String> alertCategory;
   final Value<String> country;
+  final Value<String?> lastNote;
   final Value<Map<String, dynamic>?> attributes;
   final Value<int> rowid;
   const AlertsCompanion({
@@ -2478,6 +2519,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     this.duplicateCount = const Value.absent(),
     this.alertCategory = const Value.absent(),
     this.country = const Value.absent(),
+    this.lastNote = const Value.absent(),
     this.attributes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2498,6 +2540,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     required int duplicateCount,
     required String alertCategory,
     required String country,
+    this.lastNote = const Value.absent(),
     this.attributes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2528,6 +2571,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     Expression<int>? duplicateCount,
     Expression<String>? alertCategory,
     Expression<String>? country,
+    Expression<String>? lastNote,
     Expression<String>? attributes,
     Expression<int>? rowid,
   }) {
@@ -2548,6 +2592,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
       if (duplicateCount != null) 'duplicate_count': duplicateCount,
       if (alertCategory != null) 'alert_category': alertCategory,
       if (country != null) 'country': country,
+      if (lastNote != null) 'last_note': lastNote,
       if (attributes != null) 'attributes': attributes,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2570,6 +2615,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     Value<int>? duplicateCount,
     Value<String>? alertCategory,
     Value<String>? country,
+    Value<String?>? lastNote,
     Value<Map<String, dynamic>?>? attributes,
     Value<int>? rowid,
   }) {
@@ -2590,6 +2636,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
       duplicateCount: duplicateCount ?? this.duplicateCount,
       alertCategory: alertCategory ?? this.alertCategory,
       country: country ?? this.country,
+      lastNote: lastNote ?? this.lastNote,
       attributes: attributes ?? this.attributes,
       rowid: rowid ?? this.rowid,
     );
@@ -2646,6 +2693,9 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
     if (country.present) {
       map['country'] = Variable<String>(country.value);
     }
+    if (lastNote.present) {
+      map['last_note'] = Variable<String>(lastNote.value);
+    }
     if (attributes.present) {
       map['attributes'] = Variable<String>(
         $AlertsTable.$converterattributes.toSql(attributes.value),
@@ -2676,6 +2726,7 @@ class AlertsCompanion extends UpdateCompanion<AlertEntity> {
           ..write('duplicateCount: $duplicateCount, ')
           ..write('alertCategory: $alertCategory, ')
           ..write('country: $country, ')
+          ..write('lastNote: $lastNote, ')
           ..write('attributes: $attributes, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6056,6 +6107,7 @@ typedef $$AlertsTableCreateCompanionBuilder =
       required int duplicateCount,
       required String alertCategory,
       required String country,
+      Value<String?> lastNote,
       Value<Map<String, dynamic>?> attributes,
       Value<int> rowid,
     });
@@ -6077,6 +6129,7 @@ typedef $$AlertsTableUpdateCompanionBuilder =
       Value<int> duplicateCount,
       Value<String> alertCategory,
       Value<String> country,
+      Value<String?> lastNote,
       Value<Map<String, dynamic>?> attributes,
       Value<int> rowid,
     });
@@ -6184,6 +6237,11 @@ class $$AlertsTableFilterComposer
 
   ColumnFilters<String> get country => $composableBuilder(
     column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastNote => $composableBuilder(
+    column: $table.lastNote,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6305,6 +6363,11 @@ class $$AlertsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get lastNote => $composableBuilder(
+    column: $table.lastNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get attributes => $composableBuilder(
     column: $table.attributes,
     builder: (column) => ColumnOrderings(column),
@@ -6400,6 +6463,9 @@ class $$AlertsTableAnnotationComposer
   GeneratedColumn<String> get country =>
       $composableBuilder(column: $table.country, builder: (column) => column);
 
+  GeneratedColumn<String> get lastNote =>
+      $composableBuilder(column: $table.lastNote, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
   get attributes => $composableBuilder(
     column: $table.attributes,
@@ -6474,6 +6540,7 @@ class $$AlertsTableTableManager
                 Value<int> duplicateCount = const Value.absent(),
                 Value<String> alertCategory = const Value.absent(),
                 Value<String> country = const Value.absent(),
+                Value<String?> lastNote = const Value.absent(),
                 Value<Map<String, dynamic>?> attributes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AlertsCompanion(
@@ -6493,6 +6560,7 @@ class $$AlertsTableTableManager
                 duplicateCount: duplicateCount,
                 alertCategory: alertCategory,
                 country: country,
+                lastNote: lastNote,
                 attributes: attributes,
                 rowid: rowid,
               ),
@@ -6514,6 +6582,7 @@ class $$AlertsTableTableManager
                 required int duplicateCount,
                 required String alertCategory,
                 required String country,
+                Value<String?> lastNote = const Value.absent(),
                 Value<Map<String, dynamic>?> attributes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AlertsCompanion.insert(
@@ -6533,6 +6602,7 @@ class $$AlertsTableTableManager
                 duplicateCount: duplicateCount,
                 alertCategory: alertCategory,
                 country: country,
+                lastNote: lastNote,
                 attributes: attributes,
                 rowid: rowid,
               ),

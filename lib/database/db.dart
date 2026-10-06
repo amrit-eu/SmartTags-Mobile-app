@@ -150,6 +150,9 @@ class Alerts extends Table {
   /// Alerts's category
   TextColumn get country => text()();
 
+  /// Alerts last note
+  TextColumn get lastNote => text().nullable()();
+
   /// Alert's free-form attributes (e.g. `Country`, `wigos_id`, `url`), whose
   /// keys vary per alert source. Stored as raw JSON rather than dedicated
   /// columns since the shape isn't fixed.

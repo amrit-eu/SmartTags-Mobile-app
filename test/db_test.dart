@@ -218,6 +218,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           // No matching platform in the local DB (e.g. outside the fetched
@@ -227,6 +233,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
       ]);
 
