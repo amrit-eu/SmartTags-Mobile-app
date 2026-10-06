@@ -12,6 +12,23 @@ class PassportFilterDto {
     this.offset,
   });
 
+  /// Paginated search for unclosed missions.
+  factory PassportFilterDto.unclosedPaginated({
+    required int limit,
+    required int offset,
+  }) =>
+      PassportFilterDto(
+        filters: notClosedStatusFilters,
+        paginationEnabled: true,
+        limit: limit,
+        offset: offset,
+      );
+
+  /// Status filter for unclosed missions (Gateway `PASSPORT_QUERY_NOT_CLOSED`).
+  static const Map<String, dynamic> notClosedStatusFilters = {
+    'status': '0,1,2,3,4,6',
+  };
+
   /// Free-form filter fields (e.g. `programCodes`, `networkCodes`, `reportingStatusCodes`).
   final Map<String, dynamic>? filters;
 

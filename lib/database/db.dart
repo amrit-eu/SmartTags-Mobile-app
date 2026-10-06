@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/database/db_connection.dart';
+import 'package:smart_tags/models/map_viewport_snapshot.dart';
 
 part 'db.g.dart';
 
@@ -306,6 +309,27 @@ class SyncMetadata extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Single-row table storing last map viewport and popup selection (#132).
+class MapSessionStates extends Table {
+  /// Fixed row id — only row `1` is used.
+  IntColumn get id => integer()();
+
+  /// Map centre latitude.
+  RealColumn get centerLat => real().nullable()();
+
+  /// Map centre longitude.
+  RealColumn get centerLng => real().nullable()();
+
+  /// Map zoom level.
+  RealColumn get zoom => real().nullable()();
+
+  /// Selected platform ref when a popup was open; null when dismissed.
+  TextColumn get selectedPlatformRef => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// The local SQLite database using Drift ORM.
 @DriftDatabase(
   tables: [
@@ -319,6 +343,7 @@ class SyncMetadata extends Table {
     PendingOperations,
     SyncMetadata,
     CatalogueSearchHistories,
+    MapSessionStates,
   ],
   daos: [AuthDao],
 )
@@ -330,7 +355,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.executor(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   // TODO(ylubac): Once the app's first version has been published, schema
   // changes will need a real onUpgrade migration strategy (bumping
@@ -341,12 +366,11 @@ class AppDatabase extends _$AppDatabase {
     onCreate: (Migrator m) async {
       await m.createAll();
     },
-    // onUpgrade: (Migrator m, int from, int to) async {
-    //   if (from < 2) {
-    //     // here migrations inscructions
-    //     // await m.addColumn(platforms, platforms.platformCategory);
-    //   }
-    // },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.createTable(mapSessionStates);
+      }
+    },
   );
 
   /// Returns true when no platform rows exist locally.
@@ -373,12 +397,27 @@ class AppDatabase extends _$AppDatabase {
 
   /// Helper to sync platforms to database.
   /// Currently empties and re-inserts, but could be optimized to do upserts in the future.
-  Future<void> syncPlatforms(List<PlatformsCompanion> companions) async {
+  Future<void> syncPlatforms(
+    List<PlatformsCompanion> companions, {
+    void Function(int saved, int total)? onProgress,
+  }) async {
+    final total = companions.length;
+    onProgress?.call(0, total);
+    const chunkSize = 25;
     await transaction(() async {
       await delete(platforms).go();
-      await batch((batch) {
-        batch.insertAll(platforms, companions);
-      });
+      if (companions.isEmpty) {
+        onProgress?.call(0, total);
+        return;
+      }
+      for (var start = 0; start < companions.length; start += chunkSize) {
+        final end = math.min(start + chunkSize, companions.length);
+        final chunk = companions.sublist(start, end);
+        await batch((batch) {
+          batch.insertAll(platforms, chunk);
+        });
+        onProgress?.call(end, total);
+      }
     });
   }
 
@@ -386,10 +425,24 @@ class AppDatabase extends _$AppDatabase {
   /// touching local platforms absent from [companions]. Used by the
   /// delta refresh (`updatedSince`). Requires the unique index on
   /// `platforms.ref`.
-  Future<void> upsertPlatforms(List<PlatformsCompanion> companions) async {
-    await batch((batch) {
-      batch.insertAll(platforms, companions, mode: InsertMode.insertOrReplace);
-    });
+  Future<void> upsertPlatforms(
+    List<PlatformsCompanion> companions, {
+    void Function(int saved, int total)? onProgress,
+  }) async {
+    final total = companions.length;
+    onProgress?.call(0, total);
+    if (companions.isEmpty) {
+      return;
+    }
+    const chunkSize = 25;
+    for (var start = 0; start < companions.length; start += chunkSize) {
+      final end = math.min(start + chunkSize, companions.length);
+      final chunk = companions.sublist(start, end);
+      await batch((batch) {
+        batch.insertAll(platforms, chunk, mode: InsertMode.insertOrReplace);
+      });
+      onProgress?.call(end, total);
+    }
   }
 
   /// Helper to sync alerts to database.
@@ -437,6 +490,33 @@ class AppDatabase extends _$AppDatabase {
       SyncMetadataCompanion.insert(
         id: const Value(1),
         lastPlatformsRefresh: Value(when),
+      ),
+    );
+  }
+
+  /// Reads persisted map viewport / selection (#132).
+  Future<MapViewportSnapshot?> getMapViewportSnapshot() async {
+    final row = await (select(mapSessionStates)..where((t) => t.id.equals(1))).getSingleOrNull();
+    if (row == null) {
+      return null;
+    }
+    return MapViewportSnapshot(
+      centerLat: row.centerLat,
+      centerLng: row.centerLng,
+      zoom: row.zoom,
+      selectedPlatformRef: row.selectedPlatformRef,
+    );
+  }
+
+  /// Persists map viewport / selection (#132).
+  Future<void> setMapViewportSnapshot(MapViewportSnapshot state) async {
+    await into(mapSessionStates).insertOnConflictUpdate(
+      MapSessionStatesCompanion(
+        id: const Value(1),
+        centerLat: Value(state.centerLat),
+        centerLng: Value(state.centerLng),
+        zoom: Value(state.zoom),
+        selectedPlatformRef: Value(state.selectedPlatformRef),
       ),
     );
   }

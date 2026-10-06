@@ -15,6 +15,7 @@ import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/map_session_state_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/widgets/map_skeleton_loader.dart';
@@ -96,6 +97,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   final _countedBaseTiles = <String>{};
   var _markersPaintedScheduled = false;
   Timer? _mapSkeletonTimeoutTimer;
+  var _mapSessionRestored = false;
+  var _restoringMapSession = false;
 
   @override
   void initState() {
@@ -127,6 +130,77 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       duration: const Duration(milliseconds: 350),
     );
     _selectedPlatformNotifier = ValueNotifier<model.Platform?>(null);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_restoreMapSession());
+    });
+  }
+
+  Future<void> _restoreMapSession() async {
+    if (_mapSessionRestored) {
+      return;
+    }
+    _restoringMapSession = true;
+    try {
+      final session = await ref.read(mapSessionStateProvider.future);
+      if (!mounted) {
+        return;
+      }
+      if (session.hasCamera) {
+        _mapController.move(session.center!, session.zoom!);
+      }
+      await _restoreSelectedPlatform(session.selectedPlatformRef);
+    } finally {
+      _restoringMapSession = false;
+      _mapSessionRestored = true;
+    }
+  }
+
+  Future<void> _restoreSelectedPlatform(String? platformRef) async {
+    if (platformRef == null) {
+      return;
+    }
+    final rows = await ref.read(databaseProvider).getPlatformByRef(platformRef);
+    if (!mounted) {
+      return;
+    }
+    if (rows.isEmpty) {
+      await ref.read(mapSessionStateProvider.notifier).persistSelection(null);
+      return;
+    }
+    final dbPlatform = rows.first;
+    _selectPlatformMarker(
+      dbPlatform,
+      LatLng(dbPlatform.lat, dbPlatform.lon),
+      recenter: false,
+      persistSelection: false,
+    );
+    _popupAnimationController.value = 1;
+  }
+
+  void _onMapEvent(MapEvent event) {
+    if (_restoringMapSession) {
+      return;
+    }
+
+    final camera = switch (event) {
+      MapEventMoveEnd(:final camera) => camera,
+      MapEventFlingAnimationEnd(:final camera) => camera,
+      MapEventScrollWheelZoom(:final camera) => camera,
+      MapEventMove(:final camera) when event.source == MapEventSource.mapController ||
+          event.source == MapEventSource.keyboard =>
+        camera,
+      _ => null,
+    };
+
+    if (camera == null) {
+      return;
+    }
+
+    ref.read(mapSessionStateProvider.notifier).schedulePersistCamera(
+          camera.center,
+          camera.zoom,
+        );
   }
 
   @override
@@ -165,6 +239,10 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     // This will use the last previous known location if fetching fails.
     if (_currentLocation != null) {
       _mapController.move(_currentLocation!, 10);
+      ref.read(mapSessionStateProvider.notifier).schedulePersistCamera(
+            _currentLocation!,
+            10,
+          );
       // Call the onLocationCentered callback with location.
       widget.onLocationCentered?.call(_currentLocation!);
     }
@@ -284,6 +362,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     Platform dbPlatform,
     LatLng position, {
     bool recenter = true,
+    bool persistSelection = true,
   }) {
     _ignoreNextBackgroundTap = true;
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
@@ -294,6 +373,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _popupAnimationController.forward(from: 0).ignore();
     if (recenter) {
       _animateMapToPoint(position);
+    }
+    if (persistSelection && !_restoringMapSession) {
+      unawaited(ref.read(mapSessionStateProvider.notifier).persistSelection(dbPlatform.ref));
     }
   }
 
@@ -350,6 +432,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _updateMarkerHighlight(previousRef: previousRef);
     if (_popupAnimationController.isAnimating) {
       _popupAnimationController.stop();
+    }
+    if (!_restoringMapSession) {
+      unawaited(ref.read(mapSessionStateProvider.notifier).persistSelection(null));
     }
   }
 
@@ -650,6 +735,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 ),
               ),
               onTap: _onMapBackgroundTap,
+              onMapEvent: _onMapEvent,
             ),
             children: [
               TileLayer(

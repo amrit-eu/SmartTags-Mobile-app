@@ -66,7 +66,7 @@ void main() {
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
@@ -76,5 +76,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byType(SnackBar), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await mockDatabase.close();
   });
 }

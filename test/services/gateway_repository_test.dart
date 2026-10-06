@@ -275,7 +275,12 @@ void main() {
       };
 
       final client = MockClient((request) async {
-        expect(request.url, GatewayConfig.unclosedPassportsUri);
+        expect(request.method, 'POST');
+        expect(request.url, GatewayConfig.passportsSearchUri);
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        expect(body['paginationEnabled'], isTrue);
+        expect(body['filters'], PassportFilterDto.notClosedStatusFilters);
+        expect(body['offset'], 0);
         return http.Response(json.encode(mockResponse), 200);
       });
 
@@ -286,6 +291,44 @@ void main() {
       expect(result.platforms.first.ref.value, '2900314');
       expect(result.alerts.length, 1);
       expect(result.alerts.first.id.value, 'dcb42bf8-3f75-4241-a549-d79513fc8591');
+    });
+
+    test('fetchUnclosedMissions reports download progress per page', () async {
+      final page1 = {
+        'items': List<Map<String, dynamic>>.filled(
+          50,
+          _samplePassportItem,
+        ),
+        'total': 75,
+      };
+      final page2 = {
+        'items': List<Map<String, dynamic>>.filled(
+          25,
+          _samplePassportItem,
+        ),
+        'total': 75,
+      };
+      var requestCount = 0;
+
+      final client = MockClient((request) async {
+        requestCount++;
+        if (requestCount == 1) {
+          return http.Response(json.encode(page1), 200);
+        }
+        return http.Response(json.encode(page2), 200);
+      });
+
+      final progress = <List<int>>[];
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+      await repository.fetchUnclosedMissions(
+        onDownloadProgress: (downloaded, total) => progress.add([downloaded, total]),
+      );
+
+      expect(requestCount, 2);
+      expect(progress, [
+        [50, 75],
+        [75, 75],
+      ]);
     });
 
     test('fetchUnclosedMissions throws on error response', () async {
@@ -365,8 +408,8 @@ void main() {
       };
 
       final client = MockClient((request) async {
-        expect(request.method, 'GET');
-        expect(request.url, GatewayConfig.unclosedPassportsUri);
+        expect(request.method, 'POST');
+        expect(request.url, GatewayConfig.passportsSearchUri);
         return http.Response(json.encode(mockResponse), 200);
       });
 

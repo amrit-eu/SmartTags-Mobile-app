@@ -91,6 +91,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
 
     // This screen is pushed above the main shell, so its sync banner is hidden.
     final phase = ref.watch(platformsSyncPhaseProvider);
+    final syncProgress = ref.watch(platformsSyncProgressProvider);
 
     final isLoading = alertsAsync.isLoading && !alertsAsync.hasValue;
 
@@ -100,7 +101,10 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         child: Column(
           children: [
             if (phase != PlatformsSyncPhase.idle)
-              PlatformsLoadingBanner(message: phase.bannerMessage ?? 'Downloading platforms…'),
+              PlatformsLoadingBanner(
+                message: syncProgress.bannerMessage(phase),
+                progress: phase == PlatformsSyncPhase.downloading ? null : syncProgress.fraction,
+              ),
             Expanded(
               child: PullToRefresh(
                 // App bar + platform title + filter chips: pull-from-top chrome.

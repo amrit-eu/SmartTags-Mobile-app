@@ -87,7 +87,9 @@ class _SucceedingGatewayRepository extends GatewayRepository {
   // `cachedSince` baseline yet in these tests' fresh in-memory DB, so it
   // falls back to this bounded fetch rather than an unfiltered search).
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     fetchUnclosedMissionsCallCount++;
     return const GatewayPassportsResult(platforms: [], alerts: []);
   }

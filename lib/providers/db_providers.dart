@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/alert_mapper.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/models/alert.dart' as domain;
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
@@ -100,13 +101,20 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     // request is in flight isn't missed by the first delta refresh.
     final now = DateTime.now().toUtc();
     try {
-      final result = await repository.fetchUnclosedMissions();
-      if (result.platforms.isNotEmpty) {
-        phase.setSaving();
-        await db.syncPlatforms(result.platforms);
-        await db.syncAlerts(result.alerts);
-        await db.deleteOrphanedAlerts();
-      }
+      final result = await repository.fetchUnclosedMissions(
+        onDownloadProgress: (downloaded, total) {
+          ref.read(platformsSyncProgressProvider.notifier).setProgress(
+                completed: downloaded,
+                total: total,
+              );
+        },
+      );
+      await persistGatewayPassportsResult(
+        ref: ref,
+        db: db,
+        result: result,
+        replaceAll: true,
+      );
       // Establishes the baseline `updatedSince` for the next (delta)
       // platforms refresh, so it doesn't have to re-fetch everything.
       await db.setLastPlatformsRefresh(now);

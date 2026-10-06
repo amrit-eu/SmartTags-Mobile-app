@@ -12,10 +12,14 @@ abstract final class GatewayPassportMapper {
   /// don't persist an empty/garbage platform record for them. Their alerts
   /// are still collected — any that end up pointing at a platform absent
   /// from the local DB are pruned separately by `deleteOrphanedAlerts`.
-  static GatewayPassportsResult fromEnrichedPassportItems(List<Map<String, dynamic>> items) {
+  static GatewayPassportsResult fromEnrichedPassportItems(
+    List<Map<String, dynamic>> items, {
+    int? reportedTotal,
+  }) {
     return GatewayPassportsResult(
       platforms: items.where(_hasPassport).map(fromPassportItem).toList(),
       alerts: items.expand(alertsFromPassportItem).toList(),
+      reportedTotal: reportedTotal,
     );
   }
 
@@ -209,11 +213,21 @@ class _OperationEntry {
 /// returned together so callers persist them in the same sync pass.
 class GatewayPassportsResult {
   /// Creates a [GatewayPassportsResult] with the given platforms and alerts.
-  const GatewayPassportsResult({required this.platforms, required this.alerts});
+  const GatewayPassportsResult({
+    required this.platforms,
+    required this.alerts,
+    this.reportedTotal,
+  });
 
   /// Platforms mapped from the response's `items`.
   final List<PlatformsCompanion> platforms;
 
   /// Alerts mapped from every item's `alerts` list.
   final List<AlertsCompanion> alerts;
+
+  /// Optional `total` field from the Gateway response.
+  final int? reportedTotal;
+
+  /// Denominator for sync progress banners.
+  int get syncTotal => reportedTotal ?? platforms.length;
 }
