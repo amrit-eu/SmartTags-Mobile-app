@@ -155,11 +155,11 @@ extension PermissionShortcuts on bool Function(Action action, Resource resource,
   bool canDelete(Resource resource, {int? programId}) => this(Action.delete, resource, programId: programId);
 
   /// Whether the current user can acknowledge an alert.
-  bool canAck({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+  bool canAck({int? programId}) => this(Action.ack, Resource.alert, programId: programId);
 
   /// Whether the current user can unacknowledge an alert.
-  bool canUnack({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+  bool canUnack({int? programId}) => this(Action.unack, Resource.alert, programId: programId);
 
-  /// Whether the current user can archive an alert.
+  /// Whether the current user can delete an alert.
   bool canArchive({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
 }

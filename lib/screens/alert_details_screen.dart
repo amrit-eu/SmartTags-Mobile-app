@@ -1,17 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/constants/alert_style_palette.dart';
+import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/alert.dart';
+import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/widgets/alert_chip.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// A screen displaying the full details of a single [Alert].
-class AlertDetailsScreen extends StatelessWidget {
+class AlertDetailsScreen extends ConsumerWidget {
   /// Creates an [AlertDetailsScreen] for [alert].
   const AlertDetailsScreen({required this.alert, super.key});
 
@@ -67,8 +71,15 @@ class AlertDetailsScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    // Permissions: the alert resource is the platform ref.
+    final platform = ref.watch(platformByRefStreamProvider(alert.resource)).value?.toDomain();
+    final userPermissions = ref.watch(permissionProvider);
+    final canAcknowledge =
+        platform != null && userPermissions.canAck(programId: platform.program?.id) && alert.status == AlertStatus.open;
+
     final statusStyle = AlertStatusPalette.forStatus(alert.status);
     final severityStyle = AlertSeverityPalette.forSeverity(alert.severity);
     final attributes = alert.attributes;
@@ -95,8 +106,19 @@ class AlertDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: TopNavigation(title: const Text('Alert Details'), leading: const BackButton()),
+      floatingActionButton: canAcknowledge
+          ? FloatingActionButton.extended(
+              backgroundColor: AlertStatusPalette.acknowledged.color,
+              foregroundColor: Colors.black,
+              onPressed: () {
+                // TODO(ylubac): acknowledge the alert (no action for now).
+              },
+              icon: Icon(AlertStatusPalette.acknowledged.actionIcon),
+              label: const Text('Acknowledge'),
+            )
+          : null,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, canAcknowledge ? 88 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
