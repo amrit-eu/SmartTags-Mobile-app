@@ -68,8 +68,8 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
         widget.pages ??
         <Widget>[
           const MapScreen(),
-          const CatalogueScreen(),
-          const QrScanScreen(),
+          CatalogueScreen(onScanAgain: () => _onItemTapped(2)),
+          QrScanScreen(onValidCode: () => _onItemTapped(1)),
         ];
   }
 
