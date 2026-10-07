@@ -48,7 +48,7 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   sqlite3_flutter_libs: ^0.5.41
-  url_launcher: ^6.3.3
+  url_launcher: ">=6.3.2 <6.3.3"
   
 
 dev_dependencies:
@@ -60,7 +60,12 @@ dev_dependencies:
   test: ^1.26.3
   test_screenshot: ^0.0.8
   very_good_analysis: ^10.0.0
- 
+
+# url_launcher_android 6.3.31+ requires Dart >=3.12.0 / Flutter >=3.44.0,
+# bumping this project's minimum SDK. Pinned to the last version matching
+# the SDK floor already in use (Dart >=3.11.0-0 / Flutter >=3.38.4).
+dependency_overrides:
+  url_launcher_android: 6.3.30
 
 flutter:
 
