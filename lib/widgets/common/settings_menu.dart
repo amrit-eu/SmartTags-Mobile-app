@@ -28,10 +28,14 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
     final sliderValue = (customTextScale ?? systemTextScale)
         .clamp(AppTextScale.min, AppTextScale.max);
 
+    Widget _fullWidthMenuItem(Widget child) => SizedBox(
+        width: MediaQuery.of(context).size.width, child: child
+    );
+
     return MenuAnchor(
       childFocusNode: _buttonFocusNode,
       menuChildren: <Widget>[
-        SwitchListTile(
+        _fullWidthMenuItem(SwitchListTile(
           title: const Text('Theme Mode: Use System Default'),
           value: ref.watch(themeProvider) == ThemeMode.system,
           onChanged: (bool? checked) {
@@ -42,8 +46,8 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
             }
           },
           secondary: const ExcludeSemantics(child: Icon(Icons.light_mode)),
-        ),
-        SwitchListTile(
+        )),
+        _fullWidthMenuItem(SwitchListTile(
           title: const Text('Dark Mode'),
           secondary: const ExcludeSemantics(child: Icon(Icons.dark_mode)),
           value: Theme.of(context).brightness == Brightness.dark,
@@ -56,8 +60,8 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                     ref.read(themeProvider.notifier).useLight();
                   }
                 },
-        ),
-        SwitchListTile(
+        )),
+        _fullWidthMenuItem(SwitchListTile(
           title: const Text('Text Size: Use System Default'),
           value: textFollowSystem,
           onChanged: (bool? checked) {
@@ -68,8 +72,8 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
             }
           },
           secondary: const Icon(Icons.format_size),
-        ),
-        Row(
+        )),
+        _fullWidthMenuItem(Row(
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 16),
@@ -85,7 +89,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                 value: sliderValue,
                 min: AppTextScale.min,
                 max: AppTextScale.max,
-                divisions: 12,
+                divisions: 6,
                 label: '${(sliderValue * 100).round()}%',
                 onChanged: textFollowSystem
                     ? null
@@ -93,7 +97,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
               ),
             ),
             Padding(
-                padding: const EdgeInsets.only(left: 16),
+                padding: const EdgeInsets.only(right: 32),
                 child: ExcludeSemantics(
                   child: Icon(
                     Icons.text_increase,
@@ -102,7 +106,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                 )
             ),
           ],
-        ),
+        )),
       ],
       builder: (_, MenuController controller, Widget? child) {
         return IconButton(
