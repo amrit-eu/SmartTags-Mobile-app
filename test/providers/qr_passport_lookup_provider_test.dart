@@ -102,13 +102,13 @@ void main() {
     expect(result.platforms.map((p) => p.ref), ['A', 'B']);
   });
 
-  test('offline unknown QR reference returns an empty result', () async {
+  test('offline unknown QR code returns an empty result', () async {
     final result = await QrPassportLookupRepository(
       database: db,
       gateway: gateway(MockClient((_) async => throw StateError('Unexpected request'))),
       connectivity: () async => ConnectivityResult.none,
     ).lookupByQrCode('UNKNOWN');
-    expect(result.reference, 'UNKNOWN');
+    expect(result.qrCode, 'UNKNOWN');
     expect(result.platforms, isEmpty);
   });
 

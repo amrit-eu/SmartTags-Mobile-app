@@ -13,11 +13,11 @@ import 'package:smart_tags/services/gateway_repository.dart';
 
 /// The catalogue receives the same result regardless of where it was loaded.
 class QrPassportLookupResult {
-  /// The matching passport rows for one physical QR reference.
-  const QrPassportLookupResult({required this.reference, required this.platforms});
+  /// The matching passport rows for one physical platform QR code.
+  const QrPassportLookupResult({required this.qrCode, required this.platforms});
 
-  /// The reference value read from the QR sticker.
-  final String reference;
+  /// The code read from the QR sticker.
+  final String qrCode;
 
   /// List of platforms to display in the catalogue.
   final List<Platform> platforms;
@@ -41,7 +41,7 @@ enum QrLookupPhase {
 /// State consumed by the catalogue.
 class QrLookupState {
   /// Creates a lookup state.
-  const QrLookupState({required this.phase, this.reference, this.result, this.message});
+  const QrLookupState({required this.phase, this.qrCode, this.result, this.message});
 
   /// Creates an empty state.
   const QrLookupState.idle() : this(phase: QrLookupPhase.idle);
@@ -49,8 +49,8 @@ class QrLookupState {
   /// The stage of the lookup.
   final QrLookupPhase phase;
 
-  /// The active QR reference.
-  final String? reference;
+  /// The active QR code.
+  final String? qrCode;
 
   /// The successful lookup output.
   final QrPassportLookupResult? result;
@@ -59,7 +59,7 @@ class QrLookupState {
   final String? message;
 }
 
-/// Performs the QR reference lookup.
+/// Performs the QR code lookup.
 class QrPassportLookupRepository {
   /// Creates a lookup repository with a connectivity source.
   const QrPassportLookupRepository({
@@ -77,20 +77,20 @@ class QrPassportLookupRepository {
   /// Returns current connectivity state.
   final Future<ConnectivityResult?> Function() connectivity;
 
-  /// Loads every passport for a given [reference] from the selected source.
-  Future<QrPassportLookupResult> lookupByQrCode(String reference) async {
+  /// Loads every passport for a given [qrCode] from the selected source.
+  Future<QrPassportLookupResult> lookupByQrCode(String qrCode) async {
     // If no connectivity, return local DB results.
     if (!isDeviceOnline(await connectivity())) {
-      return _local(reference, reason: 'device offline');
+      return _local(qrCode, reason: 'device offline');
     }
     // else, try to fetch from the Gateway API.
     try {
       final response = await gateway.searchPassports(
-        PassportFilterDto(paginationEnabled: false, filters: {'qrCode': reference}),
+        PassportFilterDto(paginationEnabled: false, filters: {'qrCode': qrCode}),
       );
       final matched = <String, PlatformsCompanion>{};
       for (final platform in response.platforms) {
-        if (platform.qrCode.value == reference && platform.ref.value.isNotEmpty) {
+        if (platform.qrCode.value == qrCode && platform.ref.value.isNotEmpty) {
           matched[platform.ref.value] = platform;
         }
       }
@@ -103,33 +103,33 @@ class QrPassportLookupRepository {
         });
       }
       // Read persisted rows so each card and the details page see the same data.
-      final rows = await database.getPlatformsByQrCode(reference);
+      final rows = await database.getPlatformsByQrCode(qrCode);
       return QrPassportLookupResult(
-        reference: reference,
+        qrCode: qrCode,
         platforms: _ordered(rows.where((row) => matched.containsKey(row.ref))),
       );
     } on Object catch (error) {
       // If the Gateway request fails, fall back to local DB results.
       if (error is http.ClientException) {
-        return _local(reference, reason: 'Gateway transport failure');
+        return _local(qrCode, reason: 'Gateway transport failure');
       }
       if (!isDeviceOnline(await connectivity())) {
-        return _local(reference, reason: 'connection lost during Gateway request');
+        return _local(qrCode, reason: 'connection lost during Gateway request');
       }
       rethrow;
     }
   }
 
-  /// Loads every passport for a given [reference] from the local database.
-  Future<QrPassportLookupResult> _local(String reference, {required String reason}) async {
-    final rows = await database.getPlatformsByQrCode(reference);
+  /// Loads every passport for a given [qrCode] from the local database.
+  Future<QrPassportLookupResult> _local(String qrCode, {required String reason}) async {
+    final rows = await database.getPlatformsByQrCode(qrCode);
     if (kDebugMode) {
-      debugPrint('QR passport lookup: using local DB for $reference ($reason); ${rows.length} passport(s) found');
+      debugPrint('QR passport lookup: using local DB for $qrCode ($reason); ${rows.length} passport(s) found');
     }
-    return QrPassportLookupResult(reference: reference, platforms: _ordered(rows));
+    return QrPassportLookupResult(qrCode: qrCode, platforms: _ordered(rows));
   }
 
-  /// Orders the rows by latest operation date, then by reference.
+  /// Orders the rows by latest operation date, then by platform reference.
   List<Platform> _ordered(Iterable<Platform> rows) {
     final byRef = {for (final row in rows) row.ref: row};
     final result = byRef.values.toList()
@@ -165,7 +165,7 @@ final qrPassportLookupProvider = NotifierProvider<QrPassportLookupNotifier, QrLo
   QrPassportLookupNotifier.new,
 );
 
-/// Controls lookup, retry, and clearing of a scanned reference.
+/// Controls lookup, retry, and clearing of a scanned QR code.
 class QrPassportLookupNotifier extends Notifier<QrLookupState> {
   int _requestId = 0;
 
@@ -173,30 +173,30 @@ class QrPassportLookupNotifier extends Notifier<QrLookupState> {
   QrLookupState build() => const QrLookupState.idle();
 
   /// Starts a lookup and replaces any previous scan result.
-  Future<void> lookup(String reference) async {
+  Future<void> lookup(String qrCode) async {
     // requestId used to ignore any previous lookup result.
     final requestId = ++_requestId;
-    state = QrLookupState(phase: QrLookupPhase.loading, reference: reference);
+    state = QrLookupState(phase: QrLookupPhase.loading, qrCode: qrCode);
     try {
-      final result = await ref.read(qrPassportLookupRepositoryProvider).lookupByQrCode(reference);
+      final result = await ref.read(qrPassportLookupRepositoryProvider).lookupByQrCode(qrCode);
       if (requestId == _requestId) {
-        state = QrLookupState(phase: QrLookupPhase.data, reference: reference, result: result);
+        state = QrLookupState(phase: QrLookupPhase.data, qrCode: qrCode, result: result);
       }
     } on Object {
       if (requestId == _requestId) {
         state = QrLookupState(
           phase: QrLookupPhase.error,
-          reference: reference,
+          qrCode: qrCode,
           message: 'Could not look up passports for this QR code. Please retry.',
         );
       }
     }
   }
 
-  /// Repeats the lookup with the same reference.
+  /// Repeats the lookup with the same QR code.
   Future<void> retry() async {
-    final reference = state.reference;
-    if (reference != null) await lookup(reference);
+    final qrCode = state.qrCode;
+    if (qrCode != null) await lookup(qrCode);
   }
 
   /// Clears the active scan and ignores any outstanding response.

@@ -353,7 +353,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('scanned catalogue shows error and retries the same QR reference', (tester) async {
+  testWidgets('scanned catalogue shows error and retries the same QR code', (tester) async {
     var calls = 0;
     final container = await pumpScannedCatalogue(tester, (_) async {
       calls++;

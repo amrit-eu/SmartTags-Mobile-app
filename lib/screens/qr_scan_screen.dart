@@ -40,11 +40,11 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         continue;
       }
       if (code != null) {
-        final reference = qrCodeReferenceFromUrl(code);
-        if (reference != null) {
+        final qrCode = qrCodeReferenceFromUrl(code);
+        if (qrCode != null) {
           _messengerKey.currentState?.clearSnackBars();
           setState(() => _isProcessing = true);
-          unawaited(_handleValidCode(reference));
+          unawaited(_handleValidCode(qrCode));
         } else {
           setState(() => _lastInvalidCode = code);
           _showMessage('Invalid QR Code format');
@@ -54,10 +54,10 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     }
   }
 
-  Future<void> _handleValidCode(String reference) async {
+  Future<void> _handleValidCode(String qrCode) async {
     if (!mounted) return;
     try {
-      unawaited(ref.read(qrPassportLookupProvider.notifier).lookup(reference));
+      unawaited(ref.read(qrPassportLookupProvider.notifier).lookup(qrCode));
       widget.onValidCode?.call();
       await _scannerController.stop();
     } on Object {
