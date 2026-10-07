@@ -46,6 +46,7 @@ void main() {
           .insert(
             PlatformsCompanion.insert(
               ref: 'PLT-TEST-001',
+              qrCode: const Value('RFHCZ3S'),
               model: 'Test Sensor',
               network: 'TestNet',
               lat: 10,
@@ -63,9 +64,78 @@ void main() {
 
       expect(platforms.length, 1);
       expect(platforms.first.ref, 'PLT-TEST-001');
+      expect(platforms.first.qrCode, 'RFHCZ3S');
       expect(platforms.first.model, 'Test Sensor');
 
       await db.close();
+    });
+
+    test('QR code retrieves all passports and alerts for the physical platform', () async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+      addTearDown(db.close);
+
+      final now = DateTime.utc(2026, 9, 30);
+
+      PlatformsCompanion passport({required String ref, required String qrCode}) {
+        return PlatformsCompanion.insert(
+          ref: ref,
+          qrCode: Value(qrCode),
+          model: 'Test Sensor',
+          category: 'Profiling Float',
+          network: 'Argo',
+          lat: 1,
+          lon: 2,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: now,
+          operationLat: 1,
+          operationLon: 2,
+        );
+      }
+
+      await db.insertPlatforms([
+        passport(ref: 'DEPLOYMENT-001', qrCode: 'QR-ABC123'),
+        passport(ref: 'DEPLOYMENT-002', qrCode: 'QR-ABC123'),
+        passport(ref: 'DEPLOYMENT-003', qrCode: 'QR-OTHER'),
+      ]);
+      await db.upsertAlerts([
+        AlertsCompanion.insert(
+          id: 'alert-1',
+          resource: 'DEPLOYMENT-001',
+          event: 'LowBattery',
+          severity: 'warning',
+          status: 'open',
+        ),
+        AlertsCompanion.insert(
+          id: 'alert-2',
+          resource: 'DEPLOYMENT-002',
+          event: 'NoPosition',
+          severity: 'major',
+          status: 'open',
+        ),
+        AlertsCompanion.insert(
+          id: 'alert-other',
+          resource: 'DEPLOYMENT-003',
+          event: 'Test',
+          severity: 'minor',
+          status: 'open',
+        ),
+      ]);
+
+      final storedPassport = await db.getPlatformByRef('DEPLOYMENT-001');
+      expect(storedPassport.single.qrCode, 'QR-ABC123');
+
+      final passports = await db.getPlatformsByQrCode('QR-ABC123');
+      expect(
+        passports.map((row) => row.ref),
+        unorderedEquals(['DEPLOYMENT-001', 'DEPLOYMENT-002']),
+      );
+
+      final alerts = await db.getAlertsByQrCode('QR-ABC123');
+      expect(
+        alerts.map((row) => row.id),
+        unorderedEquals(['alert-1', 'alert-2']),
+      );
     });
 
     test('Test insertPlatforms and updatePlatforms', () async {

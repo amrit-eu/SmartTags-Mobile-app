@@ -158,6 +158,15 @@ class $PlatformsTable extends Platforms
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _qrCodeMeta = const VerificationMeta('qrCode');
+  @override
+  late final GeneratedColumn<String> qrCode = GeneratedColumn<String>(
+    'qr_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _wigosIdMeta = const VerificationMeta(
     'wigosId',
   );
@@ -336,6 +345,7 @@ class $PlatformsTable extends Platforms
     operationLon,
     name,
     internalId,
+    qrCode,
     wigosId,
     gtsId,
     batchRef,
@@ -477,6 +487,12 @@ class $PlatformsTable extends Platforms
       context.handle(
         _internalIdMeta,
         internalId.isAcceptableOrUnknown(data['internal_id']!, _internalIdMeta),
+      );
+    }
+    if (data.containsKey('qr_code')) {
+      context.handle(
+        _qrCodeMeta,
+        qrCode.isAcceptableOrUnknown(data['qr_code']!, _qrCodeMeta),
       );
     }
     if (data.containsKey('wigos_id')) {
@@ -661,6 +677,10 @@ class $PlatformsTable extends Platforms
         DriftSqlType.string,
         data['${effectivePrefix}internal_id'],
       ),
+      qrCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}qr_code'],
+      ),
       wigosId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}wigos_id'],
@@ -773,6 +793,9 @@ class Platform extends DataClass implements Insertable<Platform> {
   /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
   final String? internalId;
 
+  /// OceanTags QR code reference for the physical platform.
+  final String? qrCode;
+
   /// WIGOS identifier (optional).
   final String? wigosId;
 
@@ -836,6 +859,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     required this.operationLon,
     this.name,
     this.internalId,
+    this.qrCode,
     this.wigosId,
     this.gtsId,
     this.batchRef,
@@ -872,6 +896,9 @@ class Platform extends DataClass implements Insertable<Platform> {
     }
     if (!nullToAbsent || internalId != null) {
       map['internal_id'] = Variable<String>(internalId);
+    }
+    if (!nullToAbsent || qrCode != null) {
+      map['qr_code'] = Variable<String>(qrCode);
     }
     if (!nullToAbsent || wigosId != null) {
       map['wigos_id'] = Variable<String>(wigosId);
@@ -937,6 +964,9 @@ class Platform extends DataClass implements Insertable<Platform> {
       internalId: internalId == null && nullToAbsent
           ? const Value.absent()
           : Value(internalId),
+      qrCode: qrCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(qrCode),
       wigosId: wigosId == null && nullToAbsent
           ? const Value.absent()
           : Value(wigosId),
@@ -1003,6 +1033,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       operationLon: serializer.fromJson<double>(json['operationLon']),
       name: serializer.fromJson<String?>(json['name']),
       internalId: serializer.fromJson<String?>(json['internalId']),
+      qrCode: serializer.fromJson<String?>(json['qrCode']),
       wigosId: serializer.fromJson<String?>(json['wigosId']),
       gtsId: serializer.fromJson<String?>(json['gtsId']),
       batchRef: serializer.fromJson<String?>(json['batchRef']),
@@ -1044,6 +1075,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       'operationLon': serializer.toJson<double>(operationLon),
       'name': serializer.toJson<String?>(name),
       'internalId': serializer.toJson<String?>(internalId),
+      'qrCode': serializer.toJson<String?>(qrCode),
       'wigosId': serializer.toJson<String?>(wigosId),
       'gtsId': serializer.toJson<String?>(gtsId),
       'batchRef': serializer.toJson<String?>(batchRef),
@@ -1077,6 +1109,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     double? operationLon,
     Value<String?> name = const Value.absent(),
     Value<String?> internalId = const Value.absent(),
+    Value<String?> qrCode = const Value.absent(),
     Value<String?> wigosId = const Value.absent(),
     Value<String?> gtsId = const Value.absent(),
     Value<String?> batchRef = const Value.absent(),
@@ -1107,6 +1140,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     operationLon: operationLon ?? this.operationLon,
     name: name.present ? name.value : this.name,
     internalId: internalId.present ? internalId.value : this.internalId,
+    qrCode: qrCode.present ? qrCode.value : this.qrCode,
     wigosId: wigosId.present ? wigosId.value : this.wigosId,
     gtsId: gtsId.present ? gtsId.value : this.gtsId,
     batchRef: batchRef.present ? batchRef.value : this.batchRef,
@@ -1161,6 +1195,7 @@ class Platform extends DataClass implements Insertable<Platform> {
       internalId: data.internalId.present
           ? data.internalId.value
           : this.internalId,
+      qrCode: data.qrCode.present ? data.qrCode.value : this.qrCode,
       wigosId: data.wigosId.present ? data.wigosId.value : this.wigosId,
       gtsId: data.gtsId.present ? data.gtsId.value : this.gtsId,
       batchRef: data.batchRef.present ? data.batchRef.value : this.batchRef,
@@ -1214,6 +1249,7 @@ class Platform extends DataClass implements Insertable<Platform> {
           ..write('operationLon: $operationLon, ')
           ..write('name: $name, ')
           ..write('internalId: $internalId, ')
+          ..write('qrCode: $qrCode, ')
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
@@ -1249,6 +1285,7 @@ class Platform extends DataClass implements Insertable<Platform> {
     operationLon,
     name,
     internalId,
+    qrCode,
     wigosId,
     gtsId,
     batchRef,
@@ -1283,6 +1320,7 @@ class Platform extends DataClass implements Insertable<Platform> {
           other.operationLon == this.operationLon &&
           other.name == this.name &&
           other.internalId == this.internalId &&
+          other.qrCode == this.qrCode &&
           other.wigosId == this.wigosId &&
           other.gtsId == this.gtsId &&
           other.batchRef == this.batchRef &&
@@ -1315,6 +1353,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
   final Value<double> operationLon;
   final Value<String?> name;
   final Value<String?> internalId;
+  final Value<String?> qrCode;
   final Value<String?> wigosId;
   final Value<String?> gtsId;
   final Value<String?> batchRef;
@@ -1345,6 +1384,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     this.operationLon = const Value.absent(),
     this.name = const Value.absent(),
     this.internalId = const Value.absent(),
+    this.qrCode = const Value.absent(),
     this.wigosId = const Value.absent(),
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
@@ -1376,6 +1416,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     required double operationLon,
     this.name = const Value.absent(),
     this.internalId = const Value.absent(),
+    this.qrCode = const Value.absent(),
     this.wigosId = const Value.absent(),
     this.gtsId = const Value.absent(),
     this.batchRef = const Value.absent(),
@@ -1417,6 +1458,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Expression<double>? operationLon,
     Expression<String>? name,
     Expression<String>? internalId,
+    Expression<String>? qrCode,
     Expression<String>? wigosId,
     Expression<String>? gtsId,
     Expression<String>? batchRef,
@@ -1448,6 +1490,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       if (operationLon != null) 'operation_lon': operationLon,
       if (name != null) 'name': name,
       if (internalId != null) 'internal_id': internalId,
+      if (qrCode != null) 'qr_code': qrCode,
       if (wigosId != null) 'wigos_id': wigosId,
       if (gtsId != null) 'gts_id': gtsId,
       if (batchRef != null) 'batch_ref': batchRef,
@@ -1484,6 +1527,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     Value<double>? operationLon,
     Value<String?>? name,
     Value<String?>? internalId,
+    Value<String?>? qrCode,
     Value<String?>? wigosId,
     Value<String?>? gtsId,
     Value<String?>? batchRef,
@@ -1515,6 +1559,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
       operationLon: operationLon ?? this.operationLon,
       name: name ?? this.name,
       internalId: internalId ?? this.internalId,
+      qrCode: qrCode ?? this.qrCode,
       wigosId: wigosId ?? this.wigosId,
       gtsId: gtsId ?? this.gtsId,
       batchRef: batchRef ?? this.batchRef,
@@ -1577,6 +1622,9 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
     }
     if (internalId.present) {
       map['internal_id'] = Variable<String>(internalId.value);
+    }
+    if (qrCode.present) {
+      map['qr_code'] = Variable<String>(qrCode.value);
     }
     if (wigosId.present) {
       map['wigos_id'] = Variable<String>(wigosId.value);
@@ -1649,6 +1697,7 @@ class PlatformsCompanion extends UpdateCompanion<Platform> {
           ..write('operationLon: $operationLon, ')
           ..write('name: $name, ')
           ..write('internalId: $internalId, ')
+          ..write('qrCode: $qrCode, ')
           ..write('wigosId: $wigosId, ')
           ..write('gtsId: $gtsId, ')
           ..write('batchRef: $batchRef, ')
@@ -5275,6 +5324,392 @@ class SyncMetadataCompanion extends UpdateCompanion<SyncMetadataData> {
   }
 }
 
+class $CatalogueSearchHistoriesTable extends CatalogueSearchHistories
+    with TableInfo<$CatalogueSearchHistoriesTable, CatalogueSearchHistory> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CatalogueSearchHistoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _platformRefMeta = const VerificationMeta(
+    'platformRef',
+  );
+  @override
+  late final GeneratedColumn<String> platformRef = GeneratedColumn<String>(
+    'platform_ref',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 255,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _platformModelMeta = const VerificationMeta(
+    'platformModel',
+  );
+  @override
+  late final GeneratedColumn<String> platformModel = GeneratedColumn<String>(
+    'platform_model',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _wigosIdMeta = const VerificationMeta(
+    'wigosId',
+  );
+  @override
+  late final GeneratedColumn<String> wigosId = GeneratedColumn<String>(
+    'wigos_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _searchedAtMeta = const VerificationMeta(
+    'searchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> searchedAt = GeneratedColumn<DateTime>(
+    'searched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    platformRef,
+    platformModel,
+    wigosId,
+    searchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'catalogue_search_histories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CatalogueSearchHistory> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('platform_ref')) {
+      context.handle(
+        _platformRefMeta,
+        platformRef.isAcceptableOrUnknown(
+          data['platform_ref']!,
+          _platformRefMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_platformRefMeta);
+    }
+    if (data.containsKey('platform_model')) {
+      context.handle(
+        _platformModelMeta,
+        platformModel.isAcceptableOrUnknown(
+          data['platform_model']!,
+          _platformModelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wigos_id')) {
+      context.handle(
+        _wigosIdMeta,
+        wigosId.isAcceptableOrUnknown(data['wigos_id']!, _wigosIdMeta),
+      );
+    }
+    if (data.containsKey('searched_at')) {
+      context.handle(
+        _searchedAtMeta,
+        searchedAt.isAcceptableOrUnknown(data['searched_at']!, _searchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_searchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CatalogueSearchHistory map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CatalogueSearchHistory(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      platformRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform_ref'],
+      )!,
+      platformModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}platform_model'],
+      ),
+      wigosId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}wigos_id'],
+      ),
+      searchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}searched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CatalogueSearchHistoriesTable createAlias(String alias) {
+    return $CatalogueSearchHistoriesTable(attachedDatabase, alias);
+  }
+}
+
+class CatalogueSearchHistory extends DataClass
+    implements Insertable<CatalogueSearchHistory> {
+  /// Surrogate primary key.
+  final int id;
+
+  /// Platform reference used for catalogue search (matches [Platforms.ref]).
+  final String platformRef;
+
+  /// Model name at the time the user opened the platform from search.
+  final String? platformModel;
+
+  /// WIGOS / passport id snapshot ([Platforms.wigosId]) for autosuggest labels.
+  final String? wigosId;
+
+  /// When the user last opened this platform from catalogue search.
+  final DateTime searchedAt;
+  const CatalogueSearchHistory({
+    required this.id,
+    required this.platformRef,
+    this.platformModel,
+    this.wigosId,
+    required this.searchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['platform_ref'] = Variable<String>(platformRef);
+    if (!nullToAbsent || platformModel != null) {
+      map['platform_model'] = Variable<String>(platformModel);
+    }
+    if (!nullToAbsent || wigosId != null) {
+      map['wigos_id'] = Variable<String>(wigosId);
+    }
+    map['searched_at'] = Variable<DateTime>(searchedAt);
+    return map;
+  }
+
+  CatalogueSearchHistoriesCompanion toCompanion(bool nullToAbsent) {
+    return CatalogueSearchHistoriesCompanion(
+      id: Value(id),
+      platformRef: Value(platformRef),
+      platformModel: platformModel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(platformModel),
+      wigosId: wigosId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(wigosId),
+      searchedAt: Value(searchedAt),
+    );
+  }
+
+  factory CatalogueSearchHistory.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CatalogueSearchHistory(
+      id: serializer.fromJson<int>(json['id']),
+      platformRef: serializer.fromJson<String>(json['platformRef']),
+      platformModel: serializer.fromJson<String?>(json['platformModel']),
+      wigosId: serializer.fromJson<String?>(json['wigosId']),
+      searchedAt: serializer.fromJson<DateTime>(json['searchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'platformRef': serializer.toJson<String>(platformRef),
+      'platformModel': serializer.toJson<String?>(platformModel),
+      'wigosId': serializer.toJson<String?>(wigosId),
+      'searchedAt': serializer.toJson<DateTime>(searchedAt),
+    };
+  }
+
+  CatalogueSearchHistory copyWith({
+    int? id,
+    String? platformRef,
+    Value<String?> platformModel = const Value.absent(),
+    Value<String?> wigosId = const Value.absent(),
+    DateTime? searchedAt,
+  }) => CatalogueSearchHistory(
+    id: id ?? this.id,
+    platformRef: platformRef ?? this.platformRef,
+    platformModel: platformModel.present
+        ? platformModel.value
+        : this.platformModel,
+    wigosId: wigosId.present ? wigosId.value : this.wigosId,
+    searchedAt: searchedAt ?? this.searchedAt,
+  );
+  CatalogueSearchHistory copyWithCompanion(
+    CatalogueSearchHistoriesCompanion data,
+  ) {
+    return CatalogueSearchHistory(
+      id: data.id.present ? data.id.value : this.id,
+      platformRef: data.platformRef.present
+          ? data.platformRef.value
+          : this.platformRef,
+      platformModel: data.platformModel.present
+          ? data.platformModel.value
+          : this.platformModel,
+      wigosId: data.wigosId.present ? data.wigosId.value : this.wigosId,
+      searchedAt: data.searchedAt.present
+          ? data.searchedAt.value
+          : this.searchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogueSearchHistory(')
+          ..write('id: $id, ')
+          ..write('platformRef: $platformRef, ')
+          ..write('platformModel: $platformModel, ')
+          ..write('wigosId: $wigosId, ')
+          ..write('searchedAt: $searchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, platformRef, platformModel, wigosId, searchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CatalogueSearchHistory &&
+          other.id == this.id &&
+          other.platformRef == this.platformRef &&
+          other.platformModel == this.platformModel &&
+          other.wigosId == this.wigosId &&
+          other.searchedAt == this.searchedAt);
+}
+
+class CatalogueSearchHistoriesCompanion
+    extends UpdateCompanion<CatalogueSearchHistory> {
+  final Value<int> id;
+  final Value<String> platformRef;
+  final Value<String?> platformModel;
+  final Value<String?> wigosId;
+  final Value<DateTime> searchedAt;
+  const CatalogueSearchHistoriesCompanion({
+    this.id = const Value.absent(),
+    this.platformRef = const Value.absent(),
+    this.platformModel = const Value.absent(),
+    this.wigosId = const Value.absent(),
+    this.searchedAt = const Value.absent(),
+  });
+  CatalogueSearchHistoriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String platformRef,
+    this.platformModel = const Value.absent(),
+    this.wigosId = const Value.absent(),
+    required DateTime searchedAt,
+  }) : platformRef = Value(platformRef),
+       searchedAt = Value(searchedAt);
+  static Insertable<CatalogueSearchHistory> custom({
+    Expression<int>? id,
+    Expression<String>? platformRef,
+    Expression<String>? platformModel,
+    Expression<String>? wigosId,
+    Expression<DateTime>? searchedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (platformRef != null) 'platform_ref': platformRef,
+      if (platformModel != null) 'platform_model': platformModel,
+      if (wigosId != null) 'wigos_id': wigosId,
+      if (searchedAt != null) 'searched_at': searchedAt,
+    });
+  }
+
+  CatalogueSearchHistoriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? platformRef,
+    Value<String?>? platformModel,
+    Value<String?>? wigosId,
+    Value<DateTime>? searchedAt,
+  }) {
+    return CatalogueSearchHistoriesCompanion(
+      id: id ?? this.id,
+      platformRef: platformRef ?? this.platformRef,
+      platformModel: platformModel ?? this.platformModel,
+      wigosId: wigosId ?? this.wigosId,
+      searchedAt: searchedAt ?? this.searchedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (platformRef.present) {
+      map['platform_ref'] = Variable<String>(platformRef.value);
+    }
+    if (platformModel.present) {
+      map['platform_model'] = Variable<String>(platformModel.value);
+    }
+    if (wigosId.present) {
+      map['wigos_id'] = Variable<String>(wigosId.value);
+    }
+    if (searchedAt.present) {
+      map['searched_at'] = Variable<DateTime>(searchedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CatalogueSearchHistoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('platformRef: $platformRef, ')
+          ..write('platformModel: $platformModel, ')
+          ..write('wigosId: $wigosId, ')
+          ..write('searchedAt: $searchedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5290,6 +5725,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PendingOperationsTable pendingOperations =
       $PendingOperationsTable(this);
   late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
+  late final $CatalogueSearchHistoriesTable catalogueSearchHistories =
+      $CatalogueSearchHistoriesTable(this);
   late final Index idxPlatformsRef = Index(
     'idx_platforms_ref',
     'CREATE UNIQUE INDEX idx_platforms_ref ON platforms (ref)',
@@ -5309,6 +5746,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userRoles,
     pendingOperations,
     syncMetadata,
+    catalogueSearchHistories,
     idxPlatformsRef,
   ];
 }
@@ -5329,6 +5767,7 @@ typedef $$PlatformsTableCreateCompanionBuilder =
       required double operationLon,
       Value<String?> name,
       Value<String?> internalId,
+      Value<String?> qrCode,
       Value<String?> wigosId,
       Value<String?> gtsId,
       Value<String?> batchRef,
@@ -5361,6 +5800,7 @@ typedef $$PlatformsTableUpdateCompanionBuilder =
       Value<double> operationLon,
       Value<String?> name,
       Value<String?> internalId,
+      Value<String?> qrCode,
       Value<String?> wigosId,
       Value<String?> gtsId,
       Value<String?> batchRef,
@@ -5478,6 +5918,11 @@ class $$PlatformsTableFilterComposer
 
   ColumnFilters<String> get internalId => $composableBuilder(
     column: $table.internalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get qrCode => $composableBuilder(
+    column: $table.qrCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5661,6 +6106,11 @@ class $$PlatformsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get qrCode => $composableBuilder(
+    column: $table.qrCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get wigosId => $composableBuilder(
     column: $table.wigosId,
     builder: (column) => ColumnOrderings(column),
@@ -5798,6 +6248,9 @@ class $$PlatformsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get qrCode =>
+      $composableBuilder(column: $table.qrCode, builder: (column) => column);
+
   GeneratedColumn<String> get wigosId =>
       $composableBuilder(column: $table.wigosId, builder: (column) => column);
 
@@ -5929,6 +6382,7 @@ class $$PlatformsTableTableManager
                 Value<double> operationLon = const Value.absent(),
                 Value<String?> name = const Value.absent(),
                 Value<String?> internalId = const Value.absent(),
+                Value<String?> qrCode = const Value.absent(),
                 Value<String?> wigosId = const Value.absent(),
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
@@ -5959,6 +6413,7 @@ class $$PlatformsTableTableManager
                 operationLon: operationLon,
                 name: name,
                 internalId: internalId,
+                qrCode: qrCode,
                 wigosId: wigosId,
                 gtsId: gtsId,
                 batchRef: batchRef,
@@ -5991,6 +6446,7 @@ class $$PlatformsTableTableManager
                 required double operationLon,
                 Value<String?> name = const Value.absent(),
                 Value<String?> internalId = const Value.absent(),
+                Value<String?> qrCode = const Value.absent(),
                 Value<String?> wigosId = const Value.absent(),
                 Value<String?> gtsId = const Value.absent(),
                 Value<String?> batchRef = const Value.absent(),
@@ -6021,6 +6477,7 @@ class $$PlatformsTableTableManager
                 operationLon: operationLon,
                 name: name,
                 internalId: internalId,
+                qrCode: qrCode,
                 wigosId: wigosId,
                 gtsId: gtsId,
                 batchRef: batchRef,
@@ -8885,6 +9342,225 @@ typedef $$SyncMetadataTableProcessedTableManager =
       SyncMetadataData,
       PrefetchHooks Function()
     >;
+typedef $$CatalogueSearchHistoriesTableCreateCompanionBuilder =
+    CatalogueSearchHistoriesCompanion Function({
+      Value<int> id,
+      required String platformRef,
+      Value<String?> platformModel,
+      Value<String?> wigosId,
+      required DateTime searchedAt,
+    });
+typedef $$CatalogueSearchHistoriesTableUpdateCompanionBuilder =
+    CatalogueSearchHistoriesCompanion Function({
+      Value<int> id,
+      Value<String> platformRef,
+      Value<String?> platformModel,
+      Value<String?> wigosId,
+      Value<DateTime> searchedAt,
+    });
+
+class $$CatalogueSearchHistoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $CatalogueSearchHistoriesTable> {
+  $$CatalogueSearchHistoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platformRef => $composableBuilder(
+    column: $table.platformRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get platformModel => $composableBuilder(
+    column: $table.platformModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get wigosId => $composableBuilder(
+    column: $table.wigosId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CatalogueSearchHistoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CatalogueSearchHistoriesTable> {
+  $$CatalogueSearchHistoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get platformRef => $composableBuilder(
+    column: $table.platformRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get platformModel => $composableBuilder(
+    column: $table.platformModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get wigosId => $composableBuilder(
+    column: $table.wigosId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CatalogueSearchHistoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CatalogueSearchHistoriesTable> {
+  $$CatalogueSearchHistoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get platformRef => $composableBuilder(
+    column: $table.platformRef,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get platformModel => $composableBuilder(
+    column: $table.platformModel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get wigosId =>
+      $composableBuilder(column: $table.wigosId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get searchedAt => $composableBuilder(
+    column: $table.searchedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$CatalogueSearchHistoriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CatalogueSearchHistoriesTable,
+          CatalogueSearchHistory,
+          $$CatalogueSearchHistoriesTableFilterComposer,
+          $$CatalogueSearchHistoriesTableOrderingComposer,
+          $$CatalogueSearchHistoriesTableAnnotationComposer,
+          $$CatalogueSearchHistoriesTableCreateCompanionBuilder,
+          $$CatalogueSearchHistoriesTableUpdateCompanionBuilder,
+          (
+            CatalogueSearchHistory,
+            BaseReferences<
+              _$AppDatabase,
+              $CatalogueSearchHistoriesTable,
+              CatalogueSearchHistory
+            >,
+          ),
+          CatalogueSearchHistory,
+          PrefetchHooks Function()
+        > {
+  $$CatalogueSearchHistoriesTableTableManager(
+    _$AppDatabase db,
+    $CatalogueSearchHistoriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CatalogueSearchHistoriesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CatalogueSearchHistoriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CatalogueSearchHistoriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> platformRef = const Value.absent(),
+                Value<String?> platformModel = const Value.absent(),
+                Value<String?> wigosId = const Value.absent(),
+                Value<DateTime> searchedAt = const Value.absent(),
+              }) => CatalogueSearchHistoriesCompanion(
+                id: id,
+                platformRef: platformRef,
+                platformModel: platformModel,
+                wigosId: wigosId,
+                searchedAt: searchedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String platformRef,
+                Value<String?> platformModel = const Value.absent(),
+                Value<String?> wigosId = const Value.absent(),
+                required DateTime searchedAt,
+              }) => CatalogueSearchHistoriesCompanion.insert(
+                id: id,
+                platformRef: platformRef,
+                platformModel: platformModel,
+                wigosId: wigosId,
+                searchedAt: searchedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CatalogueSearchHistoriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CatalogueSearchHistoriesTable,
+      CatalogueSearchHistory,
+      $$CatalogueSearchHistoriesTableFilterComposer,
+      $$CatalogueSearchHistoriesTableOrderingComposer,
+      $$CatalogueSearchHistoriesTableAnnotationComposer,
+      $$CatalogueSearchHistoriesTableCreateCompanionBuilder,
+      $$CatalogueSearchHistoriesTableUpdateCompanionBuilder,
+      (
+        CatalogueSearchHistory,
+        BaseReferences<
+          _$AppDatabase,
+          $CatalogueSearchHistoriesTable,
+          CatalogueSearchHistory
+        >,
+      ),
+      CatalogueSearchHistory,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8907,4 +9583,9 @@ class $AppDatabaseManager {
       $$PendingOperationsTableTableManager(_db, _db.pendingOperations);
   $$SyncMetadataTableTableManager get syncMetadata =>
       $$SyncMetadataTableTableManager(_db, _db.syncMetadata);
+  $$CatalogueSearchHistoriesTableTableManager get catalogueSearchHistories =>
+      $$CatalogueSearchHistoriesTableTableManager(
+        _db,
+        _db.catalogueSearchHistories,
+      );
 }

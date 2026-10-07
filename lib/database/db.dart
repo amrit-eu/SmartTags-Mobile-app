@@ -49,6 +49,9 @@ class Platforms extends Table {
   /// Oceanops Pltaform internal Id (operator's/ program's id for the platform).
   TextColumn get internalId => text().nullable()();
 
+  /// OceanTags QR code reference for the physical platform.
+  TextColumn get qrCode => text().nullable()();
+
   /// WIGOS identifier (optional).
   TextColumn get wigosId => text().nullable()();
 
@@ -313,6 +316,28 @@ class PendingOperations extends Table {
   IntColumn get attempts => integer().withDefault(const Constant(0))();
 }
 
+/// Recent catalogue opens keyed by platform [platformRef] (#143).
+///
+/// Stored when the user opens platform detail from a catalogue result card
+/// (not on each keystroke). [platformModel] is a snapshot for the autosuggest
+/// label when the local platform row is unavailable.
+class CatalogueSearchHistories extends Table {
+  /// Surrogate primary key.
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Platform reference used for catalogue search (matches [Platforms.ref]).
+  TextColumn get platformRef => text().withLength(min: 1, max: 255)();
+
+  /// Model name at the time the user opened the platform from search.
+  TextColumn get platformModel => text().nullable()();
+
+  /// WIGOS / passport id snapshot ([Platforms.wigosId]) for autosuggest labels.
+  TextColumn get wigosId => text().nullable()();
+
+  /// When the user last opened this platform from catalogue search.
+  DateTimeColumn get searchedAt => dateTime()();
+}
+
 /// Single-row table storing small pieces of app-level sync metadata
 /// (currently just the last successful platforms refresh timestamp, used as
 /// the `updatedSince` filter for the next delta search).
@@ -339,6 +364,7 @@ class SyncMetadata extends Table {
     UserRoles,
     PendingOperations,
     SyncMetadata,
+    CatalogueSearchHistories,
   ],
   daos: [AuthDao],
 )
@@ -461,14 +487,62 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Maximum catalogue search history rows kept locally (#143).
+  static const int catalogueSearchHistoryLimit = 15;
+
+  /// Records that the user opened [platformRef] from catalogue search (#143).
+  Future<void> recordCatalogueSearchEntry({
+    required String platformRef,
+    String? platformModel,
+    String? wigosId,
+  }) async {
+    final now = DateTime.now().toUtc();
+    await transaction(() async {
+      await (delete(catalogueSearchHistories)..where((t) => t.platformRef.equals(platformRef))).go();
+      await into(catalogueSearchHistories).insert(
+        CatalogueSearchHistoriesCompanion.insert(
+          platformRef: platformRef,
+          platformModel: Value(platformModel),
+          wigosId: Value(wigosId),
+          searchedAt: now,
+        ),
+      );
+
+      final rows = await (select(catalogueSearchHistories)
+            ..orderBy([(t) => OrderingTerm.desc(t.searchedAt)]))
+          .get();
+      if (rows.length > catalogueSearchHistoryLimit) {
+        final excess = rows.sublist(catalogueSearchHistoryLimit);
+        for (final row in excess) {
+          await (delete(catalogueSearchHistories)..where((t) => t.id.equals(row.id))).go();
+        }
+      }
+    });
+  }
+
+  /// Removes all catalogue search history rows (#143).
+  Future<void> clearCatalogueSearchHistory() {
+    return delete(catalogueSearchHistories).go();
+  }
+
+  /// Recent catalogue search entries, newest first (#143).
+  Stream<List<CatalogueSearchHistory>> watchCatalogueSearchHistory() {
+    return (select(catalogueSearchHistories)
+          ..orderBy([(t) => OrderingTerm.desc(t.searchedAt)])
+          ..limit(catalogueSearchHistoryLimit))
+        .watch();
+  }
+
   /// Watches all platforms, optionally filtered by a search query.
   Stream<List<Platform>> watchPlatforms({String? query}) {
     final queryBuilder = select(platforms);
 
     if (query != null && query.isNotEmpty) {
       queryBuilder.where((tbl) {
-        final likeQuery = '%${query.toLowerCase()}%';
-        return tbl.ref.lower().like(likeQuery) | tbl.model.lower().like(likeQuery);
+        final likeQuery = '${query.toLowerCase()}%';
+        return tbl.ref.lower().like(likeQuery) |
+            tbl.model.lower().like(likeQuery) |
+            tbl.wigosId.lower().like(likeQuery);
       });
     }
 
@@ -478,6 +552,22 @@ class AppDatabase extends _$AppDatabase {
   /// Helper function to select a specific platform by its reference. Returns a list
   Future<List<Platform>> getPlatformByRef(String ref) {
     return (select(platforms)..where((p) => p.ref.equals(ref))).get();
+  }
+
+  /// Returns every passport/deployment stored for the physical platform
+  /// identified by [qrCode].
+  Future<List<Platform>> getPlatformsByQrCode(String qrCode) {
+    return (select(platforms)..where((p) => p.qrCode.equals(qrCode))).get();
+  }
+
+  /// Returns alerts associated with every passport/deployment belonging to
+  /// the physical platform identified by [qrCode].
+  Future<List<AlertEntity>> getAlertsByQrCode(String qrCode) {
+    final query = select(alerts).join([
+      innerJoin(platforms, platforms.ref.equalsExp(alerts.resource)),
+    ])..where(platforms.qrCode.equals(qrCode));
+
+    return query.map((row) => row.readTable(alerts)).get();
   }
 
   /// Watches a single platform by its reference, emitting updates on changes.

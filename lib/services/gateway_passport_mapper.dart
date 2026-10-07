@@ -82,6 +82,7 @@ abstract final class GatewayPassportMapper {
       name: Value(identification['name'] as String?),
       serial: Value(_normalizeToString(asset['serial'])),
       internalId: Value(_normalizeToString(identification['internalId'])),
+      qrCode: Value(_normalizeToString(identification['qrCode'])),
       gtsId: Value(_normalizeToString(identification['gtsId'])),
     );
   }
