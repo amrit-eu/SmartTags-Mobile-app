@@ -106,9 +106,19 @@ class Alert {
     required this.event,
     required this.severity,
     required this.status,
+    required this.description,
+    required this.service,
+    required this.previousSeverity,
+    required this.duplicateCount,
+    required this.alertCategory,
+    required this.country,
     this.value,
     this.createTime,
     this.lastReceiveTime,
+    this.url,
+    this.origin,
+    this.attributes,
+    this.lastNote,
   });
 
   /// The unique identifier of the alert (Notification Center / Alerta side).
@@ -134,4 +144,34 @@ class Alert {
 
   /// When the alert was last received, if known.
   final DateTime? lastReceiveTime;
+
+  /// The alert's event description.
+  final String description;
+
+  /// The alert's "more info" url, if any.
+  final String? url;
+
+  /// The alert's service origin.
+  final String service;
+
+  /// The alert's origin, if any.
+  final String? origin;
+
+  /// The alert's previous severity.
+  final AlertSeverity previousSeverity;
+
+  /// The alert's duplicate count.
+  final int duplicateCount;
+
+  /// The alert's category.
+  final String alertCategory;
+
+  /// The alert's country.
+  final String country;
+
+  /// The alert's last note, if any.
+  final String? lastNote;
+
+  /// The alert's free-form attributes, whose keys vary per alert source.
+  final Map<String, dynamic>? attributes;
 }

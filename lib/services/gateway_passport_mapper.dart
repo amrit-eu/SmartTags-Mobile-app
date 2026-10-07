@@ -96,11 +96,21 @@ abstract final class GatewayPassportMapper {
   }
 
   static AlertsCompanion? _alertCompanionFromJson(Map<String, dynamic> alert) {
-    final id = alert['id'] as String?;
-    final resource = alert['resource'] as String?;
-    final event = alert['event'] as String?;
-    final severity = alert['severity'] as String?;
-    final status = alert['status'] as String?;
+    final attributes = alert['attributes'] as Map<String, dynamic>?;
+
+    final id = _normalizeToString(alert['id']);
+    final resource = _normalizeToString(alert['resource']);
+    final event = _normalizeToString(alert['event']);
+    final severity = _normalizeToString(alert['severity']);
+    final status = _normalizeToString(alert['status']);
+    final eventDescription = _normalizeToString(alert['text']) ?? '';
+    final service = _normalizeToString(alert['service']) ?? '';
+    final previousSeverity = _normalizeToString(alert['previousSeverity']) ?? '';
+    final duplicateCount = _asInt(alert['duplicateCount']) ?? 0;
+    final alertCategory = _normalizeToString(attributes?['alert_category']) ?? '';
+    final country = _normalizeToString(attributes?['Country']) ?? '';
+    final url = _normalizeToString(attributes?['url']);
+
     if (id == null || resource == null || event == null || severity == null || status == null) {
       return null;
     }
@@ -111,8 +121,18 @@ abstract final class GatewayPassportMapper {
       severity: severity,
       status: status,
       value: Value(alert['value']?.toString()),
-      createTime: Value(_parseDateTime(alert['createTime'] as String?)),
-      lastReceiveTime: Value(_parseDateTime(alert['lastReceiveTime'] as String?)),
+      createTime: Value(_parseDateTime(_normalizeToString(alert['createTime']))),
+      lastReceiveTime: Value(_parseDateTime(_normalizeToString(alert['lastReceiveTime']))),
+      description: eventDescription,
+      service: service,
+      origin: Value(alert['origin']?.toString()),
+      previousSeverity: previousSeverity,
+      duplicateCount: duplicateCount,
+      alertCategory: alertCategory,
+      country: country,
+      url: Value(url),
+      lastNote: Value(alert['lastNote']?.toString()),
+      attributes: Value(attributes),
     );
   }
 
@@ -173,10 +193,18 @@ abstract final class GatewayPassportMapper {
   }
 
   /// The Gateway/OceanOPS platform id (`ptfId`) may come through as a number
-  /// or a string depending on the endpoint; normalise to a string.
+  /// or a string depending on the endpoint; normalise to a string. Lists
+  /// (e.g. an alert's `service`) are joined with ", ".
   static String? _normalizeToString(Object? value) {
     if (value is num) {
       return value.toString();
+    }
+    if (value is List) {
+      final parts = value
+          .map(_normalizeToString)
+          .whereType<String>()
+          .toList();
+      return parts.isEmpty ? null : parts.join(', ');
     }
     if (value is String && value.isNotEmpty) {
       return value;
