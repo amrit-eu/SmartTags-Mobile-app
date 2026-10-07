@@ -77,8 +77,23 @@ class AlertDetailsScreen extends ConsumerWidget {
     // Permissions: the alert resource is the platform ref.
     final platform = ref.watch(platformByRefStreamProvider(alert.resource)).value?.toDomain();
     final userPermissions = ref.watch(permissionProvider);
+    final programId = platform?.program?.id;
+    final hasPlatform = platform != null;
     final canAcknowledge =
-        platform != null && userPermissions.canAck(programId: platform.program?.id) && alert.status == AlertStatus.open;
+        hasPlatform && userPermissions.canAckAlert(programId: programId) && alert.status == AlertStatus.open;
+    final canUnacknowledge =
+        hasPlatform &&
+        userPermissions.canUnackAlert(programId: programId) &&
+        alert.status == AlertStatus.acknowledged;
+    final canClose =
+        hasPlatform &&
+        userPermissions.canCloseAlert(programId: programId) &&
+        (alert.status == AlertStatus.open || alert.status == AlertStatus.acknowledged);
+    final canAddNote = hasPlatform && userPermissions.canAddANoteToAlert(programId: programId);
+    final actionCount = [canAcknowledge, canUnacknowledge, canClose, canAddNote].where((c) => c).length;
+
+    final ackColor = AlertStatusPalette.acknowledged.color;
+    final closeColor = AlertStatusPalette.closed.color;
 
     final statusStyle = AlertStatusPalette.forStatus(alert.status);
     final severityStyle = AlertSeverityPalette.forSeverity(alert.severity);
@@ -106,19 +121,61 @@ class AlertDetailsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: TopNavigation(title: const Text('Alert Details'), leading: const BackButton()),
-      floatingActionButton: canAcknowledge
-          ? FloatingActionButton.extended(
-              backgroundColor: AlertStatusPalette.acknowledged.color,
-              foregroundColor: Colors.black,
-              onPressed: () {
-                // TODO(ylubac): acknowledge the alert (no action for now).
-              },
-              icon: Icon(AlertStatusPalette.acknowledged.actionIcon),
-              label: const Text('Acknowledge'),
-            )
-          : null,
+      floatingActionButton: actionCount == 0
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              spacing: 12,
+              children: [
+                if (canAddNote)
+                  FloatingActionButton.extended(
+                    heroTag: 'alert-add-note',
+                    backgroundColor: Colors.grey.shade600,
+                    foregroundColor: Colors.white,
+                    onPressed: () {
+                      // TODO(ylubac): add a note to the alert (no action for now).
+                    },
+                    icon: const Icon(Icons.message_outlined),
+                    label: const Text('Add a note'),
+                  ),
+                if (canClose)
+                  FloatingActionButton.extended(
+                    heroTag: 'alert-close',
+                    backgroundColor: closeColor,
+                    foregroundColor: Colors.white,
+                    onPressed: () {
+                      // TODO(ylubac): close the alert (no action for now).
+                    },
+                    icon: Icon(AlertStatusPalette.closed.actionIcon),
+                    label: const Text('Close'),
+                  ),
+                if (canUnacknowledge)
+                  FloatingActionButton.extended(
+                    heroTag: 'alert-unack',
+                    backgroundColor: ackColor,
+                    foregroundColor: Colors.black,
+                    onPressed: () {
+                      // TODO(ylubac): unacknowledge the alert (no action for now).
+                    },
+                    icon: const Icon(Icons.undo),
+                    label: const Text('Unacknowledge'),
+                  ),
+                if (canAcknowledge)
+                  FloatingActionButton.extended(
+                    heroTag: 'alert-ack',
+                    backgroundColor: ackColor,
+                    foregroundColor: Colors.black,
+                    onPressed: () {
+                      // TODO(ylubac): acknowledge the alert (no action for now).
+                    },
+                    icon: Icon(AlertStatusPalette.acknowledged.actionIcon),
+                    label: const Text('Acknowledge'),
+                  ),
+              ],
+            ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, canAcknowledge ? 88 : 16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, actionCount == 0 ? 16 : 16 + actionCount * 68.0 + 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
