@@ -193,10 +193,18 @@ abstract final class GatewayPassportMapper {
   }
 
   /// The Gateway/OceanOPS platform id (`ptfId`) may come through as a number
-  /// or a string depending on the endpoint; normalise to a string.
+  /// or a string depending on the endpoint; normalise to a string. Lists
+  /// (e.g. an alert's `service`) are joined with ", ".
   static String? _normalizeToString(Object? value) {
     if (value is num) {
       return value.toString();
+    }
+    if (value is List) {
+      final parts = value
+          .map(_normalizeToString)
+          .whereType<String>()
+          .toList();
+      return parts.isEmpty ? null : parts.join(', ');
     }
     if (value is String && value.isNotEmpty) {
       return value;

@@ -71,7 +71,6 @@ class AlertDetailsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final statusStyle = AlertStatusPalette.forStatus(alert.status);
     final severityStyle = AlertSeverityPalette.forSeverity(alert.severity);
-    final reported = alert.lastReceiveTime ?? alert.createTime;
     final attributes = alert.attributes;
     final guidance = _attributeText(attributes, 'guidance');
     final url = alert.url;
@@ -79,13 +78,15 @@ class AlertDetailsScreen extends StatelessWidget {
     final lastNote = alert.lastNote;
     final hasLastNote = lastNote != null && lastNote.trim().isNotEmpty;
     final otherInfoEntries = <MapEntry<String, String>>[
+      MapEntry("Alert's id", _dash(alert.id)),
       MapEntry('Service', _dash(alert.service)),
       if (alert.origin != null && alert.origin!.trim().isNotEmpty) MapEntry('Origin', _dash(alert.origin)),
       MapEntry('Category', _dash(alert.alertCategory)),
       if (alert.previousSeverity != AlertSeverity.unknown)
         MapEntry('Previous severity', AlertSeverityPalette.forSeverity(alert.previousSeverity).label),
       if (alert.duplicateCount > 0) MapEntry('Duplicate count', '${alert.duplicateCount}'),
-      MapEntry('Reported', _date(reported)),
+      MapEntry('Last received time', _date(alert.lastReceiveTime)),
+      MapEntry('Alert creation time', _date(alert.createTime)),
       if (attributes != null)
         for (final entry in attributes.entries)
           if (entry.value != null && !_attributesShownElsewhere.contains(entry.key.toLowerCase()))
