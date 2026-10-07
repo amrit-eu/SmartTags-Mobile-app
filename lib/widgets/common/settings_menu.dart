@@ -28,14 +28,15 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
     final sliderValue = (customTextScale ?? systemTextScale)
         .clamp(AppTextScale.min, AppTextScale.max);
 
-    Widget _fullWidthMenuItem(Widget child) => SizedBox(
-        width: MediaQuery.of(context).size.width, child: child
+    Widget menuItem(Widget child) => ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 32),
+        child: child
     );
 
     return MenuAnchor(
       childFocusNode: _buttonFocusNode,
       menuChildren: <Widget>[
-        _fullWidthMenuItem(SwitchListTile(
+        menuItem(SwitchListTile(
           title: const Text('Theme Mode: Use System Default'),
           value: ref.watch(themeProvider) == ThemeMode.system,
           onChanged: (bool? checked) {
@@ -47,7 +48,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
           },
           secondary: const ExcludeSemantics(child: Icon(Icons.light_mode)),
         )),
-        _fullWidthMenuItem(SwitchListTile(
+        menuItem(SwitchListTile(
           title: const Text('Dark Mode'),
           secondary: const ExcludeSemantics(child: Icon(Icons.dark_mode)),
           value: Theme.of(context).brightness == Brightness.dark,
@@ -61,7 +62,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                   }
                 },
         )),
-        _fullWidthMenuItem(SwitchListTile(
+        menuItem(SwitchListTile(
           title: const Text('Text Size: Use System Default'),
           value: textFollowSystem,
           onChanged: (bool? checked) {
@@ -73,7 +74,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
           },
           secondary: const Icon(Icons.format_size),
         )),
-        _fullWidthMenuItem(Row(
+        menuItem(Row(
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 16),
