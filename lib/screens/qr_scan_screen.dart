@@ -21,6 +21,7 @@ class QrScanScreen extends ConsumerStatefulWidget {
 
 class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
+  final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _isProcessing = false;
   String? _lastInvalidCode;
 
@@ -36,12 +37,13 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     for (final barcode in capture.barcodes) {
       final code = barcode.rawValue;
       if (code == _lastInvalidCode) {
-        return;
+        continue;
       }
       if (code != null) {
         final reference = qrCodeReferenceFromUrl(code);
         if (reference != null) {
-          _isProcessing = true;
+          _messengerKey.currentState?.clearSnackBars();
+          setState(() => _isProcessing = true);
           unawaited(_handleValidCode(reference));
         } else {
           setState(() => _lastInvalidCode = code);
@@ -54,7 +56,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
   Future<void> _handleValidCode(String reference) async {
     if (!mounted) return;
-    setState(() {});
     try {
       unawaited(ref.read(qrPassportLookupProvider.notifier).lookup(reference));
       widget.onValidCode?.call();
@@ -68,62 +69,66 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = _messengerKey.currentState;
+    messenger?.clearSnackBars();
+    messenger?.showSnackBar(
       SnackBar(
         content: Text(message),
-        action: SnackBarAction(label: 'Scan again', onPressed: () => setState(() => _lastInvalidCode = null)),
+        persist: true,
+        dismissDirection: DismissDirection.none,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: TopNavigation(
-        title: const Text('Scan QR Code'),
-        actions: [
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: _scannerController,
-              builder: (context, state, child) {
-                return Icon(
-                  state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
-                );
-              },
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: TopNavigation(
+          title: const Text('Scan QR Code'),
+          actions: [
+            IconButton(
+              icon: ValueListenableBuilder(
+                valueListenable: _scannerController,
+                builder: (context, state, child) {
+                  return Icon(
+                    state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
+                  );
+                },
+              ),
+              onPressed: _scannerController.toggleTorch,
             ),
-            onPressed: _scannerController.toggleTorch,
-          ),
-          IconButton(
-            icon: const Icon(Icons.cameraswitch),
-            onPressed: _scannerController.switchCamera,
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onBarcodeDetected,
-          ),
-          // Overlay with transparent scanning area
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _QrScannerOverlay(
-                borderColor: Theme.of(context).colorScheme.primary,
+            IconButton(
+              icon: const Icon(Icons.cameraswitch),
+              onPressed: _scannerController.switchCamera,
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            MobileScanner(
+              controller: _scannerController,
+              onDetect: _onBarcodeDetected,
+            ),
+            // Overlay with transparent scanning area
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _QrScannerOverlay(borderColor: Theme.of(context).colorScheme.primary),
               ),
             ),
-          ),
-          // Scanning indicator
-          if (_isProcessing)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black54,
-                child: Center(
-                  child: CircularProgressIndicator(),
+            // Scanning indicator
+            if (_isProcessing)
+              const Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black54,
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -57,9 +57,21 @@ void main() {
           'paginationEnabled': false,
           'filters': {'qrCode': 'Def'},
         });
-        return Future.value(http.Response(jsonEncode({'items': [
-          {'reference': 'DEP-3', 'passport': {'identification': {'qrCode': 'Def'}}},
-        ]}), 200));
+        return Future.value(
+          http.Response(
+            jsonEncode({
+              'items': [
+                {
+                  'reference': 'DEP-3',
+                  'passport': {
+                    'identification': {'qrCode': 'Def'},
+                  },
+                },
+              ],
+            }),
+            200,
+          ),
+        );
       }),
       authService: AuthService(authDao: db.authDao),
     );
@@ -143,7 +155,7 @@ void main() {
     await db.close();
   });
 
-  testWidgets('invalid tracking URL stays on scanner with scan again action', (tester) async {
+  testWidgets('invalid URL format error stays visible while the scanner is open', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(
       ProviderScope(
@@ -155,8 +167,69 @@ void main() {
     scan(tester, 'https://www.ocean-ops.org/tracking/?code=A&code=B');
     await tester.pump();
     expect(find.text('Invalid QR Code format'), findsOneWidget);
-    expect(find.text('Scan again'), findsOneWidget);
+    expect(find.byType(SnackBar), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Invalid QR Code format'), findsOneWidget);
+    scan(tester, 'https://www.ocean-ops.org/tracking/?code=A&code=B');
+    await tester.pump();
+    expect(find.text('Invalid QR Code format'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    await db.close();
+  });
+
+  testWidgets('invalid scan message stays on scanner and clears for a valid scan', (tester) async {
+    final db = AppDatabase.executor(conn.inMemoryConnection());
+    final gateway = GatewayRepository(
+      client: MockClient((_) async => http.Response('{"items":[]}', 200)),
+      authService: AuthService(authDao: db.authDao),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          gatewayRepositoryProvider.overrideWithValue(gateway),
+          checkConnectionProvider.overrideWith(_Online.new),
+          initialSyncProvider.overrideWith(() => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded)),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+        ],
+        child: const MyApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.tap(find.byIcon(Icons.qr_code_scanner_outlined));
+    await tester.pump();
+    scan(tester, 'invalid');
+    await tester.pump();
+    expect(find.text('Invalid QR Code format'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.map_outlined));
+    await tester.pump();
+    expect(find.text('Invalid QR Code format'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.qr_code_scanner_outlined));
+    await tester.pump();
+    scan(tester, 'invalid');
+    await tester.pump();
+    expect(find.text('Invalid QR Code format'), findsOneWidget);
+
+    final scanner = tester.widget<MobileScanner>(find.byType(MobileScanner));
+    scanner.onDetect!(
+      const BarcodeCapture(
+        barcodes: [
+          Barcode(rawValue: 'invalid', format: BarcodeFormat.qrCode),
+          Barcode(rawValue: 'https://www.ocean-ops.org/tracking/?code=AbC', format: BarcodeFormat.qrCode),
+        ],
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Results for scanned QR code'), findsOneWidget);
+    expect(find.text('Invalid QR Code format'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
     await db.close();
   });
 }
