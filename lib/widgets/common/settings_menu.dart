@@ -24,7 +24,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
   Widget build(BuildContext context) {
     final customTextScale = ref.watch(textScaleProvider);
     final textFollowSystem = customTextScale == null;
-    final systemTextScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final systemTextScale = MediaQuery.textScalerOf(context).scale(1);
     final sliderValue = (customTextScale ?? systemTextScale)
         .clamp(AppTextScale.min, AppTextScale.max);
 

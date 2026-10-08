@@ -37,7 +37,7 @@ class AppTextScale extends Notifier<double?> {
   /// Minimum text scale factor
   static const double min = 0.8;
   /// Maximum text scale factor
-  static const double max = 2.0;
+  static const double max = 2;
 
   /// Load initial state. Currently statically initialised.
   /// Change to using AsyncNotifier once we load from a DB or similar.
