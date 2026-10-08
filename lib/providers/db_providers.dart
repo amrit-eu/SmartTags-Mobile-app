@@ -195,6 +195,17 @@ final StreamProviderFamily<List<domain.Alert>, String> alertsByResourceStreamPro
       return db.watchAlertsByResource(resource).map((rows) => rows.map((row) => row.toDomain()).toList());
     });
 
+/// Watches a single alert by its id, emitting updates on changes (e.g. when an
+/// action or note is applied locally).
+final StreamProviderFamily<domain.Alert?, String> alertByIdStreamProvider =
+    StreamProvider.family<domain.Alert?, String>((
+      ref,
+      id,
+    ) {
+      final db = ref.watch(databaseProvider);
+      return db.watchAlertById(id).map((row) => row?.toDomain());
+    });
+
 /// Open/acknowledged alert counts for a single resource.
 typedef AlertCounts = ({int open, int acknowledged});
 

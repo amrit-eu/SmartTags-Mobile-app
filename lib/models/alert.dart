@@ -40,7 +40,17 @@ enum AlertAction {
   unack,
 
   /// Close the alert.
-  close,
+  close;
+
+  /// The status stored locally for an alert once this action has been applied
+  /// (read back by [AlertStatus.fromDb]). Alerta returns an unacknowledged
+  /// alert to `open`.
+  String get resultingStatus => switch (this) {
+    open => 'open',
+    ack => 'ack',
+    unack => 'open',
+    close => 'closed',
+  };
 }
 
 /// Severity of an alert (Notification Center / Alerta).

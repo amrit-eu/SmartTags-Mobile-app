@@ -6,17 +6,26 @@ import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
+import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
 
 /// Exception thrown when a Gateway API call fails (non-200, network, or auth error).
 class GatewayException implements Exception {
-  /// Creates a [GatewayException] with the given [message].
-  const GatewayException(this.message);
+  /// Creates a [GatewayException] with the given [message] and, when the
+  /// failure came from an HTTP response, its [statusCode].
+  const GatewayException(this.message, {this.statusCode});
 
   /// The error message describing the Gateway failure.
   final String message;
+
+  /// The HTTP status code of the response, if the failure came from one.
+  final int? statusCode;
+
+  /// Whether the server rejected the request itself (4xx): replaying it
+  /// unchanged can never succeed.
+  bool get isClientError => statusCode != null && statusCode! >= 400 && statusCode! < 500;
 
   @override
   String toString() => message;
@@ -198,11 +207,29 @@ class GatewayRepository {
         throw const GatewayAuthException('Unauthorized or session expired. Please log in again.');
       }
       if (!_isSuccess(response.statusCode)) {
-        throw GatewayException('Failed to $description (Status ${response.statusCode})');
+        throw GatewayException(
+          'Failed to $description (Status ${response.statusCode})',
+          statusCode: response.statusCode,
+        );
       }
     } on http.ClientException catch (e) {
       throw GatewayException('Network error: ${e.message}');
     }
+  }
+
+  /// Replays a queued alert operation: [payloadJson] is the body stored when it
+  /// was queued (`{"alertId", "action"}` or `{"alertId", "text"}`).
+  Future<void> submitAlertOperationJson(PendingOperationKind kind, String payloadJson) {
+    final payload = json.decode(payloadJson) as Map<String, dynamic>;
+    final alertId = payload['alertId'] as String;
+    if (kind == PendingOperationKind.alertNote) {
+      return addAlertNote(alertId, payload['text'] as String);
+    }
+    final action = kind.alertAction;
+    if (action == null) {
+      throw ArgumentError.value(kind, 'kind', 'Not an alert operation');
+    }
+    return actOnAlert(alertId, action);
   }
 
   /// Builds the Gateway JSON body from [request] then sends it.

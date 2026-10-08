@@ -508,9 +508,7 @@ class AppDatabase extends _$AppDatabase {
         ),
       );
 
-      final rows = await (select(catalogueSearchHistories)
-            ..orderBy([(t) => OrderingTerm.desc(t.searchedAt)]))
-          .get();
+      final rows = await (select(catalogueSearchHistories)..orderBy([(t) => OrderingTerm.desc(t.searchedAt)])).get();
       if (rows.length > catalogueSearchHistoryLimit) {
         final excess = rows.sublist(catalogueSearchHistoryLimit);
         for (final row in excess) {
@@ -579,6 +577,22 @@ class AppDatabase extends _$AppDatabase {
   /// emitting updates on changes.
   Stream<List<AlertEntity>> watchAlertsByResource(String resource) {
     return (select(alerts)..where((a) => a.resource.equals(resource))).watch();
+  }
+
+  /// Watches a single alert by its id, emitting updates on changes.
+  Stream<AlertEntity?> watchAlertById(String id) {
+    return (select(alerts)..where((a) => a.id.equals(id))).watchSingleOrNull();
+  }
+
+  /// Sets the local `status` of the alert [id] (e.g. after an action was
+  /// applied or queued while offline).
+  Future<void> updateAlertStatus(String id, String status) {
+    return (update(alerts)..where((a) => a.id.equals(id))).write(AlertsCompanion(status: Value(status)));
+  }
+
+  /// Sets the local `lastNote` of the alert [id].
+  Future<void> updateAlertLastNote(String id, String? lastNote) {
+    return (update(alerts)..where((a) => a.id.equals(id))).write(AlertsCompanion(lastNote: Value(lastNote)));
   }
 
   /// Watches every alert across all resources in a single subscription.

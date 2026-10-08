@@ -8,6 +8,7 @@ import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -75,6 +76,10 @@ class AlertDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    // Observe the stored alert so status/note changes (local or synced) show up
+    // live; fall back to the one we were opened with.
+    final alert = ref.watch(alertByIdStreamProvider(this.alert.id)).value ?? this.alert;
 
     // Permissions: the alert resource is the platform ref.
     final platform = ref.watch(platformByRefStreamProvider(alert.resource)).value?.toDomain();
@@ -324,13 +329,13 @@ class AlertDetailsScreen extends ConsumerWidget {
     );
   }
 
-  /// Applies [action] to [alert] through the Gateway, then leaves the screen
-  /// and schedules a delayed platforms refresh to pick up the change.
+  /// Applies [action] to [alert]: sent now when online, otherwise queued and
+  /// applied locally (see [PassportEventQueueNotifier.enqueueOrSendAlertAction]).
   Future<void> _act(BuildContext context, WidgetRef ref, AlertAction action) {
     return _submit(
       context,
       ref,
-      send: (repository) => repository.actOnAlert(alert.id, action),
+      send: (queue) => queue.enqueueOrSendAlertAction(alert: alert, action: action),
       successMessage: switch (action) {
         AlertAction.ack => 'Alert acknowledged',
         AlertAction.unack => 'Alert unacknowledged',
@@ -340,7 +345,8 @@ class AlertDetailsScreen extends ConsumerWidget {
     );
   }
 
-  /// Asks the user for a note, then adds it to [alert] through the Gateway.
+  /// Asks the user for a note, then adds it to [alert] (sent now when online,
+  /// otherwise queued and applied locally).
   Future<void> _addNote(BuildContext context, WidgetRef ref) async {
     final text = await showDialog<String>(context: context, builder: (_) => const _AddNoteDialog());
     if (text == null || text.trim().isEmpty || !context.mounted) {
@@ -349,7 +355,7 @@ class AlertDetailsScreen extends ConsumerWidget {
     await _submit(
       context,
       ref,
-      send: (repository) => repository.addAlertNote(alert.id, text.trim()),
+      send: (queue) => queue.enqueueOrSendAlertNote(alert: alert, text: text.trim()),
       successMessage: 'Note added',
     );
   }
@@ -357,22 +363,29 @@ class AlertDetailsScreen extends ConsumerWidget {
   Future<void> _submit(
     BuildContext context,
     WidgetRef ref, {
-    required Future<void> Function(GatewayRepository repository) send,
+    required Future<PassportEventSubmitOutcome> Function(PassportEventQueueNotifier queue) send,
     required String successMessage,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
     final refresh = ref.read(platformsRefreshProvider.notifier);
+    final PassportEventSubmitOutcome outcome;
     try {
-      await send(ref.read(gatewayRepositoryProvider));
+      outcome = await send(ref.read(passportEventQueueProvider.notifier));
     } on GatewayException catch (e) {
+      // Rejected by the server (e.g. 403/404): nothing queued, nothing changed locally.
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
       return;
     }
-    messenger.showSnackBar(SnackBar(content: Text(successMessage)));
-    navigator.pop();
-    // Fire-and-forget: give the back-end time to process before re-fetching.
-    refresh.refreshAfterDelay().ignore();
+    if (outcome == PassportEventSubmitOutcome.sent) {
+      // Fire-and-forget: give the back-end time to process before re-fetching.
+      refresh.refreshAfterDelay().ignore();
+    }
+    final message = switch (outcome) {
+      PassportEventSubmitOutcome.sent => successMessage,
+      PassportEventSubmitOutcome.queuedAuthRequired => '$successMessage. Saved locally — log in to sync.',
+      PassportEventSubmitOutcome.queued => '$successMessage. Saved locally and queued for sync.',
+    };
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Turns a raw attribute key (e.g. `wigos_id`) into a human-readable label.
