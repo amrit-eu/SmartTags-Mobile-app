@@ -94,26 +94,26 @@ class PlatformCard extends ConsumerWidget {
               style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
             ),
             const SizedBox(height: 4),
-            Row(
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Flexible(
-                  child: Text(
-                    _dash(platform.wigosId),
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Icon(Icons.circle, size: 4, color: colorScheme.onSurfaceVariant),
-                ),
-                Flexible(
-                  child: Text(
-                    _dash(platform.observingNetwork ?? platform.network),
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                  ),
-                ),
+                    Flexible(
+                      child: Text(
+                        _dash(platform.wigosId),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(Icons.circle, size: 4, color: colorScheme.onSurfaceVariant),
+                    ),
+                    Text(
+                      _dash(platform.observingNetwork ?? platform.network),
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                    ),
               ],
             ),
             if (openCount > 0 || acknowledgedCount > 0) ...[

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/catalogue_search_history_filter.dart';
@@ -210,15 +211,14 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
           );
         }
         final customTextScale = ref.watch(textScaleProvider);
-        return GridView.builder(
+        return MasonryGridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          gridDelegate: SliverSimpleGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 400 * (customTextScale ?? 1 ),
-            mainAxisExtent: 150 * (customTextScale ?? 1 ),
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
           ),
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
           itemCount: platforms.length,
           itemBuilder: (context, index) {
             final platform = platforms[index];
