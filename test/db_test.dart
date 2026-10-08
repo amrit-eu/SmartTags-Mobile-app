@@ -105,6 +105,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           id: 'alert-2',
@@ -112,6 +118,12 @@ void main() {
           event: 'NoPosition',
           severity: 'major',
           status: 'open',
+          description: 'No position',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           id: 'alert-other',
@@ -119,6 +131,12 @@ void main() {
           event: 'Test',
           severity: 'minor',
           status: 'open',
+          description: 'Test alert',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
       ]);
 
@@ -288,6 +306,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           // No matching platform in the local DB (e.g. outside the fetched
@@ -297,6 +321,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
       ]);
 

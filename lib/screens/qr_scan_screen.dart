@@ -3,15 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:smart_tags/database/mappers/platform_mapper.dart';
-import 'package:smart_tags/providers/db_providers.dart';
-import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/helpers/qr_code_reference.dart';
+import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that provides QR code scanning functionality.
 class QrScanScreen extends ConsumerStatefulWidget {
   /// Creates a [QrScanScreen] widget.
-  const QrScanScreen({super.key});
+  const QrScanScreen({super.key, this.onValidCode});
+
+  /// Selects the catalogue tab after a valid QR scan.
+  final VoidCallback? onValidCode;
 
   @override
   ConsumerState<QrScanScreen> createState() => _QrScanScreenState();
@@ -19,8 +21,9 @@ class QrScanScreen extends ConsumerStatefulWidget {
 
 class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController();
+  final GlobalKey<ScaffoldMessengerState> _messengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _isProcessing = false;
-  String? _lastFailedReference;
+  String? _lastInvalidCode;
 
   @override
   void dispose() {
@@ -33,15 +36,17 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
     for (final barcode in capture.barcodes) {
       final code = barcode.rawValue;
-      if (code == _lastFailedReference) {
-        return;
+      if (code == _lastInvalidCode) {
+        continue;
       }
       if (code != null) {
-        final reference = _extractReference(code);
-        if (reference != null) {
-          unawaited(_handleValidCode(reference));
+        final qrCode = qrCodeReferenceFromUrl(code);
+        if (qrCode != null) {
+          _messengerKey.currentState?.clearSnackBars();
+          setState(() => _isProcessing = true);
+          unawaited(_handleValidCode(qrCode));
         } else {
-          setState(() => _lastFailedReference = code);
+          setState(() => _lastInvalidCode = code);
           _showMessage('Invalid QR Code format');
         }
         break; // Process only the first barcode
@@ -49,107 +54,81 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     }
   }
 
-  /// Extracts reference from OceanTags URL.
-  /// Example: `https://www.ocean-ops.org/oceantags/RFHCZ3S` → `RFHCZ3S`
-  String? _extractReference(String url) {
-    const prefix = 'https://www.ocean-ops.org/oceantags/';
-    if (url.startsWith(prefix)) {
-      return url.substring(prefix.length);
-    }
-    return null;
-  }
-
-  Future<void> _handleValidCode(String reference) async {
+  Future<void> _handleValidCode(String qrCode) async {
     if (!mounted) return;
-    if (reference == _lastFailedReference) {
-      return;
-    }
-    setState(() => _isProcessing = true);
-    await _scannerController.stop();
     try {
-      final platforms = await ref.read(platformByRefProvider(reference).future);
-      if (platforms.isEmpty) {
-        setState(() => _lastFailedReference = reference);
-        _showMessage('No platforms found');
-      } else {
-        final platform = platforms.first;
-        if (!mounted) return;
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => PlatformDetailScreen(platformRef: platform.toDomain().platformRef),
-          ),
-        );
-      }
-    } catch (e, st) {
-      setState(() => _lastFailedReference = reference);
-      _showMessage('Error fetching platform');
-      Error.throwWithStackTrace(e, st);
-    } finally {
+      unawaited(ref.read(qrPassportLookupProvider.notifier).lookup(qrCode));
+      widget.onValidCode?.call();
+      await _scannerController.stop();
+    } on Object {
       if (mounted) {
-        // Only restart scanner if widget is still active
         setState(() => _isProcessing = false);
-        await _scannerController.start();
+        _showMessage('Unable to start scanner lookup');
       }
     }
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = _messengerKey.currentState;
+    messenger?.clearSnackBars();
+    messenger?.showSnackBar(
       SnackBar(
         content: Text(message),
-        action: SnackBarAction(label: 'Retry', onPressed: () => setState(() => _lastFailedReference = null)),
+        persist: true,
+        dismissDirection: DismissDirection.none,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: TopNavigation(
-        title: const Text('Scan QR Code'),
-        actions: [
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: _scannerController,
-              builder: (context, state, child) {
-                return Icon(
-                  state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
-                );
-              },
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: TopNavigation(
+          title: const Text('Scan QR Code'),
+          actions: [
+            IconButton(
+              icon: ValueListenableBuilder(
+                valueListenable: _scannerController,
+                builder: (context, state, child) {
+                  return Icon(
+                    state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
+                  );
+                },
+              ),
+              onPressed: _scannerController.toggleTorch,
             ),
-            onPressed: _scannerController.toggleTorch,
-          ),
-          IconButton(
-            icon: const Icon(Icons.cameraswitch),
-            onPressed: _scannerController.switchCamera,
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onBarcodeDetected,
-          ),
-          // Overlay with transparent scanning area
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _QrScannerOverlay(
-                borderColor: Theme.of(context).colorScheme.primary,
+            IconButton(
+              icon: const Icon(Icons.cameraswitch),
+              onPressed: _scannerController.switchCamera,
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            MobileScanner(
+              controller: _scannerController,
+              onDetect: _onBarcodeDetected,
+            ),
+            // Overlay with transparent scanning area
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _QrScannerOverlay(borderColor: Theme.of(context).colorScheme.primary),
               ),
             ),
-          ),
-          // Scanning indicator
-          if (_isProcessing)
-            const Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black54,
-                child: Center(
-                  child: CircularProgressIndicator(),
+            // Scanning indicator
+            if (_isProcessing)
+              const Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black54,
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

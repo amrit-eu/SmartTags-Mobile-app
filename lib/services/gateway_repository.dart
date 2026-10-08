@@ -105,7 +105,11 @@ class GatewayRepository {
       }
 
       final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      final items = (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
+      final rawItems = jsonResponse['items'];
+      if (rawItems is! List<dynamic> || rawItems.any((item) => item is! Map<String, dynamic>)) {
+        throw const FormatException('Invalid passport search response');
+      }
+      final items = rawItems.cast<Map<String, dynamic>>();
       final result = GatewayPassportMapper.fromEnrichedPassportItems(items);
 
       if (kDebugMode) {

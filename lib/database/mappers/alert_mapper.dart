@@ -14,6 +14,16 @@ extension AlertMapper on AlertEntity {
       value: value,
       createTime: createTime,
       lastReceiveTime: lastReceiveTime,
+      description: description,
+      url: url,
+      service: service,
+      origin: origin,
+      previousSeverity: domain.AlertSeverity.fromDb(previousSeverity),
+      duplicateCount: duplicateCount,
+      alertCategory: alertCategory,
+      country: country,
+      lastNote: lastNote,
+      attributes: attributes,
     );
   }
 }

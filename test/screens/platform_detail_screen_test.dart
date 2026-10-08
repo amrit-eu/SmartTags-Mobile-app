@@ -69,6 +69,12 @@ Alert testAlert(String id, AlertStatus status) => Alert(
   event: 'event',
   severity: AlertSeverity.major,
   status: status,
+  description: 'description',
+  service: 'service',
+  previousSeverity: AlertSeverity.minor,
+  duplicateCount: 0,
+  alertCategory: 'category',
+  country: 'country',
 );
 
 /// Builds a [ProviderScope] with [platformByRefStreamProvider] and

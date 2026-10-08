@@ -129,8 +129,54 @@ class Alerts extends Table {
   /// When the alert was last received
   DateTimeColumn get lastReceiveTime => dateTime().nullable()();
 
+  /// Alerts's event description
+  TextColumn get description => text()();
+
+  /// Alerts's "more info" url
+  TextColumn get url => text().nullable()();
+
+  /// Alerts's service origin
+  TextColumn get service => text()();
+
+  /// Alerts's service origin
+  TextColumn get origin => text().nullable()();
+
+  /// Alerts's previous severity
+  TextColumn get previousSeverity => text()();
+
+  /// Alerts's duplicate count
+  IntColumn get duplicateCount => integer()();
+
+  /// Alerts's category
+  TextColumn get alertCategory => text()();
+
+  /// Alerts's category
+  TextColumn get country => text()();
+
+  /// Alerts last note
+  TextColumn get lastNote => text().nullable()();
+
+  /// Alert's free-form attributes (e.g. `Country`, `wigos_id`, `url`), whose
+  /// keys vary per alert source. Stored as raw JSON rather than dedicated
+  /// columns since the shape isn't fixed.
+  TextColumn get attributes => text().nullable().map(
+    NullAwareTypeConverter.wrap(
+      TypeConverter.json2<Map<String, dynamic>>(fromJson: (json) => json! as Map<String, dynamic>),
+    ),
+  )();
+
   @override
   Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('AlertNoteEntity')
+/// Table definition for alerts linked to platform
+class AlertsNote extends Table {
+  /// the alert id (unique identifier on Notification Center / Alerta side)
+  TextColumn get id => text()();
+
+  /// Note's content text
+  TextColumn get note => text()();
 }
 
 @DataClassName('UserEntity')
