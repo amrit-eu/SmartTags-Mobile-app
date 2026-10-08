@@ -7,6 +7,7 @@ import 'package:smart_tags/helpers/catalogue_search_history_filter.dart';
 import 'package:smart_tags/providers/catalogue_search_history_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -208,13 +209,13 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
             ],
           );
         }
-
+        final customTextScale = ref.watch(textScaleProvider);
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 400,
-            mainAxisExtent: 150,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 400 * (customTextScale ?? 1 ),
+            mainAxisExtent: 150 * (customTextScale ?? 1 ),
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
