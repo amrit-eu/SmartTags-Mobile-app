@@ -26,7 +26,7 @@ void main() {
 
     // Verify menu has opened
     expect(find.text('Dark Mode'), findsOneWidget);
-    expect(find.text('Use system default'), findsOneWidget);
+    expect(find.text('Theme Mode: Use System Default'), findsOneWidget);
   });
 
   testWidgets('System theme is enabled by default', (tester) async {
@@ -45,8 +45,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
 
-    // Verify system theme checkbox is ticked
-    expect(tester.widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, 'Use system default')).value, true);
+    // Verify system theme switch is enabled
+    expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default')).value, true);
     // Verify dark mode switch is off and disabled if system theme is in use
     expect(tester.widget<SwitchListTile>(find.widgetWithIcon(SwitchListTile, Icons.dark_mode)).onChanged, null);
     expect(tester.widget<SwitchListTile>(find.widgetWithIcon(SwitchListTile, Icons.dark_mode)).value, false);
@@ -70,12 +70,12 @@ void main() {
         ),
       ),
     );
-    final systemDefaultCheckbox = find.widgetWithText(CheckboxListTile, 'Use system default');
+    final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default');
     // Tap the ellipsis icon button and wait for menu to open
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
-    // Tap checkbox to disable
-    await tester.tap(systemDefaultCheckbox);
+    // Tap switch to disable
+    await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
 
     // Verify dark mode is turned off
@@ -105,12 +105,12 @@ void main() {
         ),
       ),
     );
-    final systemDefaultCheckbox = find.widgetWithText(CheckboxListTile, 'Use system default');
+    final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default');
     // Tap the ellipsis icon button and wait for menu to open
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
-    // Tap checkbox to disable
-    await tester.tap(systemDefaultCheckbox);
+    // Tap switch to disable
+    await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
     // Turn on dark mode
     await tester.tap(find.widgetWithText(SwitchListTile, 'Dark Mode'));
