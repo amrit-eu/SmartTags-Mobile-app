@@ -383,6 +383,7 @@ void main() {
       expect(rows.single.platformRef, 'PLT-001');
       expect(jsonDecode(rows.single.payloadJson), {'alertId': 'alert-1', 'action': 'ack'});
       expect((await storedAlert()).status, 'ack');
+      expect((await storedAlert()).severity, 'warning');
     });
 
     test('online: sends the action, queues nothing and updates the status locally', () async {
@@ -397,6 +398,7 @@ void main() {
       expect(repository.sent.single.kind, PendingOperationKind.alertClose);
       expect(await db.getPendingOperationsOrdered(), isEmpty);
       expect((await storedAlert()).status, 'closed');
+      expect((await storedAlert()).severity, 'normal');
     });
 
     test('online with a server error (5xx): queues and updates locally', () async {
@@ -410,6 +412,7 @@ void main() {
       expect(outcome, PassportEventSubmitOutcome.queued);
       expect(await db.getPendingOperationsOrdered(), hasLength(1));
       expect((await storedAlert()).status, 'ack');
+      expect((await storedAlert()).severity, 'warning');
     });
 
     test('online with an expired session: queues with queuedAuthRequired', () async {
@@ -481,6 +484,28 @@ void main() {
       final row = (await db.getPendingOperationsOrdered()).single;
       expect(row.status, 'failed');
       expect(row.lastError, contains('something_new'));
+    });
+
+    test('closing resets severity to normal, re-opening restores the previous severity', () async {
+      await db.updateAlertStatus('alert-1', 'closed');
+      var stored = await storedAlert();
+      expect(stored.status, 'closed');
+      expect(stored.severity, 'normal');
+      expect(stored.previousSeverity, 'warning');
+
+      await db.updateAlertStatus('alert-1', 'open');
+      stored = await storedAlert();
+      expect(stored.status, 'open');
+      expect(stored.severity, 'warning');
+      expect(stored.previousSeverity, 'normal');
+    });
+
+    test('ack / unack leave severities untouched', () async {
+      await db.updateAlertStatus('alert-1', 'ack');
+      await db.updateAlertStatus('alert-1', 'open');
+      final stored = await storedAlert();
+      expect(stored.severity, 'warning');
+      expect(stored.previousSeverity, 'normal');
     });
   });
 }

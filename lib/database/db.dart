@@ -586,8 +586,30 @@ class AppDatabase extends _$AppDatabase {
 
   /// Sets the local `status` of the alert [id] (e.g. after an action was
   /// applied or queued while offline).
+  /// Mirrors Alerta's severity handling: closing an alert resets its severity
+  /// to `normal` (remembering the old one in `previousSeverity`), and
+  /// re-opening a closed alert restores that previous severity.
   Future<void> updateAlertStatus(String id, String status) {
-    return (update(alerts)..where((a) => a.id.equals(id))).write(AlertsCompanion(status: Value(status)));
+    return transaction(() async {
+      final current = await (select(alerts)..where((a) => a.id.equals(id))).getSingleOrNull();
+      if (current == null) {
+        return;
+      }
+
+      var severity = current.severity;
+      var previousSeverity = current.previousSeverity;
+      if (status == 'closed' && current.status != 'closed' && severity != 'normal') {
+        previousSeverity = severity;
+        severity = 'normal';
+      } else if (status == 'open' && current.status == 'closed') {
+        severity = previousSeverity;
+        previousSeverity = 'normal';
+      }
+
+      await (update(alerts)..where((a) => a.id.equals(id))).write(
+        AlertsCompanion(status: Value(status), severity: Value(severity), previousSeverity: Value(previousSeverity)),
+      );
+    });
   }
 
   /// Sets the local `lastNote` of the alert [id].
