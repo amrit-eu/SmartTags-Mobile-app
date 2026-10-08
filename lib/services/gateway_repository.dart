@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
+import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
@@ -158,6 +159,46 @@ class GatewayRepository {
       }
       if (response.statusCode != 200) {
         throw GatewayException('Failed to submit passport event (Status ${response.statusCode})');
+      }
+    } on http.ClientException catch (e) {
+      throw GatewayException('Network error: ${e.message}');
+    }
+  }
+
+  /// Applies [action] to the alert [alertId] via `PUT /alerta/alert/:id/action`.
+  ///
+  /// Throws [GatewayException] on missing auth, non-2xx response, or network error.
+  Future<void> actOnAlert(String alertId, AlertAction action) {
+    return _putAlert(
+      GatewayConfig.alertActionUri(alertId),
+      {'action': action.name, 'timeout': null},
+      'apply "${action.name}" to the alert',
+    );
+  }
+
+  /// Adds a note with [text] to the alert [alertId] via `PUT /alerta/alert/:id/note`.
+  ///
+  /// Throws [GatewayException] on missing auth, non-2xx response, or network error.
+  Future<void> addAlertNote(String alertId, String text) {
+    return _putAlert(GatewayConfig.alertNoteUri(alertId), {'text': text}, 'add the note');
+  }
+
+  Future<void> _putAlert(Uri uri, Map<String, dynamic> body, String description) async {
+    final token = await _authService.getAccessToken();
+    if (token == null) {
+      throw const GatewayAuthException('Not authenticated. Please log in again.');
+    }
+    try {
+      final response = await _client.put(
+        uri,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: jsonEncode(body),
+      );
+      if (response.statusCode == 401) {
+        throw const GatewayAuthException('Unauthorized or session expired. Please log in again.');
+      }
+      if (!_isSuccess(response.statusCode)) {
+        throw GatewayException('Failed to $description (Status ${response.statusCode})');
       }
     } on http.ClientException catch (e) {
       throw GatewayException('Network error: ${e.message}');

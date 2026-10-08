@@ -28,6 +28,21 @@ enum AlertStatus {
   }
 }
 
+/// Actions that can be applied to an alert through the Gateway.
+enum AlertAction {
+  /// Re-open the alert.
+  open,
+
+  /// Acknowledge the alert.
+  ack,
+
+  /// Remove the acknowledgement from the alert.
+  unack,
+
+  /// Close the alert.
+  close,
+}
+
 /// Severity of an alert (Notification Center / Alerta).
 enum AlertSeverity {
   /// Critical severity.

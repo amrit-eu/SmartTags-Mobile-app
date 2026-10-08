@@ -113,7 +113,7 @@ void main() {
       expect(can(Action.delete, Resource.asset), isTrue);
       expect(can(Action.create, Resource.asset, programId: 999), isTrue);
       // Even resource/action combos with no policy defined at all.
-      expect(can(Action.archive, Resource.mission), isTrue);
+      expect(can(Action.delete, Resource.mission), isTrue);
     });
   });
 

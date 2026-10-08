@@ -9,6 +9,8 @@ import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/alert_chip.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -82,18 +84,20 @@ class AlertDetailsScreen extends ConsumerWidget {
     final canAcknowledge =
         hasPlatform && userPermissions.canAckAlert(programId: programId) && alert.status == AlertStatus.open;
     final canUnacknowledge =
-        hasPlatform &&
-        userPermissions.canUnackAlert(programId: programId) &&
-        alert.status == AlertStatus.acknowledged;
+        hasPlatform && userPermissions.canUnackAlert(programId: programId) && alert.status == AlertStatus.acknowledged;
     final canClose =
         hasPlatform &&
         userPermissions.canCloseAlert(programId: programId) &&
         (alert.status == AlertStatus.open || alert.status == AlertStatus.acknowledged);
+    final canOpen =
+        hasPlatform && userPermissions.canOpenAlert(programId: programId) && alert.status == AlertStatus.closed;
     final canAddNote = hasPlatform && userPermissions.canAddANoteToAlert(programId: programId);
-    final actionCount = [canAcknowledge, canUnacknowledge, canClose, canAddNote].where((c) => c).length;
+
+    final actionCount = [canAcknowledge, canUnacknowledge, canClose, canOpen, canAddNote].where((c) => c).length;
 
     final ackColor = AlertStatusPalette.acknowledged.color;
     final closeColor = AlertStatusPalette.closed.color;
+    final openColor = AlertStatusPalette.open.color;
 
     final statusStyle = AlertStatusPalette.forStatus(alert.status);
     final severityStyle = AlertSeverityPalette.forSeverity(alert.severity);
@@ -133,9 +137,7 @@ class AlertDetailsScreen extends ConsumerWidget {
                     heroTag: 'alert-add-note',
                     backgroundColor: Colors.grey.shade600,
                     foregroundColor: Colors.white,
-                    onPressed: () {
-                      // TODO(ylubac): add a note to the alert (no action for now).
-                    },
+                    onPressed: () => _addNote(context, ref),
                     icon: const Icon(Icons.message_outlined),
                     label: const Text('Add a note'),
                   ),
@@ -144,20 +146,25 @@ class AlertDetailsScreen extends ConsumerWidget {
                     heroTag: 'alert-close',
                     backgroundColor: closeColor,
                     foregroundColor: Colors.white,
-                    onPressed: () {
-                      // TODO(ylubac): close the alert (no action for now).
-                    },
+                    onPressed: () => _act(context, ref, AlertAction.close),
                     icon: Icon(AlertStatusPalette.closed.actionIcon),
                     label: const Text('Close'),
+                  ),
+                if (canOpen)
+                  FloatingActionButton.extended(
+                    heroTag: 'alert-open',
+                    backgroundColor: openColor,
+                    foregroundColor: Colors.black,
+                    onPressed: () => _act(context, ref, AlertAction.open),
+                    icon: Icon(AlertStatusPalette.open.actionIcon),
+                    label: const Text('Open'),
                   ),
                 if (canUnacknowledge)
                   FloatingActionButton.extended(
                     heroTag: 'alert-unack',
                     backgroundColor: ackColor,
                     foregroundColor: Colors.black,
-                    onPressed: () {
-                      // TODO(ylubac): unacknowledge the alert (no action for now).
-                    },
+                    onPressed: () => _act(context, ref, AlertAction.unack),
                     icon: const Icon(Icons.undo),
                     label: const Text('Unacknowledge'),
                   ),
@@ -166,9 +173,7 @@ class AlertDetailsScreen extends ConsumerWidget {
                     heroTag: 'alert-ack',
                     backgroundColor: ackColor,
                     foregroundColor: Colors.black,
-                    onPressed: () {
-                      // TODO(ylubac): acknowledge the alert (no action for now).
-                    },
+                    onPressed: () => _act(context, ref, AlertAction.ack),
                     icon: Icon(AlertStatusPalette.acknowledged.actionIcon),
                     label: const Text('Acknowledge'),
                   ),
@@ -319,6 +324,57 @@ class AlertDetailsScreen extends ConsumerWidget {
     );
   }
 
+  /// Applies [action] to [alert] through the Gateway, then leaves the screen
+  /// and schedules a delayed platforms refresh to pick up the change.
+  Future<void> _act(BuildContext context, WidgetRef ref, AlertAction action) {
+    return _submit(
+      context,
+      ref,
+      send: (repository) => repository.actOnAlert(alert.id, action),
+      successMessage: switch (action) {
+        AlertAction.ack => 'Alert acknowledged',
+        AlertAction.unack => 'Alert unacknowledged',
+        AlertAction.close => 'Alert closed',
+        AlertAction.open => 'Alert reopened',
+      },
+    );
+  }
+
+  /// Asks the user for a note, then adds it to [alert] through the Gateway.
+  Future<void> _addNote(BuildContext context, WidgetRef ref) async {
+    final text = await showDialog<String>(context: context, builder: (_) => const _AddNoteDialog());
+    if (text == null || text.trim().isEmpty || !context.mounted) {
+      return;
+    }
+    await _submit(
+      context,
+      ref,
+      send: (repository) => repository.addAlertNote(alert.id, text.trim()),
+      successMessage: 'Note added',
+    );
+  }
+
+  Future<void> _submit(
+    BuildContext context,
+    WidgetRef ref, {
+    required Future<void> Function(GatewayRepository repository) send,
+    required String successMessage,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final refresh = ref.read(platformsRefreshProvider.notifier);
+    try {
+      await send(ref.read(gatewayRepositoryProvider));
+    } on GatewayException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
+    messenger.showSnackBar(SnackBar(content: Text(successMessage)));
+    navigator.pop();
+    // Fire-and-forget: give the back-end time to process before re-fetching.
+    refresh.refreshAfterDelay().ignore();
+  }
+
   /// Turns a raw attribute key (e.g. `wigos_id`) into a human-readable label.
   static String _formatAttributeLabel(String key) {
     final words = key.replaceAll('_', ' ').replaceAll('-', ' ').trim().split(RegExp(r'\s+'));
@@ -346,5 +402,42 @@ class AlertDetailsScreen extends ConsumerWidget {
     }
     final text = value.toString().trim();
     return text.isEmpty ? '-' : text;
+  }
+}
+
+/// Dialog asking the user for the text of a note.
+class _AddNoteDialog extends StatefulWidget {
+  const _AddNoteDialog();
+
+  @override
+  State<_AddNoteDialog> createState() => _AddNoteDialogState();
+}
+
+class _AddNoteDialogState extends State<_AddNoteDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add a note'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        minLines: 3,
+        maxLines: 6,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(hintText: 'Note', border: OutlineInputBorder()),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        FilledButton(onPressed: () => Navigator.of(context).pop(_controller.text), child: const Text('Add')),
+      ],
+    );
   }
 }
