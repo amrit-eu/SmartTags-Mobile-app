@@ -309,7 +309,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     return MasonryGridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      gridDelegate: const SliverSimpleGridDelegateWithMaxCrossAxisExtent(
+      gridDelegate: SliverSimpleGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 400 * (customTextScale ?? 1 ),
       ),
       crossAxisSpacing: 16,
