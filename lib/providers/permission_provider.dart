@@ -66,8 +66,14 @@ enum Action {
   /// Unacknowledge an alert.
   unack,
 
-  /// Archive an alert.
-  archive,
+  /// Close an alert.
+  close,
+
+  /// Open an alert.
+  open,
+
+  /// Add a note to an alert
+  addNote,
 }
 
 const Map<Resource, Map<Action, Role>> _policy = {
@@ -88,7 +94,9 @@ const Map<Resource, Map<Action, Role>> _policy = {
     Action.view: Role.anonymous,
     Action.ack: Role.programMember,
     Action.unack: Role.programMember,
-    Action.archive: Role.programMember,
+    Action.close: Role.programMember,
+    Action.addNote: Role.programMember,
+    Action.open: Role.programMember,
     Action.delete: Role.superUser,
   },
 };
@@ -155,11 +163,17 @@ extension PermissionShortcuts on bool Function(Action action, Resource resource,
   bool canDelete(Resource resource, {int? programId}) => this(Action.delete, resource, programId: programId);
 
   /// Whether the current user can acknowledge an alert.
-  bool canAck({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+  bool canAckAlert({int? programId}) => this(Action.ack, Resource.alert, programId: programId);
 
   /// Whether the current user can unacknowledge an alert.
-  bool canUnack({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+  bool canUnackAlert({int? programId}) => this(Action.unack, Resource.alert, programId: programId);
 
-  /// Whether the current user can archive an alert.
-  bool canArchive({int? programId}) => this(Action.delete, Resource.alert, programId: programId);
+  /// Whether the current user can delete an alert.
+  bool canCloseAlert({int? programId}) => this(Action.close, Resource.alert, programId: programId);
+
+  /// Whether the current user can add a note to an alert.
+  bool canAddANoteToAlert({int? programId}) => this(Action.addNote, Resource.alert, programId: programId);
+
+  /// Whether the current user can add a note to an alert.
+  bool canOpenAlert({int? programId}) => this(Action.open, Resource.alert, programId: programId);
 }

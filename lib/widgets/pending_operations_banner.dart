@@ -4,8 +4,9 @@ import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/screens/pending_operations_screen.dart';
 
-/// Persistent indicator shown in the main shell when deploy/recover events
-/// are queued locally, awaiting (or failing) submission to the Gateway.
+/// Persistent indicator shown in the main shell when operations (deploy/recover
+/// events, alert actions and notes) are queued locally, awaiting (or failing)
+/// submission to the Gateway.
 class PendingOperationsBanner extends ConsumerWidget {
   /// Creates a [PendingOperationsBanner].
   const PendingOperationsBanner({super.key});

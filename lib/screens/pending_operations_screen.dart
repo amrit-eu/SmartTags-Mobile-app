@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
-/// Lists queued/failed deploy-recover passport events, with manual retry for
-/// failed ones.
+/// Lists queued/failed operations (deploy/recover events, alert actions and
+/// notes), with manual retry for failed ones.
 class PendingOperationsScreen extends ConsumerWidget {
   /// Creates a [PendingOperationsScreen].
   const PendingOperationsScreen({super.key});
+
+  static String _label(PendingOperationKind kind) => switch (kind) {
+    PendingOperationKind.deploy => 'Deploy',
+    PendingOperationKind.recover => 'Recover',
+    PendingOperationKind.alertOpen => 'Open alert',
+    PendingOperationKind.alertAck => 'Acknowledge alert',
+    PendingOperationKind.alertUnack => 'Unacknowledge alert',
+    PendingOperationKind.alertClose => 'Close alert',
+    PendingOperationKind.alertNote => 'Add note to alert',
+  };
 
   Future<void> _retry(BuildContext context, WidgetRef ref, PendingPassportEvent event) async {
     try {
@@ -52,7 +61,7 @@ class PendingOperationsScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                '${event.action == DeployAction.deploy ? 'Deploy' : 'Recover'} — ${event.platformRef}',
+                                '${_label(event.kind)} — ${event.platformRef}',
                                 style: Theme.of(context).textTheme.titleSmall,
                               ),
                             ),
