@@ -14,6 +14,7 @@ import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/alert_chip.dart';
 import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -184,147 +185,154 @@ class AlertDetailsScreen extends ConsumerWidget {
                   ),
               ],
             ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, actionCount == 0 ? 16 : 16 + actionCount * 68.0 + 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionContainer(
+      body: Column(
+        children: [
+          const ConnectivityBanner(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, actionCount == 0 ? 16 : 16 + actionCount * 68.0 + 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      AlertChip(
-                        label: alert.status == AlertStatus.acknowledged ? 'Ack' : statusStyle.label,
-                        background: statusStyle.color.withValues(alpha: 0.2),
-                        foreground: statusStyle.color,
-                        icon: statusStyle.displayIcon,
-                      ),
-                      const Spacer(),
-                      AlertChip(
-                        label: severityStyle.label,
-                        background: severityStyle.chipColor,
-                        foreground: severityStyle.textColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    alert.event,
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  if (alert.description.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    HtmlWidget(
-                      alert.description,
-                      textStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      onTapUrl: (url) {
-                        unawaited(_launchUrl(url));
-                        return true;
-                      },
-                    ),
-                  ],
-                  if (hasUrl) ...[
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _launchUrl(url),
-                        icon: const Icon(Icons.open_in_new, size: 16),
-                        label: Text('See more on ${_urlHost(url)}'),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            if (guidance != null) ...[
-              SectionContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Guidance',
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const Divider(height: 24),
-                    Text(guidance, style: theme.textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            SectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Key attributes',
-                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const Divider(height: 24),
-                  ContainerRow(label: 'Resource', value: _dash(alert.resource)),
-                  const Divider(height: 16),
-                  ContainerRow(label: 'Event', value: _dash(alert.event)),
-                  const Divider(height: 16),
-                  ContainerRow(label: 'Severity', value: severityStyle.label),
-                  const Divider(height: 16),
-                  ContainerRow(label: 'Status', value: statusStyle.label),
-                  const Divider(height: 16),
-                  ContainerRow(label: 'Country', value: _dash(alert.country)),
-                  const Divider(height: 16),
-                  ContainerRow(label: 'Value', value: _dash(alert.value)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            if (hasLastNote) ...[
-              SectionContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  SectionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.message_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Last note',
-                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        Row(
+                          children: [
+                            AlertChip(
+                              label: alert.status == AlertStatus.acknowledged ? 'Ack' : statusStyle.label,
+                              background: statusStyle.color.withValues(alpha: 0.2),
+                              foreground: statusStyle.color,
+                              icon: statusStyle.displayIcon,
+                            ),
+                            const Spacer(),
+                            AlertChip(
+                              label: severityStyle.label,
+                              background: severityStyle.chipColor,
+                              foreground: severityStyle.textColor,
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 12),
+                        Text(
+                          alert.event,
+                          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        if (alert.description.trim().isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          HtmlWidget(
+                            alert.description,
+                            textStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            onTapUrl: (url) {
+                              unawaited(_launchUrl(url));
+                              return true;
+                            },
+                          ),
+                        ],
+                        if (hasUrl) ...[
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _launchUrl(url),
+                              icon: const Icon(Icons.open_in_new, size: 16),
+                              label: Text('See more on ${_urlHost(url)}'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                    const Divider(height: 24),
-                    Text(lastNote, style: theme.textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            SectionContainer(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Other information',
-                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const Divider(height: 24),
-                  for (var i = 0; i < otherInfoEntries.length; i++) ...[
-                    ContainerRow(label: otherInfoEntries[i].key, value: otherInfoEntries[i].value),
-                    if (i != otherInfoEntries.length - 1) const Divider(height: 16),
+                  const SizedBox(height: 16),
+
+                  if (guidance != null) ...[
+                    SectionContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Guidance',
+                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const Divider(height: 24),
+                          Text(guidance, style: theme.textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                   ],
+
+                  SectionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Key attributes',
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const Divider(height: 24),
+                        ContainerRow(label: 'Resource', value: _dash(alert.resource)),
+                        const Divider(height: 16),
+                        ContainerRow(label: 'Event', value: _dash(alert.event)),
+                        const Divider(height: 16),
+                        ContainerRow(label: 'Severity', value: severityStyle.label),
+                        const Divider(height: 16),
+                        ContainerRow(label: 'Status', value: statusStyle.label),
+                        const Divider(height: 16),
+                        ContainerRow(label: 'Country', value: _dash(alert.country)),
+                        const Divider(height: 16),
+                        ContainerRow(label: 'Value', value: _dash(alert.value)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (hasLastNote) ...[
+                    SectionContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.message_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Last note',
+                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 24),
+                          Text(lastNote, style: theme.textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  SectionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Other information',
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const Divider(height: 24),
+                        for (var i = 0; i < otherInfoEntries.length; i++) ...[
+                          ContainerRow(label: otherInfoEntries[i].key, value: otherInfoEntries[i].value),
+                          if (i != otherInfoEntries.length - 1) const Divider(height: 16),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
