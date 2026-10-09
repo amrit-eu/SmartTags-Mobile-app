@@ -33,12 +33,25 @@ class MyApp extends ConsumerWidget {
       ..watch(initialSyncLifecycleProvider)
       ..watch(passportEventQueueLifecycleProvider)
       ..watch(platformsRefreshLifecycleProvider);
+
     return MaterialApp(
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       home: const MainNavigation(),
       themeMode: ref.watch(themeProvider),
+      builder: (context, child) {
+        final customTextScale = ref.watch(textScaleProvider);
+        if (customTextScale == null) return child!;
+
+        final mediaQuery = MediaQuery.of(context);
+        final systemTextScale = mediaQuery.textScaler.scale(1);
+
+        return MediaQuery(data: mediaQuery.copyWith(
+          textScaler: TextScaler.linear(customTextScale * systemTextScale),
+        ), child: child!,
+        );
+      }
     );
   }
 }

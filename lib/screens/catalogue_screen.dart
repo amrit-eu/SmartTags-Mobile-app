@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/catalogue_search_history_filter.dart';
@@ -303,15 +305,15 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   }
 
   Widget _platformGrid(List<Platform> platforms) {
-    return GridView.builder(
+    final textScaler = MediaQuery.textScalerOf(context);
+    return MasonryGridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400,
-        mainAxisExtent: 150,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+      gridDelegate: SliverSimpleGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: textScaler.scale(400),
       ),
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
       itemCount: platforms.length,
       itemBuilder: (context, index) {
         final platform = platforms[index];
@@ -485,15 +487,65 @@ class _LatestViewedPlatformsPanel extends StatefulWidget {
   /// Maximum history rows visible before the list scrolls inside the panel.
   static const int maxVisibleRows = 3;
 
-  /// Fixed row height so exactly [maxVisibleRows] fit in the viewport.
-  static const double historyRowHeight = 64;
-
   final List<CatalogueSearchHistory> suggestions;
   final ValueChanged<String> onSelect;
   final VoidCallback onClearHistory;
 
   @override
   State<_LatestViewedPlatformsPanel> createState() => _LatestViewedPlatformsPanelState();
+}
+
+abstract final class _HistoryRowMetrics {
+  static const int maxVisibleRows = 3;
+
+  static const double verticalPadding = 10; // per side
+  static const double horizontalPadding = 16;
+  static const double avatarRadius = 20;
+  static const double avatarGap = 12;
+  static const double titleSubtitleGap = 2;
+  static const double trailingIconSize = 16;
+  static const double dividerHeight = 1;
+  static const double listBottomPadding = 8;
+
+  static double get avatarDiameter => avatarRadius * 2;
+
+  static TextStyle? titleStyle(ThemeData theme) =>
+      theme.textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurface,
+      );
+
+  static TextStyle? subtitleStyle(ThemeData theme) =>
+      theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      );
+
+  /// Height of one text line at the current text scale.
+  static double _line(TextScaler scaler, TextStyle? style) =>
+      scaler.scale(style?.fontSize ?? 14) * (style?.height ?? 1.3);
+
+  /// Row height: padding + the taller of the avatar and the text column.
+  static double rowHeight(BuildContext context) {
+    final theme = Theme.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+
+    final textColumn = _line(scaler, titleStyle(theme)) +
+        titleSubtitleGap +
+        _line(scaler, subtitleStyle(theme));
+
+    final height = verticalPadding * 2 + math.max(avatarDiameter, textColumn);
+
+    return height.ceilToDouble();
+  }
+
+  /// Viewport height for [rowCount] visible rows (including dividers and
+  /// the list's bottom padding).
+  static double viewportHeight(BuildContext context, int rowCount) {
+    final rows = rowCount.clamp(1, maxVisibleRows);
+    return rows * rowHeight(context) +
+        (rows - 1) * dividerHeight +
+        listBottomPadding;
+  }
 }
 
 class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel> {
@@ -511,10 +563,11 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
     final suggestions = widget.suggestions;
     final isEmpty = suggestions.isEmpty;
     final canScroll = suggestions.length > _LatestViewedPlatformsPanel.maxVisibleRows;
-    final visibleRowCount = isEmpty ? 1 : suggestions.length.clamp(0, _LatestViewedPlatformsPanel.maxVisibleRows);
-    final listViewportHeight =
-        visibleRowCount * _LatestViewedPlatformsPanel.historyRowHeight +
-        (visibleRowCount > 1 ? visibleRowCount - 1 : 0);
+
+    final rowHeight = _HistoryRowMetrics.rowHeight(context);
+    final listViewportHeight = isEmpty
+        ? rowHeight // empty-state message gets one row of space
+        : _HistoryRowMetrics.viewportHeight(context, suggestions.length);
 
     final colorScheme = theme.colorScheme;
 
@@ -587,14 +640,14 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
                       padding: const EdgeInsets.only(bottom: 8),
                       itemCount: suggestions.length,
                       separatorBuilder: (_, _) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(horizontal: _HistoryRowMetrics.horizontalPadding),
+                        child: Divider(height: _HistoryRowMetrics.dividerHeight, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                       ),
                       itemBuilder: (context, index) {
                         final entry = suggestions[index];
                         final subtitle = catalogueSearchHistorySubtitle(entry);
                         return SizedBox(
-                          height: _LatestViewedPlatformsPanel.historyRowHeight,
+                          height: rowHeight,
                           child: _CatalogueHistoryRow(
                             key: Key('catalogue-search-history-${entry.platformRef}'),
                             platformRef: entry.platformRef,
@@ -640,19 +693,22 @@ class _CatalogueHistoryRow extends ConsumerWidget {
         hoverColor: Colors.transparent,
         focusColor: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _HistoryRowMetrics.horizontalPadding,
+            vertical: _HistoryRowMetrics.verticalPadding,
+          ),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 20,
+                radius: _HistoryRowMetrics.avatarRadius,
                 backgroundColor: statusStyle.backgroundColor,
                 child: Icon(
                   Icons.sensors,
-                  size: 20,
+                  size: _HistoryRowMetrics.avatarRadius,
                   color: statusStyle.textColor,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: _HistoryRowMetrics.avatarGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,18 +718,18 @@ class _CatalogueHistoryRow extends ConsumerWidget {
                       platformRef,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      style: _HistoryRowMetrics.titleStyle(theme)?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
                       ),
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: _HistoryRowMetrics.titleSubtitleGap),
                       Text(
                         subtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: _HistoryRowMetrics.subtitleStyle(theme)?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -681,7 +737,7 @@ class _CatalogueHistoryRow extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.north_west_rounded, size: 16, color: colorScheme.outline),
+              Icon(Icons.north_west_rounded, size: _HistoryRowMetrics.trailingIconSize, color: colorScheme.outline),
             ],
           ),
         ),
