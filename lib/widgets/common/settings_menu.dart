@@ -87,6 +87,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
             ),
             Expanded(
               child: Slider(
+                key: const Key('textSizeSlider'),
                 value: sliderValue,
                 min: AppTextScale.min,
                 max: AppTextScale.max,

@@ -4,6 +4,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/common/settings_menu.dart';
 
+class TextScaleWrapper extends ConsumerWidget {
+  const TextScaleWrapper({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final customTextScale = ref.watch(textScaleProvider);
+    final mediaQuery = MediaQuery.of(context);
+    return MediaQuery(
+      data: mediaQuery.copyWith(
+        textScaler: customTextScale != null
+            ? TextScaler.linear(customTextScale)
+            : mediaQuery.textScaler.clamp(
+          minScaleFactor: AppTextScale.min,
+          maxScaleFactor: AppTextScale.max,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 void main() {
   testWidgets('Settings menu can be opened from app bar and shows dark mode options', (tester) async {
     await tester.pumpWidget(
@@ -123,5 +145,125 @@ void main() {
       tester.element(find.byType(SettingsMenu)),
     );
     expect(container.read(themeProvider), ThemeMode.dark);
+  });
+
+  testWidgets('Settings menu shows text size options', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: SettingsMenu()),
+          ),
+        ),
+      ),
+    );
+
+    // Ensure menu is closed
+    expect(find.text('Text Size'), findsNothing);
+
+    // Tap the ellipsis icon button and wait for menu to open
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    // Verify menu has opened
+    expect(find.text('Text Size: Use System Default'), findsOneWidget);
+    expect(find.byKey(const Key('textSizeSlider')), findsOneWidget);
+  });
+
+  testWidgets('System font size is enabled by default', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: SettingsMenu()),
+          ),
+        ),
+      ),
+    );
+
+    // Tap the ellipsis icon button and wait for menu to open
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    // Verify system text size is enabled
+    expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Text Size: Use System Default')).value, true);
+    // Verify text size slider is set to system font size and disabled
+    expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).onChanged, null);
+    expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).value, 1);
+  });
+
+  testWidgets('Disabling system font size enables slider', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: SettingsMenu()),
+          ),
+        ),
+      ),
+    );
+    final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Text Size: Use System Default');
+    // Tap the ellipsis icon button and wait for menu to open
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    // Tap switch to disable
+    await tester.tap(systemDefaultSwitch);
+    await tester.pumpAndSettle();
+
+    // Verify slider is enabled
+    expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).onChanged, isNot(null));
+  });
+
+
+
+  testWidgets('Text size can be changed using settings slider', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(
+          builder: (context, ref, _) {
+            return MaterialApp(
+              home: Scaffold(
+                appBar: AppBar(),
+                body: const Center(child: SettingsMenu()),
+              ),
+              builder: (context, child) => TextScaleWrapper(child: child!),
+            );
+          },
+        ),
+      ),
+    );
+    final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Text Size: Use System Default');
+    // Tap the ellipsis icon button and wait for menu to open
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    // Tap switch to disable system default
+    await tester.tap(systemDefaultSwitch);
+    await tester.pumpAndSettle();
+
+    final textSizeBefore = MediaQuery.textScalerOf(
+      tester.element(find.byType(SettingsMenu)),
+    ).scale(10);
+    expect(textSizeBefore, 10);
+
+    // Drag text size slider
+    await tester.drag(find.byKey(const Key('textSizeSlider')), Offset(500, 0));
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(SettingsMenu)),
+    );
+    final scale = container.read(textScaleProvider);
+    expect(scale, 2);
+    expect(scale, AppTextScale.max);
+
+    final textSizeAfter = MediaQuery.textScalerOf(
+      tester.element(find.byType(SettingsMenu)),
+    ).scale(10);
+
+    expect(textSizeAfter, greaterThan(textSizeBefore));
+    expect(textSizeAfter, 20);
   });
 }
