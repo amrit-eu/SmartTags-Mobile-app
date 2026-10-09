@@ -10,7 +10,6 @@ import 'package:smart_tags/providers/catalogue_search_history_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
-import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -306,12 +305,12 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   }
 
   Widget _platformGrid(List<Platform> platforms) {
-    final customTextScale = ref.watch(textScaleProvider);
+    final textScaler = MediaQuery.textScalerOf(context);
     return MasonryGridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       gridDelegate: SliverSimpleGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 400 * (customTextScale ?? 1 ),
+        maxCrossAxisExtent: textScaler.scale(400),
       ),
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,

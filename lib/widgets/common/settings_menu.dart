@@ -23,10 +23,8 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
   @override
   Widget build(BuildContext context) {
     final customTextScale = ref.watch(textScaleProvider);
-    final textFollowSystem = customTextScale == null;
-    final systemTextScale = MediaQuery.textScalerOf(context).scale(1);
-    final sliderValue = (customTextScale ?? systemTextScale)
-        .clamp(AppTextScale.min, AppTextScale.max);
+    final useSystemTextScale = customTextScale == null;
+    final textScaleSliderValue = customTextScale ?? 1.0;
 
     Widget menuItem(Widget child) => ConstrainedBox(
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 32),
@@ -64,12 +62,12 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
         )),
         menuItem(SwitchListTile(
           title: const Text('Text Size: Use System Default'),
-          value: textFollowSystem,
+          value: useSystemTextScale,
           onChanged: (bool? checked) {
             if (checked ?? false) {
               ref.read(textScaleProvider.notifier).useSystem();
             } else {
-              ref.read(textScaleProvider.notifier).set(sliderValue);
+              ref.read(textScaleProvider.notifier).useCustom();
             }
           },
           secondary: const Icon(Icons.format_size),
@@ -81,19 +79,19 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
               child: ExcludeSemantics(
                 child: Icon(
                   Icons.text_decrease,
-                  color: textFollowSystem ? Theme.of(context).disabledColor : null,
+                  color: useSystemTextScale ? Theme.of(context).disabledColor : null,
                 ),
               )
             ),
             Expanded(
               child: Slider(
                 key: const Key('textSizeSlider'),
-                value: sliderValue,
+                value: textScaleSliderValue,
                 min: AppTextScale.min,
                 max: AppTextScale.max,
-                divisions: 6,
-                label: '${(sliderValue * 100).round()}%',
-                onChanged: textFollowSystem
+                divisions: AppTextScale.divisions,
+                label: '${(textScaleSliderValue * 100).round()}%',
+                onChanged: useSystemTextScale
                     ? null
                     : (value) => ref.read(textScaleProvider.notifier).set(value),
               ),
@@ -103,7 +101,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                 child: ExcludeSemantics(
                   child: Icon(
                     Icons.text_increase,
-                    color: textFollowSystem ? Theme.of(context).disabledColor : null,
+                    color: useSystemTextScale ? Theme.of(context).disabledColor : null,
                   ),
                 )
             ),

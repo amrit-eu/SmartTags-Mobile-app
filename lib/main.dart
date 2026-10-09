@@ -34,8 +34,6 @@ class MyApp extends ConsumerWidget {
       ..watch(passportEventQueueLifecycleProvider)
       ..watch(platformsRefreshLifecycleProvider);
 
-    final customTextScale = ref.watch(textScaleProvider);
-
     return MaterialApp(
       title: 'SmartTags',
       theme: AppTheme.lightTheme,
@@ -43,14 +41,14 @@ class MyApp extends ConsumerWidget {
       home: const MainNavigation(),
       themeMode: ref.watch(themeProvider),
       builder: (context, child) {
+        final customTextScale = ref.watch(textScaleProvider);
+        if (customTextScale == null) return child!;
+
         final mediaQuery = MediaQuery.of(context);
+        final systemTextScale = mediaQuery.textScaler.scale(1);
+
         return MediaQuery(data: mediaQuery.copyWith(
-          textScaler: customTextScale != null
-              ? TextScaler.linear(customTextScale)
-              : mediaQuery.textScaler.clamp(
-                  minScaleFactor: AppTextScale.min,
-                  maxScaleFactor: AppTextScale.max,
-                ),
+          textScaler: TextScaler.linear(customTextScale * systemTextScale),
         ), child: child!,
         );
       }
