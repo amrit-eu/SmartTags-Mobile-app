@@ -42,7 +42,7 @@ void main() {
 
     await tester.pump();
     // Tap the user icon button and wait for navigation
-    await tester.tap(find.byIcon(Icons.person_outline));
+    await tester.tap(find.byTooltip('Sign in'));
     await tester.pumpAndSettle();
 
     // Verify navigation occurred by checking for login form elements
@@ -69,7 +69,8 @@ void main() {
 
     await tester.pump();
     // Tap the user icon button and wait for navigation
-    await tester.tap(find.byIcon(Icons.person));
+    expect(find.text('JB'), findsOneWidget);
+    await tester.tap(find.byTooltip('Account — Joe Bloggs'));
     await tester.pumpAndSettle();
 
     // Verify navigation occurred by checking for profile content
