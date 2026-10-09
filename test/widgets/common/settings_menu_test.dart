@@ -26,18 +26,52 @@ class TextScaleWrapper extends ConsumerWidget {
   }
 }
 
-void main() {
-  testWidgets('Settings menu can be opened from app bar and shows dark mode options', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: SettingsMenu()),
-          ),
+Future<void> settingsMenuTestSetup(WidgetTester tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      child: MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: SettingsMenu()),
         ),
       ),
-    );
+    ),
+  );
+}
+
+Future<void> settingsMenuTestSetupWithConsumer(WidgetTester tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      child: Consumer(
+        builder: (context, ref, _) {
+          return MaterialApp(
+            theme: ThemeData.light(),
+            darkTheme: ThemeData.dark(),
+            themeMode: ref.watch(themeProvider),
+            builder: (context, child) => TextScaleWrapper(child: child!),
+            home: Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: SettingsMenu()),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+Future<void> openSettingsMenu(WidgetTester tester, {bool withConsumer = false}) async {
+  withConsumer
+    ? await settingsMenuTestSetupWithConsumer(tester)
+    : await settingsMenuTestSetup(tester);
+  // Tap the ellipsis icon button and wait for menu to open
+  await tester.tap(find.byIcon(Icons.more_vert));
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  testWidgets('Settings menu can be opened from app bar and shows dark mode options', (tester) async {
+    await settingsMenuTestSetup(tester);
 
     // Ensure menu is closed
     expect(find.text('Dark Mode'), findsNothing);
@@ -52,20 +86,7 @@ void main() {
   });
 
   testWidgets('System theme is enabled by default', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: SettingsMenu()),
-          ),
-        ),
-      ),
-    );
-
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    await openSettingsMenu(tester);
 
     // Verify system theme switch is enabled
     expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default')).value, true);
@@ -75,27 +96,8 @@ void main() {
   });
 
   testWidgets('Disabling system theme enables light mode', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: Consumer(
-          builder: (context, ref, _) {
-            return MaterialApp(
-              theme: ThemeData.light(),
-              darkTheme: ThemeData.dark(),
-              themeMode: ref.watch(themeProvider),
-              home: Scaffold(
-                appBar: AppBar(),
-                body: const Center(child: SettingsMenu()),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+    await openSettingsMenu(tester, withConsumer: true);
     final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default');
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
     // Tap switch to disable
     await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
@@ -110,27 +112,8 @@ void main() {
   });
 
   testWidgets('Dark mode can be toggled on', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: Consumer(
-          builder: (context, ref, _) {
-            return MaterialApp(
-              theme: ThemeData.light(),
-              darkTheme: ThemeData.dark(),
-              themeMode: ref.watch(themeProvider),
-              home: Scaffold(
-                appBar: AppBar(),
-                body: const Center(child: SettingsMenu()),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+    await openSettingsMenu(tester, withConsumer: true);
     final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default');
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
     // Tap switch to disable
     await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
@@ -148,16 +131,7 @@ void main() {
   });
 
   testWidgets('Settings menu shows text size options', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: SettingsMenu()),
-          ),
-        ),
-      ),
-    );
+    await settingsMenuTestSetup(tester);
 
     // Ensure menu is closed
     expect(find.text('Text Size'), findsNothing);
@@ -172,20 +146,7 @@ void main() {
   });
 
   testWidgets('System font size is enabled by default', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: SettingsMenu()),
-          ),
-        ),
-      ),
-    );
-
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+    await openSettingsMenu(tester);
 
     // Verify system text size is enabled
     expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Text Size: Use System Default')).value, true);
@@ -195,20 +156,10 @@ void main() {
   });
 
   testWidgets('Disabling system font size enables slider', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: SettingsMenu()),
-          ),
-        ),
-      ),
-    );
+    await openSettingsMenu(tester);
+
     final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Text Size: Use System Default');
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+
     // Tap switch to disable
     await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
@@ -217,28 +168,10 @@ void main() {
     expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).onChanged, isNot(null));
   });
 
-
-
   testWidgets('Text size can be changed using settings slider', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: Consumer(
-          builder: (context, ref, _) {
-            return MaterialApp(
-              home: Scaffold(
-                appBar: AppBar(),
-                body: const Center(child: SettingsMenu()),
-              ),
-              builder: (context, child) => TextScaleWrapper(child: child!),
-            );
-          },
-        ),
-      ),
-    );
+    await openSettingsMenu(tester, withConsumer: true);
     final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Text Size: Use System Default');
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
+
     // Tap switch to disable system default
     await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
