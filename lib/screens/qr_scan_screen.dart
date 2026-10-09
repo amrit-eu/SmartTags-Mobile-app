@@ -4,16 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_tags/helpers/qr_code_reference.dart';
+import 'package:smart_tags/models/qr_scan_result.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that provides QR code scanning functionality.
 class QrScanScreen extends ConsumerStatefulWidget {
   /// Creates a [QrScanScreen] widget.
-  const QrScanScreen({super.key, this.onValidCode});
+  const QrScanScreen({super.key, this.onValidCode}) : isPairing = false;
+
+  /// Returns a [QrScanResult] to the calling platform details route.
+  const QrScanScreen.pairing({super.key}) : onValidCode = null, isPairing = true;
 
   /// Selects the catalogue tab after a valid QR scan.
   final VoidCallback? onValidCode;
+
+  /// Whether a scan should return to platform details for pairing.
+  final bool isPairing;
 
   @override
   ConsumerState<QrScanScreen> createState() => _QrScanScreenState();
@@ -41,6 +48,12 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
       }
       if (code != null) {
         final qrCode = qrCodeReferenceFromUrl(code);
+        if (widget.isPairing) {
+          _returnPairingResult(
+            qrCode == null ? const QrScanResult.error('Invalid QR Code format') : QrScanResult.code(qrCode),
+          );
+          return;
+        }
         if (qrCode != null) {
           _messengerKey.currentState?.clearSnackBars();
           setState(() => _isProcessing = true);
@@ -52,6 +65,22 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
         break; // Process only the first barcode
       }
     }
+  }
+
+  void _returnPairingResult(QrScanResult result) {
+    if (!mounted || _isProcessing) return;
+    setState(() => _isProcessing = true);
+    Navigator.of(context).pop(result);
+  }
+
+  Widget _pairingCameraError(BuildContext context, MobileScannerException error) {
+    final message = error.errorCode == MobileScannerErrorCode.permissionDenied
+        ? 'Camera permission is required to pair a QR code.'
+        : 'Unable to open the QR scanner. Please try again.';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _returnPairingResult(QrScanResult.error(message));
+    });
+    return Center(child: Text(message));
   }
 
   Future<void> _handleValidCode(String qrCode) async {
@@ -87,6 +116,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
       child: Scaffold(
         appBar: TopNavigation(
           title: const Text('Scan QR Code'),
+          leading: widget.isPairing ? const BackButton() : null,
           actions: [
             IconButton(
               icon: ValueListenableBuilder(
@@ -110,6 +140,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
             MobileScanner(
               controller: _scannerController,
               onDetect: _onBarcodeDetected,
+              errorBuilder: widget.isPairing ? _pairingCameraError : null,
             ),
             // Overlay with transparent scanning area
             Positioned.fill(

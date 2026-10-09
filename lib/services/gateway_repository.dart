@@ -168,4 +168,41 @@ class GatewayRepository {
   Future<void> submitPassportEvent(PassportEventRequest request) {
     return submitPassportEventJson(jsonEncode(PassportEventMapper.toJson(request)));
   }
+
+  /// Pairs a [platformId] with a [qrCode].
+  ///
+  /// [platformId] must be the numeric Gateway/OceanOPS `ptfId`.
+  /// A successful response confirms pairing even when passport regeneration is still pending.
+  ///
+  /// Throws [GatewayException] on invalid input, an unsuccessful response,
+  /// or a network error. Throws [GatewayAuthException] on missing or rejected auth.
+  Future<void> pairPlatformToQRCode(String platformId, String qrCode) async {
+    final ptfId = int.tryParse(platformId.trim(), radix: 10);
+    if (ptfId == null || ptfId <= 0) {
+      throw const GatewayException('Invalid platform ID. A positive numeric ptfId is required.');
+    }
+    if (qrCode.trim().isEmpty) {
+      throw const GatewayException('QR code must not be empty.');
+    }
+
+    final token = await _authService.getAccessToken();
+    if (token == null) {
+      throw const GatewayAuthException('Not authenticated. Please log in again.');
+    }
+    try {
+      final response = await _client.post(
+        GatewayConfig.pairPlatformToQrCodeUri,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: jsonEncode({'ptfId': ptfId, 'qrCode': qrCode}),
+      );
+      if (response.statusCode == 401) {
+        throw const GatewayAuthException('Failed to pair platform to QR code: Unauthorized.');
+      }
+      if (!_isSuccess(response.statusCode)) {
+        throw GatewayException('Failed to pair platform to QR code (Status ${response.statusCode})');
+      }
+    } on http.ClientException catch (e) {
+      throw GatewayException('Network error: ${e.message}');
+    }
+  }
 }

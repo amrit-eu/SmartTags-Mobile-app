@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,17 +9,24 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
+import 'package:smart_tags/database/db.dart' show PlatformsCompanion;
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
+import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/latest_operation_status.dart';
 import 'package:smart_tags/helpers/operation_record_route.dart';
 import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/models/qr_scan_result.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/screens/alerts_screen.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
+import 'package:smart_tags/screens/qr_scan_screen.dart';
+import 'package:smart_tags/services/auth_service.dart';
+import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
@@ -37,6 +47,10 @@ class PlatformDetailScreen extends ConsumerStatefulWidget {
 
 class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   late final MapController _mapController;
+  bool _isPairing = false;
+  String? _confirmedQrCode;
+
+  static const _offlinePairingMessage = 'Pairing functionality disabled: Offline';
 
   @override
   void initState() {
@@ -48,6 +62,146 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   void dispose() {
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _showPairingMessage(String message, {bool success = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message, style: const TextStyle(color: Colors.white)),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+  }
+
+  Future<bool> _isOnlineForPairing() async {
+    final connection = ref.read(checkConnectionProvider);
+    if (connection.hasValue || connection.hasError) {
+      return isDeviceOnline(connection.value);
+    }
+    try {
+      return isDeviceOnline(await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5)));
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> _pairPlatform(Platform platform) async {
+    if (_isPairing || _confirmedQrCode != null) return;
+    setState(() => _isPairing = true);
+    try {
+      final online = await _isOnlineForPairing();
+      if (!mounted) return;
+      if (!online) {
+        _showPairingMessage(_offlinePairingMessage);
+        return;
+      }
+      if (ref.read(authProvider).value == null) {
+        _showPairingMessage('Log in to pair this platform to a QR code.');
+        return;
+      }
+      final ptfId = platform.ptfId;
+      final numericId = ptfId == null ? null : int.tryParse(ptfId.trim(), radix: 10);
+      if (numericId == null || numericId <= 0) {
+        _showPairingMessage('Platform ID is unavailable. Refresh platform data and try again.');
+        return;
+      }
+
+      final result = await Navigator.of(context).push<QrScanResult>(
+        MaterialPageRoute(builder: (_) => const QrScanScreen.pairing()),
+      );
+      if (!mounted) return;
+      if (result == null) {
+        _showPairingMessage('Pairing cancelled.');
+        return;
+      }
+      final qrCode = result.qrCode;
+      if (qrCode == null) {
+        _showPairingMessage(result.errorMessage ?? 'Unable to scan QR code.');
+        return;
+      }
+
+      final stillOnline = await _isOnlineForPairing();
+      if (!mounted) return;
+      if (!stillOnline) {
+        _showPairingMessage(_offlinePairingMessage);
+        return;
+      }
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Pair this platform to this QR code?'),
+          content: Text(
+            'Platform: ${(platform.name?.trim().isNotEmpty ?? false) ? platform.name : platform.model}\n'
+            '${(platform.wigosId?.trim().isNotEmpty ?? false) ? 'WIGOS ID: ${platform.wigosId}' : 'Reference: ${platform.platformRef}'}\n\n'
+            'QR code: $qrCode',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Pair')),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (confirmed != true) {
+        _showPairingMessage('Pairing cancelled.');
+        return;
+      }
+      final onlineAfterConfirmation = await _isOnlineForPairing();
+      if (!mounted) return;
+      if (!onlineAfterConfirmation) {
+        _showPairingMessage(_offlinePairingMessage);
+        return;
+      }
+
+      final currentPlatform = ref.read(platformByRefStreamProvider(widget.platformRef)).value;
+      if (currentPlatform == null) {
+        _showPairingMessage('Platform is no longer available. Refresh platform data and try again.');
+        return;
+      }
+      if (currentPlatform.qrCode?.trim().isNotEmpty ?? false) {
+        _showPairingMessage(
+          currentPlatform.qrCode == qrCode
+              ? 'Platform is already paired to this QR code.'
+              : 'Platform is already paired to a different QR code.',
+          success: currentPlatform.qrCode == qrCode,
+        );
+        return;
+      }
+
+      final gateway = ref.read(gatewayRepositoryProvider);
+      final database = ref.read(databaseProvider);
+      final platformRef = widget.platformRef;
+      await gateway.pairPlatformToQRCode(ptfId!, qrCode);
+      // Keep the confirmed association visible while passport regeneration
+      // catches up, including if a background refresh returns stale data.
+      if (mounted) setState(() => _confirmedQrCode = qrCode);
+      try {
+        await database.updatePlatforms([
+          PlatformsCompanion(ref: Value(platformRef), qrCode: Value(qrCode)),
+        ]);
+      } on Object catch (error) {
+        debugPrint('Could not save confirmed QR pairing locally: $error');
+        _showPairingMessage('Platform paired to QR code. Refresh to update local data.', success: true);
+        return;
+      }
+      _showPairingMessage('Platform paired to QR code successfully.', success: true);
+    } on GatewayException catch (error) {
+      if (mounted) {
+        _showPairingMessage(
+          isDeviceOnline(ref.read(checkConnectionProvider).value) ? error.message : _offlinePairingMessage,
+        );
+      }
+    } on RefreshException {
+      _showPairingMessage('Session expired. Please log in again.');
+    } on Object {
+      _showPairingMessage('Unable to pair platform to QR code. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isPairing = false);
+    }
   }
 
   @override
@@ -65,6 +219,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     final userPermissions = ref.watch(permissionProvider);
     final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: platform.program?.id ?? 0);
     final isLoggedIn = ref.watch(authProvider).value != null;
+    final isOnline = isDeviceOnline(ref.watch(checkConnectionProvider).value);
 
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
@@ -151,7 +306,13 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            _PlatformSummaryCard(platform: platform),
+            _PlatformSummaryCard(
+              platform: platform,
+              confirmedQrCode: _confirmedQrCode,
+              isPairing: _isPairing,
+              isOnline: isOnline,
+              onPair: () => unawaited(_pairPlatform(platform)),
+            ),
             const SizedBox(height: 16),
 
             _AlertsSummaryRow(platformRef: widget.platformRef),
@@ -207,9 +368,19 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
 
 /// Passport-aligned summary on the platform details page (#97).
 class _PlatformSummaryCard extends StatelessWidget {
-  const _PlatformSummaryCard({required this.platform});
+  const _PlatformSummaryCard({
+    required this.platform,
+    required this.isPairing,
+    required this.isOnline,
+    required this.onPair,
+    this.confirmedQrCode,
+  });
 
   final Platform platform;
+  final bool isPairing;
+  final bool isOnline;
+  final VoidCallback onPair;
+  final String? confirmedQrCode;
 
   static String _dash(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -225,6 +396,8 @@ class _PlatformSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final qrCode = confirmedQrCode ?? platform.qrCode;
+    final isUnpaired = qrCode?.trim().isEmpty ?? true;
 
     return SectionContainer(
       child: Column(
@@ -273,6 +446,33 @@ class _PlatformSummaryCard extends StatelessWidget {
                 Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               ],
             ),
+          ),
+          const Divider(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ContainerRow(
+                  label: 'QR Code',
+                  value: isUnpaired ? 'Not paired' : qrCode!,
+                ),
+              ),
+              if (isUnpaired) ...[
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: isPairing ? null : onPair,
+                  style: isOnline
+                      ? null
+                      : OutlinedButton.styleFrom(
+                          foregroundColor: theme.disabledColor,
+                          side: BorderSide(color: theme.disabledColor),
+                        ),
+                  icon: isPairing
+                      ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.qr_code_scanner),
+                  label: Text(isPairing ? 'Pairing...' : 'Pair to QR Code'),
+                ),
+              ],
+            ],
           ),
           const Divider(height: 16),
           ContainerRow(

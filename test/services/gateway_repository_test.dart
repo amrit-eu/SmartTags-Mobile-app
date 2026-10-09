@@ -428,4 +428,113 @@ void main() {
       );
     });
   });
+
+  group('pairPlatformToQRCode', () {
+    const platformId = '1004967';
+    const qrCode = 'AbC/123';
+
+    for (final passportsUpToDate in [false, true]) {
+      test('sends an authenticated POST and accepts 201 with passportsUpToDate=$passportsUpToDate', () async {
+        final client = MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url, GatewayConfig.pairPlatformToQrCodeUri);
+          expect(request.headers['Authorization'], 'Bearer test-token');
+          expect(request.headers['Content-Type'], 'application/json');
+          expect(jsonDecode(request.body), {'ptfId': 1004967, 'qrCode': qrCode});
+          return http.Response(
+            jsonEncode({
+              'ptfId': 1004967,
+              'qrCode': qrCode,
+              'localIdentifier': '5500023',
+              'passportsUpToDate': passportsUpToDate,
+            }),
+            201,
+          );
+        });
+        final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+        await repository.pairPlatformToQRCode(platformId, qrCode);
+      });
+    }
+
+    test('does not send a request without an access token', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request without a token');
+      });
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+
+      await expectLater(
+        repository.pairPlatformToQRCode(platformId, qrCode),
+        throwsA(isA<GatewayAuthException>()),
+      );
+    });
+
+    test('throws GatewayAuthException when the server rejects authentication', () async {
+      final client = MockClient((request) async => http.Response('Unauthorized', 401));
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      await expectLater(
+        repository.pairPlatformToQRCode(platformId, qrCode),
+        throwsA(isA<GatewayAuthException>()),
+      );
+    });
+
+    for (final statusCode in [400, 403, 409, 500]) {
+      test('reports a failed pairing response with status $statusCode', () async {
+        final client = MockClient((request) async => http.Response('Pairing failed', statusCode));
+        final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+        await expectLater(
+          repository.pairPlatformToQRCode(platformId, qrCode),
+          throwsA(
+            isA<GatewayException>().having(
+              (error) => error.message,
+              'message',
+              'Failed to pair platform to QR code (Status $statusCode)',
+            ),
+          ),
+        );
+      });
+    }
+
+    test('wraps transport failures in GatewayException', () async {
+      final client = MockClient((request) async => throw http.ClientException('Connection lost'));
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      await expectLater(
+        repository.pairPlatformToQRCode(platformId, qrCode),
+        throwsA(
+          isA<GatewayException>().having((error) => error.message, 'message', 'Network error: Connection lost'),
+        ),
+      );
+    });
+
+    test('rejects invalid platform identifiers before sending a request', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request with an invalid platform ID');
+      });
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      for (final invalidId in ['', '   ', 'DEP-1', '0', '-1', '1.5', '0x10']) {
+        await expectLater(
+          repository.pairPlatformToQRCode(invalidId, qrCode),
+          throwsA(isA<GatewayException>()),
+        );
+      }
+    });
+
+    test('rejects empty QR codes before sending a request', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request with an empty QR code');
+      });
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      for (final emptyCode in ['', '   ']) {
+        await expectLater(
+          repository.pairPlatformToQRCode(platformId, emptyCode),
+          throwsA(isA<GatewayException>()),
+        );
+      }
+    });
+  });
 }

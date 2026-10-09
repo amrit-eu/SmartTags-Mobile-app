@@ -23,4 +23,7 @@ abstract final class GatewayConfig {
 
   /// Deploy/recover passport event submission endpoint.
   static Uri get goosPassportEventsUri => apiUri('oceanops/data/goos-passport-events');
+
+  /// Pair platform to QR code endpoint.
+  static Uri get pairPlatformToQrCodeUri => apiUri('oceanops/data/qr-code/pair');
 }
