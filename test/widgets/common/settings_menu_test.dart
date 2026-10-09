@@ -5,7 +5,7 @@ import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/common/settings_menu.dart';
 
 class TextScaleWrapper extends ConsumerWidget {
-  const TextScaleWrapper({super.key, required this.child});
+  const TextScaleWrapper({required this.child, super.key});
   final Widget child;
 
   @override
@@ -182,7 +182,7 @@ void main() {
     expect(textSizeBefore, 10);
 
     // Drag text size slider
-    await tester.drag(find.byKey(const Key('textSizeSlider')), Offset(500, 0));
+    await tester.drag(find.byKey(const Key('textSizeSlider')), const Offset(500, 0));
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
