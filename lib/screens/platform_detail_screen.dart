@@ -89,6 +89,14 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     }
   }
 
+  Future<bool> _checkPairingConnection() async {
+    if (!mounted) return false;
+    final online = await _isOnlineForPairing();
+    if (!mounted) return false;
+    if (!online) _showPairingMessage(_offlinePairingMessage);
+    return online;
+  }
+
   Future<void> _pairPlatform(Platform platform) async {
     if (_isPairing || _confirmedQrCode != null) return;
     setState(() => _isPairing = true);
@@ -113,14 +121,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     } finally {
       if (mounted) setState(() => _isPairing = false);
     }
-  }
-
-  Future<bool> _checkPairingConnection() async {
-    if (!mounted) return false;
-    final online = await _isOnlineForPairing();
-    if (!mounted) return false;
-    if (!online) _showPairingMessage(_offlinePairingMessage);
-    return online;
   }
 
   String? _validatePairingPlatform(Platform platform) {
