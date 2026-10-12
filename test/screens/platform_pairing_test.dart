@@ -202,6 +202,24 @@ void main() {
     await mount(
       tester,
       response: (request) {
+        if (request.url == GatewayConfig.passportsSearchUri) {
+          return Future.value(
+            http.Response(
+              jsonEncode({
+                'items': [
+                  for (final platformRef in ['DEP-1', 'DEP-2'])
+                    {
+                      'reference': platformRef,
+                      'passport': {
+                        'identification': {'qrCode': 'AbC/123'},
+                      },
+                    },
+                ],
+              }),
+              200,
+            ),
+          );
+        }
         expect(request.method, 'POST');
         expect(request.url, GatewayConfig.pairPlatformToQrCodeUri);
         expect(request.headers['Authorization'], 'Bearer test-token');
@@ -209,6 +227,15 @@ void main() {
         return response.future;
       },
     );
+    await database.setLastPlatformsRefresh(DateTime.utc(2026));
+    await database.insertPlatforms([
+      (await database.getPlatformByRef('DEP-1')).single
+          .toCompanion(true)
+          .copyWith(
+            id: const Value.absent(),
+            ref: const Value('DEP-2'),
+          ),
+    ]);
     final container = ProviderScope.containerOf(tester.element(find.byType(PlatformDetailScreen)));
     await _openScanner(tester);
     expect(find.byType(QrScanScreen), findsOneWidget);
@@ -241,6 +268,14 @@ void main() {
     await tester.pump();
     expect(find.text('AbC/123'), findsOneWidget);
     expect(find.text('Pair to QR Code'), findsNothing);
+
+    expect(requests, 1);
+    expect((await database.getPlatformByRef('DEP-2')).single.qrCode, isNull);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(requests, 2);
+    expect((await database.getPlatformByRef('DEP-1')).single.qrCode, 'AbC/123');
+    expect((await database.getPlatformByRef('DEP-2')).single.qrCode, 'AbC/123');
   });
 
   testPairing('offline taps show the required message without opening the scanner', (tester) async {
@@ -343,7 +378,9 @@ void main() {
       expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
       expect(
         find.text(
-          status == 401 ? 'Failed to pair platform to QR code: Unauthorized.' : 'Failed to pair platform to QR code (Status 500)',
+          status == 401
+              ? 'Failed to pair platform to QR code: Unauthorized.'
+              : 'Failed to pair platform to QR code (Status 500)',
         ),
         findsOneWidget,
       );

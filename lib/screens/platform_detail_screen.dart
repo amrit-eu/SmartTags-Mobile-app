@@ -22,6 +22,7 @@ import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
+import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/alerts_screen.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
@@ -175,7 +176,9 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       final gateway = ref.read(gatewayRepositoryProvider);
       final database = ref.read(databaseProvider);
       final platformRef = widget.platformRef;
+      final refresh = ref.read(platformsRefreshProvider.notifier);
       await gateway.pairPlatformToQRCode(ptfId!, qrCode);
+      refresh.refreshAfterDelay().ignore();
       // Keep the confirmed association visible while passport regeneration
       // catches up, including if a background refresh returns stale data.
       if (mounted) setState(() => _confirmedQrCode = qrCode);
