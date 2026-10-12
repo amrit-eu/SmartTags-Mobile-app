@@ -8,12 +8,15 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
+
+import '../utils/fake_auth_notifiers.dart';
 
 void main() {
   late AppDatabase db;
@@ -100,6 +103,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -121,6 +125,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -150,6 +155,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -180,6 +186,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -206,6 +213,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -233,6 +241,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -260,6 +269,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
@@ -299,6 +309,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
         child: const MaterialApp(
           home: CatalogueScreen(),
