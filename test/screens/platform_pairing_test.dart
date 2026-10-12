@@ -343,7 +343,7 @@ void main() {
       expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
       expect(
         find.text(
-          status == 401 ? 'Session expired. Please log in again.' : 'Failed to pair platform to QR code (Status 500)',
+          status == 401 ? 'Failed to pair platform to QR code: Unauthorized.' : 'Failed to pair platform to QR code (Status 500)',
         ),
         findsOneWidget,
       );
