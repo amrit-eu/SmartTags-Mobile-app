@@ -93,105 +93,13 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     if (_isPairing || _confirmedQrCode != null) return;
     setState(() => _isPairing = true);
     try {
-      final online = await _isOnlineForPairing();
-      if (!mounted) return;
-      if (!online) {
-        _showPairingMessage(_offlinePairingMessage);
-        return;
-      }
-      if (ref.read(authProvider).value == null) {
-        _showPairingMessage('Log in to pair this platform to a QR code.');
-        return;
-      }
-      final ptfId = platform.ptfId;
-      final numericId = ptfId == null ? null : int.tryParse(ptfId.trim(), radix: 10);
-      if (numericId == null || numericId <= 0) {
-        _showPairingMessage('Platform ID is unavailable. Refresh platform data and try again.');
-        return;
-      }
-
-      final result = await Navigator.of(context).push<QrScanResult>(
-        MaterialPageRoute(builder: (_) => const QrScanScreen.pairing()),
-      );
-      if (!mounted) return;
-      if (result == null) {
-        _showPairingMessage('Pairing cancelled.');
-        return;
-      }
-      final qrCode = result.qrCode;
-      if (qrCode == null) {
-        _showPairingMessage(result.errorMessage ?? 'Unable to scan QR code.');
-        return;
-      }
-
-      final stillOnline = await _isOnlineForPairing();
-      if (!mounted) return;
-      if (!stillOnline) {
-        _showPairingMessage(_offlinePairingMessage);
-        return;
-      }
-
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Pair this platform to this QR code?'),
-          content: Text(
-            'Platform: ${(platform.name?.trim().isNotEmpty ?? false) ? platform.name : platform.model}\n'
-            '${(platform.wigosId?.trim().isNotEmpty ?? false) ? 'WIGOS ID: ${platform.wigosId}' : 'Reference: ${platform.platformRef}'}\n\n'
-            'QR code: $qrCode',
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Pair')),
-          ],
-        ),
-      );
-      if (!mounted) return;
-      if (confirmed != true) {
-        _showPairingMessage('Pairing cancelled.');
-        return;
-      }
-      final onlineAfterConfirmation = await _isOnlineForPairing();
-      if (!mounted) return;
-      if (!onlineAfterConfirmation) {
-        _showPairingMessage(_offlinePairingMessage);
-        return;
-      }
-
-      final currentPlatform = ref.read(platformByRefStreamProvider(widget.platformRef)).value;
-      if (currentPlatform == null) {
-        _showPairingMessage('Platform is no longer available. Refresh platform data and try again.');
-        return;
-      }
-      if (currentPlatform.qrCode?.trim().isNotEmpty ?? false) {
-        _showPairingMessage(
-          currentPlatform.qrCode == qrCode
-              ? 'Platform is already paired to this QR code.'
-              : 'Platform is already paired to a different QR code.',
-          success: currentPlatform.qrCode == qrCode,
-        );
-        return;
-      }
-
-      final gateway = ref.read(gatewayRepositoryProvider);
-      final database = ref.read(databaseProvider);
-      final platformRef = widget.platformRef;
-      final refresh = ref.read(platformsRefreshProvider.notifier);
-      await gateway.pairPlatformToQRCode(ptfId!, qrCode);
-      refresh.refreshAfterDelay().ignore();
-      // Keep the confirmed association visible while passport regeneration
-      // catches up, including if a background refresh returns stale data.
-      if (mounted) setState(() => _confirmedQrCode = qrCode);
-      try {
-        await database.updatePlatforms([
-          PlatformsCompanion(ref: Value(platformRef), qrCode: Value(qrCode)),
-        ]);
-      } on Object catch (error) {
-        debugPrint('Could not save confirmed QR pairing locally: $error');
-        _showPairingMessage('Platform paired to QR code. Refresh to update local data.', success: true);
-        return;
-      }
-      _showPairingMessage('Platform paired to QR code successfully.', success: true);
+      if (!await _checkPairingConnection() || !mounted) return;
+      final ptfId = _validatePairingPlatform(platform);
+      if (ptfId == null) return;
+      final qrCode = await _scanPairingCode();
+      if (qrCode == null) return;
+      if (!await _confirmPairing(platform, qrCode)) return;
+      await _submitPairing(ptfId, qrCode);
     } on GatewayException catch (error) {
       if (mounted) {
         _showPairingMessage(
@@ -205,6 +113,103 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     } finally {
       if (mounted) setState(() => _isPairing = false);
     }
+  }
+
+  Future<bool> _checkPairingConnection() async {
+    if (!mounted) return false;
+    final online = await _isOnlineForPairing();
+    if (!mounted) return false;
+    if (!online) _showPairingMessage(_offlinePairingMessage);
+    return online;
+  }
+
+  String? _validatePairingPlatform(Platform platform) {
+    if (ref.read(authProvider).value == null) {
+      _showPairingMessage('Log in to pair this platform to a QR code.');
+      return null;
+    }
+    final ptfId = platform.ptfId;
+    final numericId = ptfId == null ? null : int.tryParse(ptfId.trim(), radix: 10);
+    if (numericId == null || numericId <= 0) {
+      _showPairingMessage('Platform ID is unavailable. Refresh platform data and try again.');
+      return null;
+    }
+    return ptfId;
+  }
+
+  Future<String?> _scanPairingCode() async {
+    final result = await Navigator.of(context).push<QrScanResult>(
+      MaterialPageRoute(builder: (_) => const QrScanScreen.pairing()),
+    );
+    if (!mounted) return null;
+    if (result == null) {
+      _showPairingMessage('Pairing cancelled.');
+      return null;
+    }
+    if (result.qrCode == null) {
+      _showPairingMessage(result.errorMessage ?? 'Unable to scan QR code.');
+    }
+    return result.qrCode;
+  }
+
+  Future<bool> _confirmPairing(Platform platform, String qrCode) async {
+    if (!await _checkPairingConnection() || !mounted) return false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Pair this platform to this QR code?'),
+        content: Text(
+          'Platform: ${(platform.name?.trim().isNotEmpty ?? false) ? platform.name : platform.model}\n'
+          '${(platform.wigosId?.trim().isNotEmpty ?? false) ? 'WIGOS ID: ${platform.wigosId}' : 'Reference: ${platform.platformRef}'}\n\n'
+          'QR code: $qrCode',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Pair')),
+        ],
+      ),
+    );
+    if (!mounted) return false;
+    if (confirmed != true) _showPairingMessage('Pairing cancelled.');
+    return confirmed ?? false;
+  }
+
+  Future<void> _submitPairing(String ptfId, String qrCode) async {
+    if (!await _checkPairingConnection() || !mounted) return;
+    final currentPlatform = ref.read(platformByRefStreamProvider(widget.platformRef)).value;
+    if (currentPlatform == null) {
+      _showPairingMessage('Platform is no longer available. Refresh platform data and try again.');
+      return;
+    }
+    if (currentPlatform.qrCode?.trim().isNotEmpty ?? false) {
+      _showPairingMessage(
+        currentPlatform.qrCode == qrCode
+            ? 'Platform is already paired to this QR code.'
+            : 'Platform is already paired to a different QR code.',
+        success: currentPlatform.qrCode == qrCode,
+      );
+      return;
+    }
+
+    final gateway = ref.read(gatewayRepositoryProvider);
+    final database = ref.read(databaseProvider);
+    final platformRef = widget.platformRef;
+    final refresh = ref.read(platformsRefreshProvider.notifier);
+    await gateway.pairPlatformToQRCode(ptfId, qrCode);
+    refresh.refreshAfterDelay().ignore();
+    // Keep the confirmed association visible while passport regeneration
+    // catches up.
+    if (mounted) setState(() => _confirmedQrCode = qrCode);
+    try {
+      await database.updatePlatforms([
+        PlatformsCompanion(ref: Value(platformRef), qrCode: Value(qrCode)),
+      ]);
+    } on Object catch (error) {
+      debugPrint('Could not save confirmed QR pairing locally: $error');
+      _showPairingMessage('Platform paired to QR code. Refresh to update local data.', success: true);
+      return;
+    }
+    _showPairingMessage('Platform paired to QR code successfully.', success: true);
   }
 
   @override
