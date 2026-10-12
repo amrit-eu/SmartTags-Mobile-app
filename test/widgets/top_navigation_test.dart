@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/widgets/common/settings_menu.dart';
 import 'package:smart_tags/widgets/common/user_icon_button.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
+
+class _LoggedOutAuthNotifier extends AuthNotifier {
+  @override
+  Future<User?> build() async => null;
+}
 
 void main() {
   group('TopNavigation', () {
@@ -40,6 +47,9 @@ void main() {
     testWidgets('TopNavigation displays UserIconButton by default', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            authProvider.overrideWith(_LoggedOutAuthNotifier.new),
+          ],
           child: MaterialApp(
             home: Scaffold(
               appBar: TopNavigation(),
@@ -48,8 +58,11 @@ void main() {
         ),
       );
 
+      await tester.pump();
+
       expect(find.byType(UserIconButton), findsOneWidget);
       expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.byTooltip('Sign in'), findsOneWidget);
     });
 
     testWidgets('TopNavigation displays SettingsMenu action by default', (tester) async {
@@ -142,6 +155,9 @@ void main() {
     testWidgets('TopNavigation displays empty actions list', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
+          overrides: [
+            authProvider.overrideWith(_LoggedOutAuthNotifier.new),
+          ],
           child: MaterialApp(
             home: Scaffold(
               appBar: TopNavigation(actions: const []),
@@ -149,6 +165,8 @@ void main() {
           ),
         ),
       );
+
+      await tester.pump();
 
       expect(find.byType(UserIconButton), findsOne);
       expect(find.byIcon(Icons.person_outline), findsOne);
