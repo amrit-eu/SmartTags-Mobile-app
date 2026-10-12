@@ -17,6 +17,7 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/map_skeleton_loader.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -738,10 +739,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   void _showToast(BuildContext context, String message, String label) {
     final scaffold = ScaffoldMessenger.of(context);
+
     scaffold.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: SnackBarAction(label: label, onPressed: scaffold.hideCurrentSnackBar),
+      buildAppSnackBar(
+        message: message,
+        actionLabel: label,
+        onAction: scaffold.hideCurrentSnackBar,
       ),
     );
   }

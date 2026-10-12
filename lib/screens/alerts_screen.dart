@@ -99,20 +99,25 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         bottom: false,
         child: Column(
           children: [
+            SizedBox(
+              height: kToolbarHeight,
+              child: TopNavigation(
+                title: const Text('Alerts'),
+                leading: const BackButton(),
+              ),
+            ),
             if (phase != PlatformsSyncPhase.idle)
-              PlatformsLoadingBanner(message: phase.bannerMessage ?? 'Downloading platforms…'),
+              PlatformsLoadingBanner(
+                message: phase.bannerMessage ?? 'Downloading platforms…',
+              ),
             Expanded(
               child: PullToRefresh(
-                // App bar + platform title + filter chips: pull-from-top chrome.
+                // Platform title and filter chips: pull-from-top content.
                 edgeStartMaxY: kToolbarHeight + 100,
                 onRefresh: _refreshPlatforms,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      height: kToolbarHeight,
-                      child: TopNavigation(title: const Text('Alerts'), leading: const BackButton()),
-                    ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(

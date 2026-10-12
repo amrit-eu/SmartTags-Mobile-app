@@ -18,6 +18,7 @@ import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/screens/alerts_screen.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
@@ -174,7 +175,9 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                 ? "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program."
                 : 'Log in to edit this platform.';
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(message)),
+              buildAppSnackBar(
+                message: message,
+              ),
             );
             return;
           }

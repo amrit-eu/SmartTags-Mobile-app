@@ -21,6 +21,7 @@ import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -48,7 +49,11 @@ void applyOperationSubmitResult({
   required OperationSubmitResult result,
   required ScaffoldMessengerState messenger,
 }) {
-  messenger.showSnackBar(SnackBar(content: Text(result.message)));
+  messenger.showSnackBar(
+    buildAppSnackBar(
+      message: result.message,
+    ),
+  );
 }
 
 /// A screen for deploying or recovering a platform, allowing users to input relevant details.
@@ -135,7 +140,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       if (!allowed) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission is required for live updates.')),
+            buildAppSnackBar(
+              message: 'Location permission is required for live updates.',
+            ),
           );
         }
         return;
@@ -172,7 +179,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         debugPrint('Location stream error: $error');
         if (mounted && useLiveLocation) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error fetching live location. Live updates stopped.')),
+            buildAppSnackBar(
+              message: 'Error fetching live location. Live updates stopped.',
+            ),
           );
           // addPostFrameCallback used to avoid setState during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -187,7 +196,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         (status) {
           if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location services disabled. Live updates stopped.')),
+              buildAppSnackBar(
+                message: 'Location services disabled. Live updates stopped.',
+              ),
             );
             // addPostFrameCallback used to avoid setState during build
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -264,8 +275,8 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     if (ptfId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Missing Gateway platform ID — refresh platform data (reconnect) before syncing.'),
+          buildAppSnackBar(
+            message: 'Missing Gateway platform ID — refresh platform data (reconnect) before syncing.',
           ),
         );
         _closeForm();
@@ -339,7 +350,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       if (mounted) {
         setState(() => _submitInProgress = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update platform.')),
+          buildAppSnackBar(
+            message: 'Failed to update platform.',
+          ),
         );
       }
       return;
@@ -421,190 +434,230 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     _connectivityState = ref.watch(checkConnectionProvider).value ?? ConnectivityResult.none;
 
     return Scaffold(
-      appBar: TopNavigation(title: const Text('Record Operation'), leading: const BackButton()),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            if (_connectivityState == ConnectivityResult.none)
-              const OfflineStatus(), // Show offline status if the device is offline.
-            SectionContainer(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  spacing: 16,
-                  children: [
-                    Center(
-                      child: SegmentedButton<DeployAction>(
-                        segments: const [
-                          ButtonSegment(value: DeployAction.deploy, label: Text('Deploy')),
-                          ButtonSegment(value: DeployAction.recover, label: Text('Recover')),
-                        ],
-                        selected: {_selectedAction},
-                        onSelectionChanged: (newSelection) {
-                          setState(() => _selectedAction = newSelection.first);
-                        },
+      appBar: TopNavigation(
+        title: const Text('Record Operation'),
+        leading: const BackButton(),
+      ),
+      body: Column(
+        children: [
+          if (_connectivityState == ConnectivityResult.none) const OfflineStatus(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: SectionContainer(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    spacing: 16,
+                    children: [
+                      Center(
+                        child: SegmentedButton<DeployAction>(
+                          segments: const [
+                            ButtonSegment(
+                              value: DeployAction.deploy,
+                              label: Text('Deploy'),
+                            ),
+                            ButtonSegment(
+                              value: DeployAction.recover,
+                              label: Text('Recover'),
+                            ),
+                          ],
+                          selected: {_selectedAction},
+                          onSelectionChanged: (newSelection) {
+                            setState(
+                              () => _selectedAction = newSelection.first,
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Wigos ID'),
-                      initialValue: widget.platform.wigosId,
-                      enabled: false, // Wigos ID is not editable.
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Platform Category'),
-                      initialValue: widget.platform.category,
-                      enabled: false, // Platform Model is not editable.
-                    ),
-                    Row(
-                      spacing: 8,
-                      children: [
-                        _AutofillLocationTimeControl(
-                          active: useLiveLocation,
-                          onPressed: toggleLiveUpdates,
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Wigos ID',
                         ),
-                        Expanded(
-                          child: Column(
-                            spacing: 16,
-                            children: [
-                              Row(
-                                spacing: 8,
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      decoration: const InputDecoration(
-                                        labelText: 'Latitude',
-                                        errorMaxLines: 3,
-                                      ),
-                                      controller: _latitudeController,
-                                      keyboardType: const TextInputType.numberWithOptions(
-                                        signed: true,
-                                        decimal: true,
-                                      ),
-                                      enabled: !useLiveLocation,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Latitude is required';
-                                        }
-                                        try {
-                                          final latitude = double.parse(value);
-                                          if (latitude < -90 || latitude > 90) {
-                                            return 'Latitude must be between -90 and 90';
+                        initialValue: widget.platform.wigosId,
+                        enabled: false, // Wigos ID is not editable.
+                      ),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Platform Category', // Platform Model is not editable.
+                        ),
+                        initialValue: widget.platform.category,
+                        enabled: false,
+                      ),
+                      Row(
+                        spacing: 8,
+                        children: [
+                          _AutofillLocationTimeControl(
+                            active: useLiveLocation,
+                            onPressed: toggleLiveUpdates,
+                          ),
+                          Expanded(
+                            child: Column(
+                              spacing: 16,
+                              children: [
+                                Row(
+                                  spacing: 8,
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        decoration: const InputDecoration(
+                                          labelText: 'Latitude',
+                                          errorMaxLines: 3,
+                                        ),
+                                        controller: _latitudeController,
+                                        keyboardType: const TextInputType.numberWithOptions(
+                                          signed: true,
+                                          decimal: true,
+                                        ),
+                                        enabled: !useLiveLocation,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Latitude is required';
                                           }
-                                        } on FormatException {
-                                          return 'Latitude must be a valid number';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: TextFormField(
-                                      decoration: const InputDecoration(
-                                        labelText: 'Longitude',
-                                        errorMaxLines: 3,
-                                      ),
-                                      controller: _longitudeController,
-                                      keyboardType: const TextInputType.numberWithOptions(
-                                        signed: true,
-                                        decimal: true,
-                                      ),
-                                      enabled: !useLiveLocation,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Longitude is required';
-                                        }
-                                        try {
-                                          final longitude = double.parse(value);
-                                          if (longitude < -180 || longitude > 180) {
-                                            return 'Longitude must be between -180 and 180';
+
+                                          try {
+                                            final latitude = double.parse(value);
+
+                                            if (latitude < -90 || latitude > 90) {
+                                              return 'Latitude must be between -90 and 90';
+                                            }
+                                          } on FormatException {
+                                            return 'Latitude must be a valid number';
                                           }
-                                        } on FormatException {
-                                          return 'Longitude must be a valid number';
-                                        }
-                                        return null;
-                                      },
+
+                                          return null;
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              TextFormField(
-                                decoration: InputDecoration(
-                                  labelText: '$_eventType Time (UTC)',
-                                  errorMaxLines: 3,
+                                    Expanded(
+                                      child: TextFormField(
+                                        decoration: const InputDecoration(
+                                          labelText: 'Longitude',
+                                          errorMaxLines: 3,
+                                        ),
+                                        controller: _longitudeController,
+                                        keyboardType: const TextInputType.numberWithOptions(
+                                          signed: true,
+                                          decimal: true,
+                                        ),
+                                        enabled: !useLiveLocation,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Longitude is required';
+                                          }
+
+                                          try {
+                                            final longitude = double.parse(value);
+
+                                            if (longitude < -180 || longitude > 180) {
+                                              return 'Longitude must be between -180 and 180';
+                                            }
+                                          } on FormatException {
+                                            return 'Longitude must be a valid number';
+                                          }
+
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                controller: _dateTimeController,
-                                readOnly: true,
-                                enabled: !useLiveLocation,
-                                validator: (value) =>
-                                    (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
-                                onTap: () async {
-                                  final date = await showDatePicker(
-                                    context: this.context,
-                                    initialDate: _selectedDateTime ?? DateTime.now(),
-                                    firstDate: DateTime(2000),
-                                    lastDate: DateTime(2100),
-                                    helpText: 'Date',
-                                  );
-                                  if (date == null) return;
-                                  if (!mounted) return;
-                                  final time = await showTimePicker(
-                                    context: this.context,
-                                    initialTime: _selectedDateTime != null
-                                        ? TimeOfDay.fromDateTime(_selectedDateTime!)
-                                        : TimeOfDay.now(),
-                                    helpText: 'Time (UTC)',
-                                  );
-                                  if (time == null) return;
-                                  if (!mounted) return;
-                                  final combined = DateTime(
-                                    date.year,
-                                    date.month,
-                                    date.day,
-                                    time.hour,
-                                    time.minute,
-                                  );
-                                  _setSelectedDateTime(combined);
-                                },
-                              ),
-                            ],
+                                TextFormField(
+                                  decoration: InputDecoration(
+                                    labelText: '$_eventType Time (UTC)',
+                                    errorMaxLines: 3,
+                                  ),
+                                  controller: _dateTimeController,
+                                  readOnly: true,
+                                  enabled: !useLiveLocation,
+                                  validator: (value) =>
+                                      (value == null || value.isEmpty) ? '$_eventType Time is required' : null,
+                                  onTap: () async {
+                                    final date = await showDatePicker(
+                                      context: this.context,
+                                      initialDate: _selectedDateTime ?? DateTime.now(),
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                      helpText: 'Date',
+                                    );
+
+                                    if (date == null || !mounted) {
+                                      return;
+                                    }
+
+                                    final time = await showTimePicker(
+                                      context: this.context,
+                                      initialTime: _selectedDateTime != null
+                                          ? TimeOfDay.fromDateTime(
+                                              _selectedDateTime!,
+                                            )
+                                          : TimeOfDay.now(),
+                                      helpText: 'Time (UTC)',
+                                    );
+
+                                    if (time == null || !mounted) {
+                                      return;
+                                    }
+
+                                    final combined = DateTime(
+                                      date.year,
+                                      date.month,
+                                      date.day,
+                                      time.hour,
+                                      time.minute,
+                                    );
+
+                                    _setSelectedDateTime(combined);
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Notes',
                         ),
-                      ],
-                    ),
-                    TextFormField(
-                      decoration: const InputDecoration(labelText: 'Notes'),
-                      controller: _notesController,
-                      maxLines: 3,
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Other fields', style: Theme.of(context).textTheme.titleMedium),
-                    ),
-                    ..._buildOtherFields(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 16,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _submitInProgress ? null : _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                        controller: _notesController,
+                        maxLines: 3,
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Other fields',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      ..._buildOtherFields(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 16,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _submitInProgress ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.secondaryContainer,
+                            ),
+                            child: Text(
+                              '${_selectedAction.name.capitalize()} Platform',
+                            ),
                           ),
-                          child: Text('${_selectedAction.name.capitalize()} Platform'),
-                        ),
-                        ElevatedButton(
-                          onPressed: _submitInProgress ? null : _closeForm,
-                          child: const Text('Cancel'),
-                        ),
-                      ],
-                    ),
-                  ],
+                          ElevatedButton(
+                            onPressed: _submitInProgress ? null : _closeForm,
+                            child: const Text('Cancel'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

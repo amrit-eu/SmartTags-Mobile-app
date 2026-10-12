@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// Lists queued/failed deploy-recover passport events, with manual retry for
@@ -16,12 +17,20 @@ class PendingOperationsScreen extends ConsumerWidget {
     try {
       await ref.read(passportEventQueueProvider.notifier).retryFailed(event.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Synced.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          buildAppSnackBar(
+            message: 'Synced.',
+          ),
+        );
       }
     } on Object catch (e) {
       debugPrint('Retry failed for pending operation ${event.id}: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Retry failed: still queued.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          buildAppSnackBar(
+            message: 'Retry failed: still queued.',
+          ),
+        );
       }
     }
   }

@@ -74,6 +74,7 @@ class AppStatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = _colorsFor(theme.colorScheme);
+    final hasTrailingControls = actionLabel != null || onDismiss != null;
 
     return Material(
       color: colors.background,
@@ -89,7 +90,12 @@ class AppStatusBanner extends StatelessWidget {
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              hasTrailingControls ? 4 : 16,
+              8,
+            ),
             child: Row(
               children: [
                 if (icon != null) ...[

@@ -4,6 +4,7 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/screens/user_profile.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that allows a user to log in via OceanOps using their username and password.
@@ -157,8 +158,8 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                               if (!context.mounted) return;
                               if (authState is AsyncData<User?> && authState.value != null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Login successful'),
+                                  buildAppSnackBar(
+                                    message: 'Login successful',
                                   ),
                                 );
                               }
