@@ -78,6 +78,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
+        authProvider.overrideWith(() => FakeAuthNotifier(null)),
         qrPassportLookupRepositoryProvider.overrideWithValue(
           QrPassportLookupRepository(
             database: db,
