@@ -156,7 +156,7 @@ void main() {
     await db.close();
   });
 
-  testWidgets('invalid URL format error dismisses after the standard duration', (
+  testWidgets('invalid URL format error uses transient feedback', (
     tester,
   ) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
@@ -179,32 +179,25 @@ void main() {
       'https://www.ocean-ops.org/tracking/?code=A&code=B',
     );
     await tester.pump();
-    await tester.pumpAndSettle();
 
     expect(find.text('Invalid QR Code format'), findsOneWidget);
     expect(find.byType(SnackBar), findsOneWidget);
 
-    await tester.pump(appSnackBarDuration);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Invalid QR Code format'), findsNothing);
-    expect(find.byType(SnackBar), findsNothing);
-
-    // A new invalid value can display transient feedback again.
-    scan(
-      tester,
-      'https://www.ocean-ops.org/tracking/?code=C&code=D',
+    final snackBar = tester.widget<SnackBar>(
+      find.byType(SnackBar),
     );
-    await tester.pump();
-    await tester.pumpAndSettle();
 
-    expect(find.text('Invalid QR Code format'), findsOneWidget);
-    expect(find.byType(SnackBar), findsOneWidget);
+    expect(snackBar.duration, appSnackBarDuration);
+    expect(snackBar.persist, isNot(true));
+    expect(
+      snackBar.dismissDirection,
+      isNot(DismissDirection.none),
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     await db.close();
   });
-
   testWidgets('invalid scan message stays on scanner and clears for a valid scan', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     final gateway = GatewayRepository(

@@ -8,9 +8,13 @@ void main() {
 
     expect((snackBar.content as Text).data, 'Saved');
     expect(snackBar.duration, appSnackBarDuration);
+    expect(snackBar.persist, isNot(true));
+    expect(
+      snackBar.dismissDirection,
+      isNot(DismissDirection.none),
+    );
     expect(snackBar.action, isNull);
   });
-
   test('builds an optional action', () {
     var actionCalled = false;
 
