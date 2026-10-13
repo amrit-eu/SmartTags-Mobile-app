@@ -101,7 +101,12 @@ void main() {
 
     test('reconnecting with a pending queue drains it, waits the delay, then refreshes', () async {
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 1015493,
+        ),
       );
       final repository = _CombinedGatewayRepository(unclosedMissions: [_samplePlatform()]);
       final connectivity = _ControllableConnectivity(ConnectivityResult.none);

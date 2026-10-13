@@ -7,6 +7,7 @@ extension PendingOperationMapper on PendingOperation {
   domain.PendingPassportEvent toDomain() {
     return domain.PendingPassportEvent(
       id: id,
+      userRef: userRef,
       platformRef: platformRef,
       kind: domain.PendingOperationKind.fromDb(action),
       payloadJson: payloadJson,

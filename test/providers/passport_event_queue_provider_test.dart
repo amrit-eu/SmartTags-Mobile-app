@@ -145,7 +145,7 @@ void main() {
       expect(rows.single.status, 'pending');
     });
 
-    test('enqueueOrSend queues with queuedAuthRequired when not authenticated', () async {
+    test('enqueueOrSend doesnt queue with notQueuedAuthRequired when not authenticated', () async {
       final repository = _ScriptedGatewayRepository([const GatewayAuthException('Not authenticated.')]);
       final container = ProviderContainer(
         overrides: [
@@ -160,7 +160,7 @@ void main() {
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
 
-      expect(outcome, PassportEventSubmitOutcome.queuedAuthRequired);
+      expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
       expect(await db.getPendingOperationsOrdered(), hasLength(1));
     });
 
@@ -186,13 +186,28 @@ void main() {
 
     test('processQueue is skip-and-continue: a failed row is marked failed, later rows still send', () async {
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 1015493,
+        ),
       );
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-002', action: 'recover', payloadJson: '{"b":2}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-002',
+          action: 'recover',
+          payloadJson: '{"b":2}',
+          userRef: 101549,
+        ),
       );
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-003', action: 'deploy', payloadJson: '{"c":3}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-003',
+          action: 'deploy',
+          payloadJson: '{"c":3}',
+          userRef: 101549,
+        ),
       );
 
       // Item 2 (index 1) fails, items 1 and 3 succeed.
@@ -218,7 +233,12 @@ void main() {
 
     test('processQueue: a second concurrent call joins the first instead of starting a new pass', () async {
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 101549,
+        ),
       );
 
       final gate = Completer<void>();
@@ -252,7 +272,12 @@ void main() {
 
     test('retryFailed resends a single row and removes it on success', () async {
       final id = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 101549,
+        ),
       );
       await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
 
@@ -273,7 +298,12 @@ void main() {
 
     test('retryFailed rethrows and keeps the row failed when the retry also fails', () async {
       final id = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 101549,
+        ),
       );
       await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
 
@@ -415,7 +445,7 @@ void main() {
       expect((await storedAlert()).severity, 'warning');
     });
 
-    test('online with an expired session: queues with queuedAuthRequired', () async {
+    test('online with an expired session: doesnt queue with notQueuedAuthRequired', () async {
       final repository = _AlertGatewayRepository([const GatewayAuthException('Session expired')]);
       final container = containerWith(repository, ConnectivityResult.wifi);
 
@@ -423,7 +453,7 @@ void main() {
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSendAlertAction(alert: alert, action: AlertAction.ack);
 
-      expect(outcome, PassportEventSubmitOutcome.queuedAuthRequired);
+      expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
       expect(await db.getPendingOperationsOrdered(), hasLength(1));
     });
 
@@ -473,7 +503,12 @@ void main() {
 
     test('processQueue marks a row of unknown type failed instead of replaying it', () async {
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'something_new', payloadJson: '{}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'something_new',
+          payloadJson: '{}',
+          userRef: 101549,
+        ),
       );
       final repository = _AlertGatewayRepository([null]);
       final container = containerWith(repository, ConnectivityResult.wifi);

@@ -361,10 +361,20 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       final firstId = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 1015493,
+        ),
       );
       final secondId = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-002', action: 'recover', payloadJson: '{"b":2}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-002',
+          action: 'recover',
+          payloadJson: '{"b":2}',
+          userRef: 1015493,
+        ),
       );
 
       final ordered = await db.getPendingOperationsOrdered();
@@ -383,7 +393,12 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       final id = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{}',
+          userRef: 1015493,
+        ),
       );
 
       await db.markPendingOperationFailed(id, error: 'Server rejected', attempts: 1);
