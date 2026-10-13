@@ -198,6 +198,9 @@ class GatewayRepository {
       if (response.statusCode == 401) {
         throw const GatewayAuthException('Failed to pair platform to QR code: Unauthorized.');
       }
+      if (response.statusCode == 409) {
+        throw const GatewayException('QR code already paired to another platform.');
+      }
       if (!_isSuccess(response.statusCode)) {
         throw GatewayException('Failed to pair platform to QR code (Status ${response.statusCode})');
       }

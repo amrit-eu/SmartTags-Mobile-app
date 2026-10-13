@@ -490,7 +490,9 @@ void main() {
             isA<GatewayException>().having(
               (error) => error.message,
               'message',
-              'Failed to pair platform to QR code (Status $statusCode)',
+              statusCode == 409
+                  ? 'QR code already paired to another platform.'
+                  : 'Failed to pair platform to QR code (Status $statusCode)',
             ),
           ),
         );

@@ -140,6 +140,7 @@ void main() {
     String? qrCode,
     String? ptfId = '1004967',
     bool signedIn = true,
+    int programId = 4,
     Future<http.Response> Function(http.Request)? response,
   }) async {
     await database.insertPlatforms([
@@ -147,6 +148,9 @@ void main() {
         ref: 'DEP-1',
         ptfId: Value(ptfId),
         qrCode: Value(qrCode),
+        programId: Value(programId),
+        programName: const Value('Argo Australia'),
+        programCode: const Value('argo-australia'),
         model: 'ARVOR',
         network: 'Argo',
         category: 'Subsurface Profiler',
@@ -362,7 +366,7 @@ void main() {
     expect(requests, 0);
   });
 
-  for (final status in [401, 500]) {
+  for (final status in [401, 409, 500]) {
     testPairing('a Gateway $status response leaves the platform unpaired with red feedback', (tester) async {
       await mount(tester, response: (_) async => http.Response('Failed', status));
       await _openScanner(tester);
@@ -378,9 +382,11 @@ void main() {
       expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
       expect(
         find.text(
-          status == 401
-              ? 'Failed to pair platform to QR code: Unauthorized.'
-              : 'Failed to pair platform to QR code (Status 500)',
+          switch (status) {
+            401 => 'Failed to pair platform to QR code: Unauthorized.',
+            409 => 'QR code already paired to another platform.',
+            _ => 'Failed to pair platform to QR code (Status $status)',
+          },
         ),
         findsOneWidget,
       );
@@ -400,6 +406,18 @@ void main() {
     await _openScanner(tester);
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Log in to pair this platform to a QR code.'), findsOneWidget);
+    expect(requests, 0);
+  });
+
+  testPairing('users outside of the relevant program cannot scan or submit a pairing', (tester) async {
+    await mount(tester, programId: 99);
+    await _openScanner(tester);
+    expect(find.byType(QrScanScreen), findsNothing);
+    expect(
+      find.text("You don't have permission to edit this platform. You must be member of the Argo Australia program."),
+      findsOneWidget,
+    );
+    expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
     expect(requests, 0);
   });
 }

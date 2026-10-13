@@ -128,6 +128,12 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       _showPairingMessage('Log in to pair this platform to a QR code.');
       return null;
     }
+    if (!ref.read(permissionProvider).canEdit(Resource.deployment, programId: platform.program?.id ?? 0)) {
+      _showPairingMessage(
+        "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program.",
+      );
+      return null;
+    }
     final ptfId = platform.ptfId;
     final numericId = ptfId == null ? null : int.tryParse(ptfId.trim(), radix: 10);
     if (numericId == null || numericId <= 0) {
