@@ -4602,6 +4602,17 @@ class $PendingOperationsTable extends PendingOperations
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
+  static const VerificationMeta _userRefMeta = const VerificationMeta(
+    'userRef',
+  );
+  @override
+  late final GeneratedColumn<int> userRef = GeneratedColumn<int>(
+    'user_ref',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _platformRefMeta = const VerificationMeta(
     'platformRef',
   );
@@ -4681,6 +4692,7 @@ class $PendingOperationsTable extends PendingOperations
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    userRef,
     platformRef,
     action,
     payloadJson,
@@ -4703,6 +4715,14 @@ class $PendingOperationsTable extends PendingOperations
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_ref')) {
+      context.handle(
+        _userRefMeta,
+        userRef.isAcceptableOrUnknown(data['user_ref']!, _userRefMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userRefMeta);
     }
     if (data.containsKey('platform_ref')) {
       context.handle(
@@ -4771,6 +4791,10 @@ class $PendingOperationsTable extends PendingOperations
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
+      userRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_ref'],
+      )!,
       platformRef: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}platform_ref'],
@@ -4813,6 +4837,9 @@ class PendingOperation extends DataClass
   /// Primary key identifying the record; the natural FIFO ordering key.
   final int id;
 
+  /// User id who made the action.
+  final int userRef;
+
   /// The platform this event is for (`Platform.platformRef`).
   final String platformRef;
 
@@ -4836,6 +4863,7 @@ class PendingOperation extends DataClass
   final int attempts;
   const PendingOperation({
     required this.id,
+    required this.userRef,
     required this.platformRef,
     required this.action,
     required this.payloadJson,
@@ -4848,6 +4876,7 @@ class PendingOperation extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['user_ref'] = Variable<int>(userRef);
     map['platform_ref'] = Variable<String>(platformRef);
     map['action'] = Variable<String>(action);
     map['payload_json'] = Variable<String>(payloadJson);
@@ -4863,6 +4892,7 @@ class PendingOperation extends DataClass
   PendingOperationsCompanion toCompanion(bool nullToAbsent) {
     return PendingOperationsCompanion(
       id: Value(id),
+      userRef: Value(userRef),
       platformRef: Value(platformRef),
       action: Value(action),
       payloadJson: Value(payloadJson),
@@ -4882,6 +4912,7 @@ class PendingOperation extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return PendingOperation(
       id: serializer.fromJson<int>(json['id']),
+      userRef: serializer.fromJson<int>(json['userRef']),
       platformRef: serializer.fromJson<String>(json['platformRef']),
       action: serializer.fromJson<String>(json['action']),
       payloadJson: serializer.fromJson<String>(json['payloadJson']),
@@ -4896,6 +4927,7 @@ class PendingOperation extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'userRef': serializer.toJson<int>(userRef),
       'platformRef': serializer.toJson<String>(platformRef),
       'action': serializer.toJson<String>(action),
       'payloadJson': serializer.toJson<String>(payloadJson),
@@ -4908,6 +4940,7 @@ class PendingOperation extends DataClass
 
   PendingOperation copyWith({
     int? id,
+    int? userRef,
     String? platformRef,
     String? action,
     String? payloadJson,
@@ -4917,6 +4950,7 @@ class PendingOperation extends DataClass
     int? attempts,
   }) => PendingOperation(
     id: id ?? this.id,
+    userRef: userRef ?? this.userRef,
     platformRef: platformRef ?? this.platformRef,
     action: action ?? this.action,
     payloadJson: payloadJson ?? this.payloadJson,
@@ -4928,6 +4962,7 @@ class PendingOperation extends DataClass
   PendingOperation copyWithCompanion(PendingOperationsCompanion data) {
     return PendingOperation(
       id: data.id.present ? data.id.value : this.id,
+      userRef: data.userRef.present ? data.userRef.value : this.userRef,
       platformRef: data.platformRef.present
           ? data.platformRef.value
           : this.platformRef,
@@ -4946,6 +4981,7 @@ class PendingOperation extends DataClass
   String toString() {
     return (StringBuffer('PendingOperation(')
           ..write('id: $id, ')
+          ..write('userRef: $userRef, ')
           ..write('platformRef: $platformRef, ')
           ..write('action: $action, ')
           ..write('payloadJson: $payloadJson, ')
@@ -4960,6 +4996,7 @@ class PendingOperation extends DataClass
   @override
   int get hashCode => Object.hash(
     id,
+    userRef,
     platformRef,
     action,
     payloadJson,
@@ -4973,6 +5010,7 @@ class PendingOperation extends DataClass
       identical(this, other) ||
       (other is PendingOperation &&
           other.id == this.id &&
+          other.userRef == this.userRef &&
           other.platformRef == this.platformRef &&
           other.action == this.action &&
           other.payloadJson == this.payloadJson &&
@@ -4984,6 +5022,7 @@ class PendingOperation extends DataClass
 
 class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   final Value<int> id;
+  final Value<int> userRef;
   final Value<String> platformRef;
   final Value<String> action;
   final Value<String> payloadJson;
@@ -4993,6 +5032,7 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   final Value<int> attempts;
   const PendingOperationsCompanion({
     this.id = const Value.absent(),
+    this.userRef = const Value.absent(),
     this.platformRef = const Value.absent(),
     this.action = const Value.absent(),
     this.payloadJson = const Value.absent(),
@@ -5003,6 +5043,7 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   });
   PendingOperationsCompanion.insert({
     this.id = const Value.absent(),
+    required int userRef,
     required String platformRef,
     required String action,
     required String payloadJson,
@@ -5010,11 +5051,13 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
     this.status = const Value.absent(),
     this.lastError = const Value.absent(),
     this.attempts = const Value.absent(),
-  }) : platformRef = Value(platformRef),
+  }) : userRef = Value(userRef),
+       platformRef = Value(platformRef),
        action = Value(action),
        payloadJson = Value(payloadJson);
   static Insertable<PendingOperation> custom({
     Expression<int>? id,
+    Expression<int>? userRef,
     Expression<String>? platformRef,
     Expression<String>? action,
     Expression<String>? payloadJson,
@@ -5025,6 +5068,7 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (userRef != null) 'user_ref': userRef,
       if (platformRef != null) 'platform_ref': platformRef,
       if (action != null) 'action': action,
       if (payloadJson != null) 'payload_json': payloadJson,
@@ -5037,6 +5081,7 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
 
   PendingOperationsCompanion copyWith({
     Value<int>? id,
+    Value<int>? userRef,
     Value<String>? platformRef,
     Value<String>? action,
     Value<String>? payloadJson,
@@ -5047,6 +5092,7 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   }) {
     return PendingOperationsCompanion(
       id: id ?? this.id,
+      userRef: userRef ?? this.userRef,
       platformRef: platformRef ?? this.platformRef,
       action: action ?? this.action,
       payloadJson: payloadJson ?? this.payloadJson,
@@ -5062,6 +5108,9 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (userRef.present) {
+      map['user_ref'] = Variable<int>(userRef.value);
     }
     if (platformRef.present) {
       map['platform_ref'] = Variable<String>(platformRef.value);
@@ -5091,6 +5140,7 @@ class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
   String toString() {
     return (StringBuffer('PendingOperationsCompanion(')
           ..write('id: $id, ')
+          ..write('userRef: $userRef, ')
           ..write('platformRef: $platformRef, ')
           ..write('action: $action, ')
           ..write('payloadJson: $payloadJson, ')
@@ -8938,6 +8988,7 @@ typedef $$UserRolesTableProcessedTableManager =
 typedef $$PendingOperationsTableCreateCompanionBuilder =
     PendingOperationsCompanion Function({
       Value<int> id,
+      required int userRef,
       required String platformRef,
       required String action,
       required String payloadJson,
@@ -8949,6 +9000,7 @@ typedef $$PendingOperationsTableCreateCompanionBuilder =
 typedef $$PendingOperationsTableUpdateCompanionBuilder =
     PendingOperationsCompanion Function({
       Value<int> id,
+      Value<int> userRef,
       Value<String> platformRef,
       Value<String> action,
       Value<String> payloadJson,
@@ -8969,6 +9021,11 @@ class $$PendingOperationsTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get userRef => $composableBuilder(
+    column: $table.userRef,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9022,6 +9079,11 @@ class $$PendingOperationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get userRef => $composableBuilder(
+    column: $table.userRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get platformRef => $composableBuilder(
     column: $table.platformRef,
     builder: (column) => ColumnOrderings(column),
@@ -9069,6 +9131,9 @@ class $$PendingOperationsTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get userRef =>
+      $composableBuilder(column: $table.userRef, builder: (column) => column);
 
   GeneratedColumn<String> get platformRef => $composableBuilder(
     column: $table.platformRef,
@@ -9137,6 +9202,7 @@ class $$PendingOperationsTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<int> userRef = const Value.absent(),
                 Value<String> platformRef = const Value.absent(),
                 Value<String> action = const Value.absent(),
                 Value<String> payloadJson = const Value.absent(),
@@ -9146,6 +9212,7 @@ class $$PendingOperationsTableTableManager
                 Value<int> attempts = const Value.absent(),
               }) => PendingOperationsCompanion(
                 id: id,
+                userRef: userRef,
                 platformRef: platformRef,
                 action: action,
                 payloadJson: payloadJson,
@@ -9157,6 +9224,7 @@ class $$PendingOperationsTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                required int userRef,
                 required String platformRef,
                 required String action,
                 required String payloadJson,
@@ -9166,6 +9234,7 @@ class $$PendingOperationsTableTableManager
                 Value<int> attempts = const Value.absent(),
               }) => PendingOperationsCompanion.insert(
                 id: id,
+                userRef: userRef,
                 platformRef: platformRef,
                 action: action,
                 payloadJson: payloadJson,

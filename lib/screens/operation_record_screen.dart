@@ -316,6 +316,17 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       ref.read(platformsRefreshProvider.notifier).refreshAfterDelay().ignore();
     }
 
+    if (outcome == PassportEventSubmitOutcome.notQueuedAuthRequired) {
+      // Neither sent nor queued: leave the local database untouched
+      if (mounted) {
+        setState(() => _submitInProgress = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$_eventType not saved: you need to be logged in.')),
+        );
+      }
+      return;
+    }
+
     // The event was sent (or queued for later sync) successfully; reflect
     // the new state in the local database so the UI updates immediately.
     try {
@@ -348,8 +359,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
     if (mounted) {
       final message = switch (outcome) {
         PassportEventSubmitOutcome.sent => '$_eventType successful! Changes have been saved and synced.',
-        PassportEventSubmitOutcome.queuedAuthRequired =>
-          '$_eventType successful! Changes saved locally. Log in to sync this change.',
+        PassportEventSubmitOutcome.notQueuedAuthRequired => '$_eventType not saved: you need to be logged in.',
         PassportEventSubmitOutcome.queued =>
           '$_eventType successful! Changes have been saved locally and queued for sync.',
       };

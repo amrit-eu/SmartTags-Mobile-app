@@ -23,4 +23,13 @@ abstract final class GatewayConfig {
 
   /// Deploy/recover passport event submission endpoint.
   static Uri get goosPassportEventsUri => apiUri('oceanops/data/goos-passport-events');
+
+  /// endpoint to get a specfic alert or action on it (:id/action) :
+  static Uri get actOnAlertsUri => apiUri('alerta/alert');
+
+  /// `PUT` endpoint to apply an action (ack, unack, close, open…) to alert [id].
+  static Uri alertActionUri(String id) => Uri.parse('$actOnAlertsUri/${Uri.encodeComponent(id)}/action');
+
+  /// `PUT` endpoint to add a note to alert [id].
+  static Uri alertNoteUri(String id) => Uri.parse('$actOnAlertsUri/${Uri.encodeComponent(id)}/note');
 }

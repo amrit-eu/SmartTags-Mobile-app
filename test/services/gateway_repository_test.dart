@@ -7,6 +7,7 @@ import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
+import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
@@ -18,12 +19,18 @@ import 'package:smart_tags/services/gateway_repository.dart';
 AuthDao _fakeAuthDao() => AppDatabase.executor(conn.inMemoryConnection()).authDao;
 
 class _FakeAuthService extends AuthService {
-  _FakeAuthService(this._token) : super(authDao: _fakeAuthDao());
+  _FakeAuthService(this._token, {this.error}) : super(authDao: _fakeAuthDao());
 
   final String? _token;
 
+  /// When set, thrown by [getAccessToken] instead of returning [_token].
+  final Exception? error;
+
   @override
-  Future<String?> getAccessToken() async => _token;
+  Future<String?> getAccessToken() async {
+    if (error != null) throw error!;
+    return _token;
+  }
 }
 
 const Map<String, dynamic> _samplePassportItem = {
@@ -427,5 +434,51 @@ void main() {
         throwsA(isA<GatewayException>()),
       );
     });
+  });
+
+  group('access token failures', () {
+    final calls = <String, Future<void> Function(GatewayRepository)>{
+      'submitPassportEventJson': (repository) => repository.submitPassportEventJson('{}'),
+      'actOnAlert': (repository) => repository.actOnAlert('alert-1', AlertAction.ack),
+      'addAlertNote': (repository) => repository.addAlertNote('alert-1', 'note'),
+    };
+
+    GatewayRepository repositoryThrowing(Exception error) {
+      final client = MockClient((request) async {
+        fail('Should not send a request without a token');
+      });
+      return GatewayRepository(client: client, authService: _FakeAuthService(null, error: error));
+    }
+
+    for (final MapEntry(key: name, value: call) in calls.entries) {
+      test('$name maps RefreshException to GatewayAuthException', () async {
+        await expectLater(
+          call(repositoryThrowing(const RefreshException('Invalid refresh token'))),
+          throwsA(isA<GatewayAuthException>()),
+        );
+      });
+
+      test('$name maps AuthException to a retryable GatewayException', () async {
+        await expectLater(
+          call(repositoryThrowing(const AuthException('Unable to refresh token'))),
+          throwsA(
+            isA<GatewayException>()
+                .having((e) => e, 'exception', isNot(isA<GatewayAuthException>()))
+                .having((e) => e.isClientError, 'isClientError', isFalse),
+          ),
+        );
+      });
+
+      test('$name maps ClientException to a network GatewayException', () async {
+        await expectLater(
+          call(repositoryThrowing(http.ClientException('Connection refused'))),
+          throwsA(
+            isA<GatewayException>()
+                .having((e) => e.message, 'message', contains('Network error'))
+                .having((e) => e.isClientError, 'isClientError', isFalse),
+          ),
+        );
+      });
+    }
   });
 }
