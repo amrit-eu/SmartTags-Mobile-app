@@ -138,6 +138,26 @@ class GatewayRepository {
   /// passport search) rather than `200 OK`, so any 2xx status is accepted.
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 
+  /// Returns a valid access token, translating [AuthService.getAccessToken]
+  /// failures into [GatewayException]s so callers only have one type to handle.
+  Future<String> _accessToken() async {
+    final String? token;
+    try {
+      token = await _authService.getAccessToken();
+    } on RefreshException {
+      // AuthService has already logged out: a fresh login is required.
+      throw const GatewayAuthException('session expired. Please log in again.');
+    } on AuthException {
+      throw const GatewayException('Unable to refresh session');
+    } on http.ClientException {
+      throw const GatewayException('Network error');
+    }
+    if (token == null) {
+      throw const GatewayAuthException('Not authenticated. Please log in again.');
+    }
+    return token;
+  }
+
   String _truncate(String value, {int max = 200}) {
     if (value.length <= max) {
       return value;
@@ -151,12 +171,8 @@ class GatewayRepository {
   /// request without depending on form state.
   ///
   /// Throws [GatewayException] on missing auth, non-200 response, or network error.
-  /// [RefreshException] (forced logout) from [AuthService.getAccessToken] propagates.
   Future<void> submitPassportEventJson(String body) async {
-    final token = await _authService.getAccessToken();
-    if (token == null) {
-      throw const GatewayAuthException('Not authenticated. Please log in again.');
-    }
+    final token = await _accessToken();
     try {
       final response = await _client.put(
         GatewayConfig.goosPassportEventsUri,
@@ -193,10 +209,7 @@ class GatewayRepository {
   }
 
   Future<void> _putAlert(Uri uri, Map<String, dynamic> body, String description) async {
-    final token = await _authService.getAccessToken();
-    if (token == null) {
-      throw const GatewayAuthException('Not authenticated. Please log in again.');
-    }
+    final token = await _accessToken();
     try {
       final response = await _client.put(
         uri,
