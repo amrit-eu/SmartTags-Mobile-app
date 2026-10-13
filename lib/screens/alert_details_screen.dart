@@ -390,8 +390,7 @@ class AlertDetailsScreen extends ConsumerWidget {
     }
     final message = switch (outcome) {
       PassportEventSubmitOutcome.sent => successMessage,
-      PassportEventSubmitOutcome.notQueuedAuthRequired =>
-        '$successMessage. Submit failed and not queued. Need to be logged in.',
+      PassportEventSubmitOutcome.notQueuedAuthRequired => 'Not saved — you need to be logged in.',
       PassportEventSubmitOutcome.queued => '$successMessage. Saved locally and queued for sync.',
     };
     messenger.showSnackBar(SnackBar(content: Text(message)));

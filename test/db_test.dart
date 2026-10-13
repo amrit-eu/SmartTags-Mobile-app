@@ -365,7 +365,7 @@ void main() {
           platformRef: 'PLT-001',
           action: 'deploy',
           payloadJson: '{"a":1}',
-          userRef: 1015493,
+          userRef: 123456,
         ),
       );
       final secondId = await db.enqueuePendingOperation(
@@ -373,7 +373,7 @@ void main() {
           platformRef: 'PLT-002',
           action: 'recover',
           payloadJson: '{"b":2}',
-          userRef: 1015493,
+          userRef: 123456,
         ),
       );
 
@@ -397,7 +397,7 @@ void main() {
           platformRef: 'PLT-001',
           action: 'deploy',
           payloadJson: '{}',
-          userRef: 1015493,
+          userRef: 123456,
         ),
       );
 

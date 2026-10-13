@@ -10,6 +10,7 @@ import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/pending_operation.dart';
+import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
@@ -92,6 +93,21 @@ class _GatedGatewayRepository extends GatewayRepository {
   }
 }
 
+/// Auth notifier whose user can be switched mid-test (logout / login as
+/// someone else).
+class _SwitchableAuthNotifier extends AuthNotifier {
+  _SwitchableAuthNotifier(this._initial);
+
+  final User? _initial;
+
+  @override
+  Future<User?> build() async => _initial;
+
+  void setUser(User? user) => state = AsyncData(user);
+}
+
+final int _userId = createTestUser().id;
+
 void main() {
   group('PassportEventQueueNotifier', () {
     late AppDatabase db;
@@ -111,9 +127,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       final outcome = await container
           .read(passportEventQueueProvider.notifier)
@@ -131,9 +149,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       final outcome = await container
           .read(passportEventQueueProvider.notifier)
@@ -145,23 +165,25 @@ void main() {
       expect(rows.single.status, 'pending');
     });
 
-    test('enqueueOrSend doesnt queue with notQueuedAuthRequired when not authenticated', () async {
+    test('enqueueOrSend does not queue (notQueuedAuthRequired) when no user is logged in', () async {
       final repository = _ScriptedGatewayRepository([const GatewayAuthException('Not authenticated.')]);
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       final outcome = await container
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
 
       expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
-      expect(await db.getPendingOperationsOrdered(), hasLength(1));
+      expect(await db.getPendingOperationsOrdered(), isEmpty);
     });
 
     test('enqueueOrSend queues directly when offline, without calling the repository', () async {
@@ -171,9 +193,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.none)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       final outcome = await container
           .read(passportEventQueueProvider.notifier)
@@ -181,7 +205,8 @@ void main() {
 
       expect(outcome, PassportEventSubmitOutcome.queued);
       expect(repository.sentBodies, isEmpty);
-      expect(await db.getPendingOperationsOrdered(), hasLength(1));
+      final rows = await db.getPendingOperationsOrdered();
+      expect(rows.single.userRef, _userId);
     });
 
     test('processQueue is skip-and-continue: a failed row is marked failed, later rows still send', () async {
@@ -190,7 +215,7 @@ void main() {
           platformRef: 'PLT-001',
           action: 'deploy',
           payloadJson: '{"a":1}',
-          userRef: 1015493,
+          userRef: _userId,
         ),
       );
       await db.enqueuePendingOperation(
@@ -198,7 +223,7 @@ void main() {
           platformRef: 'PLT-002',
           action: 'recover',
           payloadJson: '{"b":2}',
-          userRef: 101549,
+          userRef: _userId,
         ),
       );
       await db.enqueuePendingOperation(
@@ -206,7 +231,7 @@ void main() {
           platformRef: 'PLT-003',
           action: 'deploy',
           payloadJson: '{"c":3}',
-          userRef: 101549,
+          userRef: _userId,
         ),
       );
 
@@ -217,9 +242,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       await container.read(passportEventQueueProvider.notifier).processQueue();
 
@@ -237,7 +264,7 @@ void main() {
           platformRef: 'PLT-001',
           action: 'deploy',
           payloadJson: '{"a":1}',
-          userRef: 101549,
+          userRef: _userId,
         ),
       );
 
@@ -248,9 +275,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       final notifier = container.read(passportEventQueueProvider.notifier);
       final first = notifier.processQueue();
@@ -276,7 +305,7 @@ void main() {
           platformRef: 'PLT-001',
           action: 'deploy',
           payloadJson: '{"a":1}',
-          userRef: 101549,
+          userRef: _userId,
         ),
       );
       await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
@@ -287,9 +316,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       await container.read(passportEventQueueProvider.notifier).retryFailed(id);
 
@@ -302,7 +333,7 @@ void main() {
           platformRef: 'PLT-001',
           action: 'deploy',
           payloadJson: '{"a":1}',
-          userRef: 101549,
+          userRef: _userId,
         ),
       );
       await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
@@ -313,9 +344,11 @@ void main() {
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
+      await container.read(authProvider.future);
 
       await expectLater(
         container.read(passportEventQueueProvider.notifier).retryFailed(id),
@@ -325,6 +358,97 @@ void main() {
       final row = await db.getPendingOperationById(id);
       expect(row!.status, 'failed');
       expect(row.attempts, 2);
+    });
+
+    group('rows are tied to the user who queued them', () {
+      const otherUserId = 999;
+
+      ProviderContainer containerFor(_ScriptedGatewayRepository repository, AuthNotifier Function() auth) {
+        final container = ProviderContainer(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
+            gatewayRepositoryProvider.overrideWithValue(repository),
+            authProvider.overrideWith(auth),
+          ],
+        );
+        addTearDown(container.dispose);
+        return container;
+      }
+
+      Future<int> enqueueFor(int userRef, String platformRef) {
+        return db.enqueuePendingOperation(
+          PendingOperationsCompanion.insert(
+            platformRef: platformRef,
+            action: 'deploy',
+            payloadJson: '{"p":"$platformRef"}',
+            userRef: userRef,
+          ),
+        );
+      }
+
+      test('processQueue only replays the current user rows; other users rows stay pending', () async {
+        await enqueueFor(otherUserId, 'PLT-OTHER');
+        await enqueueFor(_userId, 'PLT-MINE');
+        final repository = _ScriptedGatewayRepository([null]);
+        final container = containerFor(repository, () => FakeAuthNotifier(createTestUser()));
+        await container.read(authProvider.future);
+
+        await container.read(passportEventQueueProvider.notifier).processQueue();
+
+        expect(repository.sentBodies, ['{"p":"PLT-MINE"}']);
+        final remaining = (await db.getPendingOperationsOrdered()).single;
+        expect(remaining.platformRef, 'PLT-OTHER');
+        expect(remaining.status, 'pending');
+        expect(remaining.attempts, 0);
+      });
+
+      test('processQueue does nothing when no user is logged in', () async {
+        await enqueueFor(_userId, 'PLT-001');
+        final repository = _ScriptedGatewayRepository([null]);
+        final container = containerFor(repository, () => FakeAuthNotifier(null));
+        await container.read(authProvider.future);
+
+        await container.read(passportEventQueueProvider.notifier).processQueue();
+
+        expect(repository.sentBodies, isEmpty);
+        expect((await db.getPendingOperationsOrdered()).single.status, 'pending');
+      });
+
+      test('retryFailed ignores a row queued by another user', () async {
+        final id = await enqueueFor(otherUserId, 'PLT-001');
+        await db.markPendingOperationFailed(id, error: 'boom', attempts: 1);
+        final repository = _ScriptedGatewayRepository([null]);
+        final container = containerFor(repository, () => FakeAuthNotifier(createTestUser()));
+        await container.read(authProvider.future);
+
+        await container.read(passportEventQueueProvider.notifier).retryFailed(id);
+
+        expect(repository.sentBodies, isEmpty);
+        final row = await db.getPendingOperationById(id);
+        expect(row!.status, 'failed');
+        expect(row.attempts, 1);
+      });
+
+      test('pendingPassportEventsProvider lists only the current user rows and follows user changes', () async {
+        await enqueueFor(_userId, 'PLT-MINE');
+        await enqueueFor(otherUserId, 'PLT-OTHER');
+        final auth = _SwitchableAuthNotifier(createTestUser());
+        final container = containerFor(_ScriptedGatewayRepository([null]), () => auth)
+          ..listen(pendingPassportEventsProvider, (_, _) {});
+
+        await container.read(authProvider.future);
+        var events = await container.read(pendingPassportEventsProvider.future);
+        expect(events.map((e) => e.platformRef), ['PLT-MINE']);
+
+        auth.setUser(createTestUser(id: otherUserId));
+        events = await container.read(pendingPassportEventsProvider.future);
+        expect(events.map((e) => e.platformRef), ['PLT-OTHER']);
+
+        auth.setUser(null);
+        events = await container.read(pendingPassportEventsProvider.future);
+        expect(events, isEmpty);
+      });
     });
   });
 
@@ -383,13 +507,17 @@ void main() {
       country: 'country',
     );
 
-    ProviderContainer containerWith(_AlertGatewayRepository repository, ConnectivityResult connectivity) {
+    ProviderContainer containerWith(
+      _AlertGatewayRepository repository,
+      ConnectivityResult connectivity, {
+      bool loggedIn = true,
+    }) {
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(connectivity)),
           gatewayRepositoryProvider.overrideWithValue(repository),
-          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          authProvider.overrideWith(() => FakeAuthNotifier(loggedIn ? createTestUser() : null)),
         ],
       );
       addTearDown(container.dispose);
@@ -445,7 +573,7 @@ void main() {
       expect((await storedAlert()).severity, 'warning');
     });
 
-    test('online with an expired session: doesnt queue with notQueuedAuthRequired', () async {
+    test('online with an expired session, user still known: queues it under that user', () async {
       final repository = _AlertGatewayRepository([const GatewayAuthException('Session expired')]);
       final container = containerWith(repository, ConnectivityResult.wifi);
 
@@ -453,8 +581,21 @@ void main() {
           .read(passportEventQueueProvider.notifier)
           .enqueueOrSendAlertAction(alert: alert, action: AlertAction.ack);
 
+      expect(outcome, PassportEventSubmitOutcome.queued);
+      expect((await db.getPendingOperationsOrdered()).single.userRef, _userId);
+    });
+
+    test('not logged in: nothing queued, alert left untouched', () async {
+      final repository = _AlertGatewayRepository([null]);
+      final container = containerWith(repository, ConnectivityResult.none, loggedIn: false);
+
+      final outcome = await container
+          .read(passportEventQueueProvider.notifier)
+          .enqueueOrSendAlertAction(alert: alert, action: AlertAction.ack);
+
       expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
-      expect(await db.getPendingOperationsOrdered(), hasLength(1));
+      expect(await db.getPendingOperationsOrdered(), isEmpty);
+      expect((await storedAlert()).status, 'open');
     });
 
     test('online with a 4xx rejection: rethrows, queues nothing, leaves the alert untouched', () async {
@@ -507,11 +648,12 @@ void main() {
           platformRef: 'PLT-001',
           action: 'something_new',
           payloadJson: '{}',
-          userRef: 101549,
+          userRef: _userId,
         ),
       );
       final repository = _AlertGatewayRepository([null]);
       final container = containerWith(repository, ConnectivityResult.wifi);
+      await container.read(authProvider.future);
 
       await container.read(passportEventQueueProvider.notifier).processQueue();
 

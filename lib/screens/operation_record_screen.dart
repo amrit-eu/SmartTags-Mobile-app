@@ -349,7 +349,7 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       final message = switch (outcome) {
         PassportEventSubmitOutcome.sent => '$_eventType successful! Changes have been saved and synced.',
         PassportEventSubmitOutcome.notQueuedAuthRequired =>
-          '$_eventType Submit failed and not queued. Need to be logged in.',
+          '$_eventType not saved — you need to be logged in.',
         PassportEventSubmitOutcome.queued =>
           '$_eventType successful! Changes have been saved locally and queued for sync.',
       };

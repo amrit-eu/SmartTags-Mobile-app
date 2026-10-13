@@ -18,10 +18,11 @@ import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
 
-/// Streams all queued operations — deploy/recover events and alert actions/notes
-/// (pending + failed), oldest first.
+/// Streams the current user's queued operations — deploy/recover events and
+/// alert actions/notes (pending + failed), oldest first. Rebuilt when the
+/// logged-in user changes, so another user's rows are never shown.
 final pendingPassportEventsProvider = StreamProvider<List<PendingPassportEvent>>((ref) {
-  final authorId = ref.read(authProvider).value?.id;
+  final authorId = ref.watch(authProvider.select((async) => async.value?.id));
   final db = ref.watch(databaseProvider);
   return db.watchPendingOperations().map(
     // Rows of an unknown type can't be displayed (nor replayed: the replay
@@ -39,8 +40,8 @@ enum PassportEventSubmitOutcome {
   /// Sent to the Gateway immediately.
   sent,
 
-  /// Never Queue locally if the user isn't authenticated (or their session
-  /// expired) — reconnecting alone won't resolve this; the user needs to log in.
+  /// Not sent and not queued because no user is logged in: a queued row must
+  /// be replayed as the user who made it, so there is no one to queue it for.
   notQueuedAuthRequired,
 
   /// Queued locally because the device is offline or the request failed for
@@ -62,8 +63,9 @@ class PassportEventQueueNotifier extends Notifier<void> {
   void build() {}
 
   /// Attempts to send [request] immediately when online; otherwise (or on
-  /// failure) queues it locally for later replay. Never throws: every
-  /// failure path degrades to "queued".
+  /// failure) queues it locally, tagged with the current user, for later
+  /// replay. Never throws: every failure path degrades to "queued", or to
+  /// "not queued" when no user is logged in.
   Future<PassportEventSubmitOutcome> enqueueOrSend({
     required String platformRef,
     required DeployAction action,
@@ -73,7 +75,6 @@ class PassportEventQueueNotifier extends Notifier<void> {
     final bodyJson = jsonEncode(PassportEventMapper.toJson(request));
 
     final connectivity = await _currentConnectivity();
-    final authorId = ref.read(authProvider).value?.id;
 
     if (isDeviceOnline(connectivity)) {
       try {
@@ -84,6 +85,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
       }
     }
 
+    final authorId = await _currentUserId();
     if (authorId != null) {
       await db.enqueuePendingOperation(
         PendingOperationsCompanion.insert(
@@ -101,8 +103,10 @@ class PassportEventQueueNotifier extends Notifier<void> {
   }
 
   /// Applies [action] to [alert]: sends it immediately when online, otherwise
-  /// (or on a network/server/auth failure) queues it for later replay. In both
-  /// cases the alert's status is updated locally so the UI reflects it at once.
+  /// (or on a network/server/auth failure) queues it, tagged with the current
+  /// user, for later replay. In both cases the alert's status is updated
+  /// locally so the UI reflects it at once. With no user logged in, nothing
+  /// is queued nor changed locally.
   ///
   /// Unlike [enqueueOrSend], a 4xx rejection from the Gateway (e.g. 403, 404)
   /// is rethrown as a [GatewayException]: nothing is queued or changed locally,
@@ -145,7 +149,6 @@ class PassportEventQueueNotifier extends Notifier<void> {
     final bodyJson = jsonEncode(payload);
 
     final connectivity = await _currentConnectivity();
-    final authorId = ref.read(authProvider).value?.id;
 
     if (isDeviceOnline(connectivity)) {
       try {
@@ -160,6 +163,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
       }
     }
 
+    final authorId = await _currentUserId();
     if (authorId != null) {
       await db.enqueuePendingOperation(
         PendingOperationsCompanion.insert(
@@ -208,8 +212,10 @@ class PassportEventQueueNotifier extends Notifier<void> {
   }
 
   Future<void> _performProcessQueue() async {
+    // Rows are replayed only as the user who queued them. No need to wait for
+    // the auth state to load: a pass is triggered again on login.
     final authorId = ref.read(authProvider).value?.id;
-    if (authorId == null) return; // need to be logged to retrieve queue.
+    if (authorId == null) return;
 
     final db = ref.read(databaseProvider);
     final repository = ref.read(gatewayRepositoryProvider);
@@ -239,17 +245,31 @@ class PassportEventQueueNotifier extends Notifier<void> {
   }
 
   /// Retries a single failed row on demand. Rethrows on failure so the
-  /// calling UI can show its own feedback for that row.
+  /// calling UI can show its own feedback for that row. Rows queued by
+  /// another user are left untouched.
   Future<void> retryFailed(int id) async {
     final db = ref.read(databaseProvider);
     final row = await db.getPendingOperationById(id);
-    if (row == null) return;
+    if (row == null || row.userRef != ref.read(authProvider).value?.id) return;
     try {
       await _replay(ref.read(gatewayRepositoryProvider), row);
       await db.deletePendingOperation(id);
     } on Object catch (e) {
       await db.markPendingOperationFailed(id, error: e.toString(), attempts: row.attempts + 1);
       rethrow;
+    }
+  }
+
+  /// The logged-in user's id, waiting for the auth state to load if needed;
+  /// `null` when logged out or if it can't be resolved.
+  Future<int?> _currentUserId() async {
+    final async = ref.read(authProvider);
+    if (async.hasValue) return async.value?.id;
+    if (async.hasError) return null;
+    try {
+      return (await ref.read(authProvider.future).timeout(const Duration(seconds: 5)))?.id;
+    } on Object {
+      return null;
     }
   }
 
