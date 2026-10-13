@@ -293,6 +293,9 @@ class PendingOperations extends Table {
   /// Primary key identifying the record; the natural FIFO ordering key.
   IntColumn get id => integer().autoIncrement()();
 
+  /// User id who made the action.
+  IntColumn get userRef => integer()();
+
   /// The platform this event is for (`Platform.platformRef`).
   TextColumn get platformRef => text()();
 

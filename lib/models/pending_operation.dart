@@ -95,6 +95,7 @@ class PendingPassportEvent {
   /// Creates a [PendingPassportEvent].
   const PendingPassportEvent({
     required this.id,
+    required this.userRef,
     required this.platformRef,
     required this.kind,
     required this.payloadJson,
@@ -106,6 +107,9 @@ class PendingPassportEvent {
 
   /// Local queue row id (also the FIFO ordering key).
   final int id;
+
+  /// User id at the origin of the action
+  final int userRef;
 
   /// The platform this operation is for (for alerts: the alert's resource).
   final String platformRef;
