@@ -32,4 +32,7 @@ abstract final class GatewayConfig {
 
   /// `PUT` endpoint to add a note to alert [id].
   static Uri alertNoteUri(String id) => Uri.parse('$actOnAlertsUri/${Uri.encodeComponent(id)}/note');
+
+  /// Pair platform to QR code endpoint.
+  static Uri get pairPlatformToQrCodeUri => apiUri('oceanops/data/qr-code/pair');
 }
