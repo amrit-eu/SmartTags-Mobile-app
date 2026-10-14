@@ -30,6 +30,7 @@ import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
 import 'package:smart_tags/widgets/common/container.dart';
+import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -250,92 +251,99 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
         title: const Text('Platform Details'),
         leading: const BackButton(),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Map Section
-            SectionContainer(
-              height: 250,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  children: [
-                    FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: platform.latestPosition,
-                        initialZoom: 10,
-                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: MapConfig.oceanBaseTileUrl,
-                          userAgentPackageName: MapConfig.userAgentPackageName,
-                        ),
-                        TileLayer(
-                          urlTemplate: MapConfig.oceanReferenceTileUrl,
-                          userAgentPackageName: MapConfig.userAgentPackageName,
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: platform.latestPosition,
-                              width: 40,
-                              height: 40,
-                              child: Icon(
-                                Icons.location_on,
-                                color: PlatformStatusPalette.forStatus(platform.status).backgroundColor,
-                                size: 40,
+      body: Column(
+        children: [
+          const ConnectivityBanner(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Map Section
+                  SectionContainer(
+                    height: 250,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
+                        children: [
+                          FlutterMap(
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: platform.latestPosition,
+                              initialZoom: 10,
+                              interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: MapConfig.oceanBaseTileUrl,
+                                userAgentPackageName: MapConfig.userAgentPackageName,
+                              ),
+                              TileLayer(
+                                urlTemplate: MapConfig.oceanReferenceTileUrl,
+                                userAgentPackageName: MapConfig.userAgentPackageName,
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: platform.latestPosition,
+                                    width: 40,
+                                    height: 40,
+                                    child: Icon(
+                                      Icons.location_on,
+                                      color: PlatformStatusPalette.forStatus(platform.status).backgroundColor,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(200),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Latest observation',
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(200),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Latest observation',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  _PlatformSummaryCard(
+                    platform: platform,
+                    confirmedQrCode: _confirmedQrCode,
+                    isPairing: _isPairing,
+                    isOnline: isOnline,
+                    onPair: () => unawaited(_pairPlatform(platform)),
+                  ),
+                  const SizedBox(height: 16),
+
+                  _AlertsSummaryRow(platformRef: widget.platformRef),
+                  const SizedBox(height: 16),
+
+                  _LatestOperationCard(platform: platform),
+                  const SizedBox(height: 72),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            _PlatformSummaryCard(
-              platform: platform,
-              confirmedQrCode: _confirmedQrCode,
-              isPairing: _isPairing,
-              isOnline: isOnline,
-              onPair: () => unawaited(_pairPlatform(platform)),
-            ),
-            const SizedBox(height: 16),
-
-            _AlertsSummaryRow(platformRef: widget.platformRef),
-            const SizedBox(height: 16),
-
-            _LatestOperationCard(platform: platform),
-            const SizedBox(height: 72),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: platform.operationalStatus == OperationalStatus.deployed ? 'recover' : 'deploy',

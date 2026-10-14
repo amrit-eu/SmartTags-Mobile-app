@@ -3,19 +3,29 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
+import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/passport_event.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
+import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
 
 /// Exception thrown when a Gateway API call fails (non-200, network, or auth error).
 class GatewayException implements Exception {
-  /// Creates a [GatewayException] with the given [message].
-  const GatewayException(this.message);
+  /// Creates a [GatewayException] with the given [message] and, when the
+  /// failure came from an HTTP response, its [statusCode].
+  const GatewayException(this.message, {this.statusCode});
 
   /// The error message describing the Gateway failure.
   final String message;
+
+  /// The HTTP status code of the response, if the failure came from one.
+  final int? statusCode;
+
+  /// Whether the server rejected the request itself (4xx): replaying it
+  /// unchanged can never succeed.
+  bool get isClientError => statusCode != null && statusCode! >= 400 && statusCode! < 500;
 
   @override
   String toString() => message;
@@ -128,6 +138,26 @@ class GatewayRepository {
   /// passport search) rather than `200 OK`, so any 2xx status is accepted.
   bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 
+  /// Returns a valid access token, translating [AuthService.getAccessToken]
+  /// failures into [GatewayException]s so callers only have one type to handle.
+  Future<String> _accessToken() async {
+    final String? token;
+    try {
+      token = await _authService.getAccessToken();
+    } on RefreshException {
+      // AuthService has already logged out: a fresh login is required.
+      throw const GatewayAuthException('session expired. Please log in again.');
+    } on AuthException {
+      throw const GatewayException('Unable to refresh session');
+    } on http.ClientException {
+      throw const GatewayException('Network error');
+    }
+    if (token == null) {
+      throw const GatewayAuthException('Not authenticated. Please log in again.');
+    }
+    return token;
+  }
+
   String _truncate(String value, {int max = 200}) {
     if (value.length <= max) {
       return value;
@@ -141,12 +171,8 @@ class GatewayRepository {
   /// request without depending on form state.
   ///
   /// Throws [GatewayException] on missing auth, non-200 response, or network error.
-  /// [RefreshException] (forced logout) from [AuthService.getAccessToken] propagates.
   Future<void> submitPassportEventJson(String body) async {
-    final token = await _authService.getAccessToken();
-    if (token == null) {
-      throw const GatewayAuthException('Not authenticated. Please log in again.');
-    }
+    final token = await _accessToken();
     try {
       final response = await _client.put(
         GatewayConfig.goosPassportEventsUri,
@@ -162,6 +188,61 @@ class GatewayRepository {
     } on http.ClientException catch (e) {
       throw GatewayException('Network error: ${e.message}');
     }
+  }
+
+  /// Applies [action] to the alert [alertId] via `PUT /alerta/alert/:id/action`.
+  ///
+  /// Throws [GatewayException] on missing auth, non-2xx response, or network error.
+  Future<void> actOnAlert(String alertId, AlertAction action) {
+    return _putAlert(
+      GatewayConfig.alertActionUri(alertId),
+      {'action': action.name, 'timeout': null},
+      'apply "${action.name}" to the alert',
+    );
+  }
+
+  /// Adds a note with [text] to the alert [alertId] via `PUT /alerta/alert/:id/note`.
+  ///
+  /// Throws [GatewayException] on missing auth, non-2xx response, or network error.
+  Future<void> addAlertNote(String alertId, String text) {
+    return _putAlert(GatewayConfig.alertNoteUri(alertId), {'text': text}, 'add the note');
+  }
+
+  Future<void> _putAlert(Uri uri, Map<String, dynamic> body, String description) async {
+    final token = await _accessToken();
+    try {
+      final response = await _client.put(
+        uri,
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: jsonEncode(body),
+      );
+      if (response.statusCode == 401) {
+        throw const GatewayAuthException('Unauthorized or session expired. Please log in again.');
+      }
+      if (!_isSuccess(response.statusCode)) {
+        throw GatewayException(
+          'Failed to $description (Status ${response.statusCode})',
+          statusCode: response.statusCode,
+        );
+      }
+    } on http.ClientException catch (e) {
+      throw GatewayException('Network error: ${e.message}');
+    }
+  }
+
+  /// Replays a queued alert operation: [payloadJson] is the body stored when it
+  /// was queued (`{"alertId", "action"}` or `{"alertId", "text"}`).
+  Future<void> submitAlertOperationJson(PendingOperationKind kind, String payloadJson) {
+    final payload = json.decode(payloadJson) as Map<String, dynamic>;
+    final alertId = payload['alertId'] as String;
+    if (kind == PendingOperationKind.alertNote) {
+      return addAlertNote(alertId, payload['text'] as String);
+    }
+    final action = kind.alertAction;
+    if (action == null) {
+      throw ArgumentError.value(kind, 'kind', 'Not an alert operation');
+    }
+    return actOnAlert(alertId, action);
   }
 
   /// Builds the Gateway JSON body from [request] then sends it.
