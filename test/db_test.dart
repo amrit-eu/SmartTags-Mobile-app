@@ -105,6 +105,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           id: 'alert-2',
@@ -112,6 +118,12 @@ void main() {
           event: 'NoPosition',
           severity: 'major',
           status: 'open',
+          description: 'No position',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           id: 'alert-other',
@@ -119,6 +131,12 @@ void main() {
           event: 'Test',
           severity: 'minor',
           status: 'open',
+          description: 'Test alert',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
       ]);
 
@@ -288,6 +306,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
         AlertsCompanion.insert(
           // No matching platform in the local DB (e.g. outside the fetched
@@ -297,6 +321,12 @@ void main() {
           event: 'LowBattery',
           severity: 'warning',
           status: 'open',
+          description: 'Battery low',
+          service: 'service',
+          previousSeverity: 'normal',
+          duplicateCount: 0,
+          alertCategory: 'category',
+          country: 'country',
         ),
       ]);
 
@@ -331,10 +361,20 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       final firstId = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: 123456,
+        ),
       );
       final secondId = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-002', action: 'recover', payloadJson: '{"b":2}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-002',
+          action: 'recover',
+          payloadJson: '{"b":2}',
+          userRef: 123456,
+        ),
       );
 
       final ordered = await db.getPendingOperationsOrdered();
@@ -353,7 +393,12 @@ void main() {
       final db = AppDatabase.executor(conn.inMemoryConnection());
 
       final id = await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{}',
+          userRef: 123456,
+        ),
       );
 
       await db.markPendingOperationFailed(id, error: 'Server rejected', attempts: 1);

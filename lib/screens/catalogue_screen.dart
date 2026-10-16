@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/catalogue_search_history_filter.dart';
@@ -8,6 +10,7 @@ import 'package:smart_tags/providers/catalogue_search_history_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -15,7 +18,10 @@ import 'package:smart_tags/widgets/top_navigation.dart';
 /// A screen that displays a searchable catalogue of platforms.
 class CatalogueScreen extends ConsumerStatefulWidget {
   /// Creates a [CatalogueScreen].
-  const CatalogueScreen({super.key});
+  const CatalogueScreen({super.key, this.onScanAgain});
+
+  /// Selects the scanner tab after an empty QR lookup.
+  final VoidCallback? onScanAgain;
 
   @override
   ConsumerState<CatalogueScreen> createState() => _CatalogueScreenState();
@@ -56,6 +62,10 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   }
 
   Future<void> _refreshPlatforms() async {
+    if (ref.read(qrPassportLookupProvider).phase != QrLookupPhase.idle) {
+      await ref.read(qrPassportLookupProvider.notifier).retry();
+      return;
+    }
     // Errors are shown by [InitialSyncShell] (top banner + Retry).
     await ref.read(platformsRefreshProvider.notifier).refresh();
   }
@@ -133,8 +143,9 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     final historyAsync = ref.watch(catalogueSearchHistoryProvider);
     final history = historyAsync.value ?? const [];
     final suggestions = filterCatalogueSearchHistory(history, _searchQuery);
+    final scanActive = ref.watch(qrPassportLookupProvider).phase != QrLookupPhase.idle;
     final showHistory =
-        _keepLatestViewedPanelOpen || (_searchFocusNode.hasFocus && suggestions.isNotEmpty);
+        !scanActive && (_keepLatestViewedPanelOpen || (_searchFocusNode.hasFocus && suggestions.isNotEmpty));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -170,6 +181,22 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
                 onClearHistory: _confirmClearSearchHistory,
               ),
             ),
+            if (scanActive)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Expanded(child: Text('Results for scanned QR code')),
+                    TextButton(
+                      onPressed: () {
+                        ref.read(qrPassportLookupProvider.notifier).clear();
+                        _searchController.clear();
+                      },
+                      child: const Text('Clear scan'),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: GestureDetector(
                 onTap: _closeSearchHistory,
@@ -184,6 +211,35 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
   }
 
   Widget _buildResults({required bool hideEmptyPrompt}) {
+    final scan = ref.watch(qrPassportLookupProvider);
+    switch (scan.phase) {
+      case QrLookupPhase.loading:
+        return const Center(child: CircularProgressIndicator());
+      case QrLookupPhase.error:
+        return _scanMessage(
+          scan.message ?? 'Could not look up passports for this QR code.',
+          'Retry lookup',
+          () => ref.read(qrPassportLookupProvider.notifier).retry(),
+        );
+      case QrLookupPhase.data:
+        final query = _searchQuery.toLowerCase();
+        final platforms = scan.result!.platforms.where((platform) {
+          return platform.ref.toLowerCase().contains(query) || platform.model.toLowerCase().contains(query);
+        }).toList();
+        if (scan.result!.platforms.isEmpty) {
+          return _scanMessage('No passports available for this QR code', 'Scan again', () {
+            ref.read(qrPassportLookupProvider.notifier).clear();
+            _searchController.clear();
+            widget.onScanAgain?.call();
+          });
+        }
+        if (platforms.isEmpty) {
+          return _scanMessage('No results found', 'Clear search', _searchController.clear);
+        }
+        return _platformGrid(platforms);
+      case QrLookupPhase.idle:
+        break;
+    }
     if (_searchQuery.isEmpty) {
       if (hideEmptyPrompt) {
         return const SizedBox.shrink();
@@ -203,65 +259,84 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
       );
     }
 
-    return ref.watch(platformsWatchProvider(_searchQuery)).when(
-      data: (platforms) {
-        if (platforms.isEmpty) {
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: const [
-              SizedBox(height: 96),
-              Center(
-                child: _CataloguePlaceholder(
-                  icon: Icons.search_off_rounded,
-                  headline: 'No results found',
-                  message: 'Try another ID, model, or WIGOS identifier',
-                ),
-              ),
-            ],
-          );
-        }
+    return ref
+        .watch(platformsWatchProvider(_searchQuery))
+        .when(
+          data: (platforms) {
+            if (platforms.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 96),
+                  Center(
+                    child: _CataloguePlaceholder(
+                      icon: Icons.search_off_rounded,
+                      headline: 'No results found',
+                      message: 'Try another ID, model, or WIGOS identifier',
+                    ),
+                  ),
+                ],
+              );
+            }
 
-        return GridView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 400,
-            mainAxisExtent: 150,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: platforms.length,
-          itemBuilder: (context, index) {
-            final platform = platforms[index];
-            return PlatformCard(
-              platform: platform,
-              onBeforeOpen: () => recordCatalogueSearchHistory(
-                ref,
-                platformRef: platform.ref,
-                platformModel: platform.model,
-                wigosId: platform.wigosId,
-              ),
+            return _platformGrid(platforms);
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) {
+            if (kDebugMode) {
+              debugPrint('Error: $error \n Stack: $stack');
+            }
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 96),
+                Center(
+                  child: _CataloguePlaceholder(
+                    icon: Icons.cloud_off_outlined,
+                    headline: 'Failed to fetch platforms',
+                    message: 'Pull down to refresh and try again',
+                  ),
+                ),
+              ],
             );
           },
         );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) {
-        if (kDebugMode) {
-          debugPrint('Error: $error \n Stack: $stack');
-        }
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 96),
-            Center(
-              child: _CataloguePlaceholder(
-                icon: Icons.cloud_off_outlined,
-                headline: 'Failed to fetch platforms',
-                message: 'Pull down to refresh and try again',
-              ),
-            ),
-          ],
+  }
+
+  Widget _scanMessage(String message, String action, VoidCallback onPressed) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 100),
+        Center(child: Text(message, textAlign: TextAlign.center)),
+        Center(
+          child: TextButton(onPressed: onPressed, child: Text(action)),
+        ),
+      ],
+    );
+  }
+
+  Widget _platformGrid(List<Platform> platforms) {
+    final textScaler = MediaQuery.textScalerOf(context);
+    return MasonryGridView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      gridDelegate: SliverSimpleGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: textScaler.scale(400),
+      ),
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      itemCount: platforms.length,
+      itemBuilder: (context, index) {
+        final platform = platforms[index];
+        return PlatformCard(
+          platform: platform,
+          onBeforeOpen: () => recordCatalogueSearchHistory(
+            ref,
+            platformRef: platform.ref,
+            platformModel: platform.model,
+            wigosId: platform.wigosId,
+          ),
         );
       },
     );
@@ -367,9 +442,7 @@ class _CatalogueSearchChrome extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: borderRadius,
-        border: showHistory
-            ? null
-            : Border.all(color: colorScheme.outline.withValues(alpha: 0.35)),
+        border: showHistory ? null : Border.all(color: colorScheme.outline.withValues(alpha: 0.35)),
         boxShadow: showHistory ? openShadow : closedShadow,
       ),
       child: ClipRRect(
@@ -426,15 +499,65 @@ class _LatestViewedPlatformsPanel extends StatefulWidget {
   /// Maximum history rows visible before the list scrolls inside the panel.
   static const int maxVisibleRows = 3;
 
-  /// Fixed row height so exactly [maxVisibleRows] fit in the viewport.
-  static const double historyRowHeight = 64;
-
   final List<CatalogueSearchHistory> suggestions;
   final Future<void> Function(CatalogueSearchHistory entry) onSelect;
   final VoidCallback onClearHistory;
 
   @override
   State<_LatestViewedPlatformsPanel> createState() => _LatestViewedPlatformsPanelState();
+}
+
+abstract final class _HistoryRowMetrics {
+  static const int maxVisibleRows = 3;
+
+  static const double verticalPadding = 10; // per side
+  static const double horizontalPadding = 16;
+  static const double avatarRadius = 20;
+  static const double avatarGap = 12;
+  static const double titleSubtitleGap = 2;
+  static const double trailingIconSize = 16;
+  static const double dividerHeight = 1;
+  static const double listBottomPadding = 8;
+
+  static double get avatarDiameter => avatarRadius * 2;
+
+  static TextStyle? titleStyle(ThemeData theme) =>
+      theme.textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurface,
+      );
+
+  static TextStyle? subtitleStyle(ThemeData theme) =>
+      theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      );
+
+  /// Height of one text line at the current text scale.
+  static double _line(TextScaler scaler, TextStyle? style) =>
+      scaler.scale(style?.fontSize ?? 14) * (style?.height ?? 1.3);
+
+  /// Row height: padding + the taller of the avatar and the text column.
+  static double rowHeight(BuildContext context) {
+    final theme = Theme.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+
+    final textColumn = _line(scaler, titleStyle(theme)) +
+        titleSubtitleGap +
+        _line(scaler, subtitleStyle(theme));
+
+    final height = verticalPadding * 2 + math.max(avatarDiameter, textColumn);
+
+    return height.ceilToDouble();
+  }
+
+  /// Viewport height for [rowCount] visible rows (including dividers and
+  /// the list's bottom padding).
+  static double viewportHeight(BuildContext context, int rowCount) {
+    final rows = rowCount.clamp(1, maxVisibleRows);
+    return rows * rowHeight(context) +
+        (rows - 1) * dividerHeight +
+        listBottomPadding;
+  }
 }
 
 class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel> {
@@ -452,10 +575,11 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
     final suggestions = widget.suggestions;
     final isEmpty = suggestions.isEmpty;
     final canScroll = suggestions.length > _LatestViewedPlatformsPanel.maxVisibleRows;
-    final visibleRowCount =
-        isEmpty ? 1 : suggestions.length.clamp(0, _LatestViewedPlatformsPanel.maxVisibleRows);
-    final listViewportHeight = visibleRowCount * _LatestViewedPlatformsPanel.historyRowHeight +
-        (visibleRowCount > 1 ? visibleRowCount - 1 : 0);
+
+    final rowHeight = _HistoryRowMetrics.rowHeight(context);
+    final listViewportHeight = isEmpty
+        ? rowHeight // empty-state message gets one row of space
+        : _HistoryRowMetrics.viewportHeight(context, suggestions.length);
 
     final colorScheme = theme.colorScheme;
 
@@ -528,14 +652,14 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
                       padding: const EdgeInsets.only(bottom: 8),
                       itemCount: suggestions.length,
                       separatorBuilder: (_, _) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(horizontal: _HistoryRowMetrics.horizontalPadding),
+                        child: Divider(height: _HistoryRowMetrics.dividerHeight, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                       ),
                       itemBuilder: (context, index) {
                         final entry = suggestions[index];
                         final subtitle = catalogueSearchHistorySubtitle(entry);
                         return SizedBox(
-                          height: _LatestViewedPlatformsPanel.historyRowHeight,
+                          height: rowHeight,
                           child: _CatalogueHistoryRow(
                             key: Key('catalogue-search-history-${entry.platformRef}'),
                             platformRef: entry.platformRef,
@@ -581,19 +705,22 @@ class _CatalogueHistoryRow extends ConsumerWidget {
         hoverColor: Colors.transparent,
         focusColor: Colors.transparent,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: _HistoryRowMetrics.horizontalPadding,
+            vertical: _HistoryRowMetrics.verticalPadding,
+          ),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 20,
+                radius: _HistoryRowMetrics.avatarRadius,
                 backgroundColor: statusStyle.backgroundColor,
                 child: Icon(
                   Icons.sensors,
-                  size: 20,
+                  size: _HistoryRowMetrics.avatarRadius,
                   color: statusStyle.textColor,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: _HistoryRowMetrics.avatarGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,18 +730,18 @@ class _CatalogueHistoryRow extends ConsumerWidget {
                       platformRef,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      style: _HistoryRowMetrics.titleStyle(theme)?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: colorScheme.onSurface,
                       ),
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: _HistoryRowMetrics.titleSubtitleGap),
                       Text(
                         subtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: _HistoryRowMetrics.subtitleStyle(theme)?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                       ),
@@ -622,7 +749,7 @@ class _CatalogueHistoryRow extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.north_west_rounded, size: 16, color: colorScheme.outline),
+              Icon(Icons.north_west_rounded, size: _HistoryRowMetrics.trailingIconSize, color: colorScheme.outline),
             ],
           ),
         ),

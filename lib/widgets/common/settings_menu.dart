@@ -22,35 +22,91 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
 
   @override
   Widget build(BuildContext context) {
+    final customTextScale = ref.watch(textScaleProvider);
+    final useSystemTextScale = customTextScale == null;
+    final textScaleSliderValue = customTextScale ?? 1.0;
+
+    Widget menuItem(Widget child) => ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 32),
+        child: child
+    );
+
     return MenuAnchor(
       childFocusNode: _buttonFocusNode,
       menuChildren: <Widget>[
-        SwitchListTile(
+        menuItem(SwitchListTile(
+          title: const Text('Theme Mode: Use System Default'),
+          value: ref.watch(themeProvider) == ThemeMode.system,
+          onChanged: (bool? checked) {
+            if (checked ?? false) {
+              ref.read(themeProvider.notifier).useSystem();
+            } else {
+              ref.read(themeProvider.notifier).useLight();
+            }
+          },
+          secondary: const ExcludeSemantics(child: Icon(Icons.light_mode)),
+        )),
+        menuItem(SwitchListTile(
           title: const Text('Dark Mode'),
-          secondary: const Icon(Icons.dark_mode),
+          secondary: const ExcludeSemantics(child: Icon(Icons.dark_mode)),
           value: Theme.of(context).brightness == Brightness.dark,
           onChanged: ref.watch(themeProvider) == ThemeMode.system
               ? null // disables the switch
               : (bool value) {
                   if (value) {
-                    ref.read(themeProvider.notifier).setDark();
+                    ref.read(themeProvider.notifier).useDark();
                   } else {
-                    ref.read(themeProvider.notifier).setLight();
+                    ref.read(themeProvider.notifier).useLight();
                   }
                 },
-        ),
-        CheckboxListTile(
-          title: const Text('Use system default'),
-          value: ref.watch(themeProvider) == ThemeMode.system,
+        )),
+        menuItem(SwitchListTile(
+          title: const Text('Text Size: Use System Default'),
+          value: useSystemTextScale,
           onChanged: (bool? checked) {
             if (checked ?? false) {
-              ref.read(themeProvider.notifier).setSystem();
+              ref.read(textScaleProvider.notifier).useSystem();
             } else {
-              ref.read(themeProvider.notifier).setLight();
+              ref.read(textScaleProvider.notifier).useCustom();
             }
           },
-          secondary: const Icon(Icons.light_mode),
-        ),
+          secondary: const Icon(Icons.format_size),
+        )),
+        menuItem(Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: ExcludeSemantics(
+                child: Icon(
+                  Icons.text_decrease,
+                  color: useSystemTextScale ? Theme.of(context).disabledColor : null,
+                ),
+              )
+            ),
+            Expanded(
+              child: Slider(
+                key: const Key('textSizeSlider'),
+                value: textScaleSliderValue,
+                min: AppTextScale.min,
+                max: AppTextScale.max,
+                divisions: AppTextScale.divisions,
+                label: '${(textScaleSliderValue * 100).round()}%',
+                onChanged: useSystemTextScale
+                    ? null
+                    : (value) => ref.read(textScaleProvider.notifier).set(value),
+              ),
+            ),
+            Padding(
+                padding: const EdgeInsets.only(right: 32),
+                child: ExcludeSemantics(
+                  child: Icon(
+                    Icons.text_increase,
+                    color: useSystemTextScale ? Theme.of(context).disabledColor : null,
+                  ),
+                )
+            ),
+          ],
+        )),
       ],
       builder: (_, MenuController controller, Widget? child) {
         return IconButton(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/models/alert.dart';
+import 'package:smart_tags/screens/alert_details_screen.dart';
+import 'package:smart_tags/widgets/alert_chip.dart';
 
 /// Card summarising an [Alert]: status, severity, event and last receive time.
 class AlertTile extends StatelessWidget {
@@ -36,7 +38,9 @@ class AlertTile extends StatelessWidget {
               border: Border(left: BorderSide(color: statusStyle.color, width: 4)),
             ),
             child: InkWell(
-              onTap: () {},
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => AlertDetailsScreen(alert: alert)),
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
@@ -46,7 +50,7 @@ class AlertTile extends StatelessWidget {
                       children: [
                         Icon(statusStyle.displayIcon, color: statusStyle.color, size: 32),
                         const SizedBox(height: 4),
-                        _Chip(
+                        AlertChip(
                           label: alert.status == AlertStatus.acknowledged ? 'Ack' : statusStyle.label,
                           background: statusStyle.color.withValues(alpha: 0.2),
                           foreground: statusStyle.color,
@@ -88,33 +92,13 @@ class AlertTile extends StatelessWidget {
           Positioned(
             top: 8,
             right: 8,
-            child: _Chip(
+            child: AlertChip(
               label: severityStyle.label,
               background: severityStyle.chipColor,
               foreground: severityStyle.textColor,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.background, required this.foreground});
-
-  final String label;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(12)),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: foreground, fontWeight: FontWeight.w600),
       ),
     );
   }
