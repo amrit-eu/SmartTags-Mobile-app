@@ -5,8 +5,9 @@ import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/screens/pending_operations_screen.dart';
 import 'package:smart_tags/widgets/common/app_status_banner.dart';
 
-/// Persistent indicator shown in the main shell when deploy/recover events
-/// are queued locally, awaiting (or failing) submission to the Gateway.
+/// Persistent indicator shown when operations (deploy/recover
+/// events, alert actions and notes) are queued locally, awaiting (or failing)
+/// submission to the Gateway.
 class PendingOperationsBanner extends ConsumerStatefulWidget {
   /// Creates a [PendingOperationsBanner].
   const PendingOperationsBanner({super.key});
@@ -53,8 +54,8 @@ class _PendingOperationsBannerState extends ConsumerState<PendingOperationsBanne
       severity: failedCount > 0 ? AppStatusBannerSeverity.error : AppStatusBannerSeverity.info,
       icon: failedCount > 0 ? Icons.sync_problem : Icons.sync,
       actionLabel: 'View',
-      onAction: () {
-        Navigator.push(
+      onAction: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute<void>(
             builder: (_) => const PendingOperationsScreen(),

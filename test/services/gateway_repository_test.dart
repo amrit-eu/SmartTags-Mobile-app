@@ -7,6 +7,7 @@ import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
+import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
@@ -18,12 +19,18 @@ import 'package:smart_tags/services/gateway_repository.dart';
 AuthDao _fakeAuthDao() => AppDatabase.executor(conn.inMemoryConnection()).authDao;
 
 class _FakeAuthService extends AuthService {
-  _FakeAuthService(this._token) : super(authDao: _fakeAuthDao());
+  _FakeAuthService(this._token, {this.error}) : super(authDao: _fakeAuthDao());
 
   final String? _token;
 
+  /// When set, thrown by [getAccessToken] instead of returning [_token].
+  final Exception? error;
+
   @override
-  Future<String?> getAccessToken() async => _token;
+  Future<String?> getAccessToken() async {
+    if (error != null) throw error!;
+    return _token;
+  }
 }
 
 const Map<String, dynamic> _samplePassportItem = {
@@ -426,6 +433,163 @@ void main() {
         () => repository.submitPassportEventJson(body),
         throwsA(isA<GatewayException>()),
       );
+    });
+  });
+
+  group('access token failures', () {
+    final calls = <String, Future<void> Function(GatewayRepository)>{
+      'submitPassportEventJson': (repository) => repository.submitPassportEventJson('{}'),
+      'actOnAlert': (repository) => repository.actOnAlert('alert-1', AlertAction.ack),
+      'addAlertNote': (repository) => repository.addAlertNote('alert-1', 'note'),
+    };
+
+    GatewayRepository repositoryThrowing(Exception error) {
+      final client = MockClient((request) async {
+        fail('Should not send a request without a token');
+      });
+      return GatewayRepository(client: client, authService: _FakeAuthService(null, error: error));
+    }
+
+    for (final MapEntry(key: name, value: call) in calls.entries) {
+      test('$name maps RefreshException to GatewayAuthException', () async {
+        await expectLater(
+          call(repositoryThrowing(const RefreshException('Invalid refresh token'))),
+          throwsA(isA<GatewayAuthException>()),
+        );
+      });
+
+      test('$name maps AuthException to a retryable GatewayException', () async {
+        await expectLater(
+          call(repositoryThrowing(const AuthException('Unable to refresh token'))),
+          throwsA(
+            isA<GatewayException>()
+                .having((e) => e, 'exception', isNot(isA<GatewayAuthException>()))
+                .having((e) => e.isClientError, 'isClientError', isFalse),
+          ),
+        );
+      });
+
+      test('$name maps ClientException to a network GatewayException', () async {
+        await expectLater(
+          call(repositoryThrowing(http.ClientException('Connection refused'))),
+          throwsA(
+            isA<GatewayException>()
+                .having((e) => e.message, 'message', contains('Network error'))
+                .having((e) => e.isClientError, 'isClientError', isFalse),
+          ),
+        );
+      });
+    }
+  });
+
+  group('pairPlatformToQRCode', () {
+    const platformId = '1004967';
+    const qrCode = 'AbC/123';
+
+    for (final passportsUpToDate in [false, true]) {
+      test('sends an authenticated POST and accepts 201 with passportsUpToDate=$passportsUpToDate', () async {
+        final client = MockClient((request) async {
+          expect(request.method, 'POST');
+          expect(request.url, GatewayConfig.pairPlatformToQrCodeUri);
+          expect(request.headers['Authorization'], 'Bearer test-token');
+          expect(request.headers['Content-Type'], 'application/json');
+          expect(jsonDecode(request.body), {'ptfId': 1004967, 'qrCode': qrCode});
+          return http.Response(
+            jsonEncode({
+              'ptfId': 1004967,
+              'qrCode': qrCode,
+              'localIdentifier': '5500023',
+              'passportsUpToDate': passportsUpToDate,
+            }),
+            201,
+          );
+        });
+        final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+        await repository.pairPlatformToQRCode(platformId, qrCode);
+      });
+    }
+
+    test('does not send a request without an access token', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request without a token');
+      });
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+
+      await expectLater(
+        repository.pairPlatformToQRCode(platformId, qrCode),
+        throwsA(isA<GatewayAuthException>()),
+      );
+    });
+
+    test('throws GatewayAuthException when the server rejects authentication', () async {
+      final client = MockClient((request) async => http.Response('Unauthorized', 401));
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      await expectLater(
+        repository.pairPlatformToQRCode(platformId, qrCode),
+        throwsA(isA<GatewayAuthException>()),
+      );
+    });
+
+    for (final statusCode in [400, 403, 409, 500]) {
+      test('reports a failed pairing response with status $statusCode', () async {
+        final client = MockClient((request) async => http.Response('Pairing failed', statusCode));
+        final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+        await expectLater(
+          repository.pairPlatformToQRCode(platformId, qrCode),
+          throwsA(
+            isA<GatewayException>().having(
+              (error) => error.message,
+              'message',
+              statusCode == 409
+                  ? 'QR code already paired to another platform.'
+                  : 'Failed to pair platform to QR code (Status $statusCode)',
+            ),
+          ),
+        );
+      });
+    }
+
+    test('wraps transport failures in GatewayException', () async {
+      final client = MockClient((request) async => throw http.ClientException('Connection lost'));
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      await expectLater(
+        repository.pairPlatformToQRCode(platformId, qrCode),
+        throwsA(
+          isA<GatewayException>().having((error) => error.message, 'message', 'Network error: Connection lost'),
+        ),
+      );
+    });
+
+    test('rejects invalid platform identifiers before sending a request', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request with an invalid platform ID');
+      });
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      for (final invalidId in ['', '   ', 'DEP-1', '0', '-1', '1.5', '0x10']) {
+        await expectLater(
+          repository.pairPlatformToQRCode(invalidId, qrCode),
+          throwsA(isA<GatewayException>()),
+        );
+      }
+    });
+
+    test('rejects empty QR codes before sending a request', () async {
+      final client = MockClient((request) async {
+        fail('Should not send a request with an empty QR code');
+      });
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService('test-token'));
+
+      for (final emptyCode in ['', '   ']) {
+        await expectLater(
+          repository.pairPlatformToQRCode(platformId, emptyCode),
+          throwsA(isA<GatewayException>()),
+        );
+      }
     });
   });
 }

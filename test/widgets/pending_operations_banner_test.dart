@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_tags/models/deploy_action.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/screens/pending_operations_screen.dart';
@@ -15,11 +14,13 @@ PendingPassportEvent _event({
   PendingOperationStatus status = PendingOperationStatus.pending,
   int attempts = 0,
   String? lastError,
+  PendingOperationKind kind = PendingOperationKind.deploy,
 }) {
   return PendingPassportEvent(
     id: id,
+    userRef: 123456,
     platformRef: 'PLT-$id',
-    action: DeployAction.deploy,
+    kind: kind,
     payloadJson: '{}',
     createdAt: DateTime.utc(2026),
     status: status,
@@ -196,5 +197,41 @@ void main() {
       find.byType(AppStatusBanner),
       findsNothing,
     );
+  });
+
+  testWidgets('counts alert actions and notes alongside deploy and recover events', (tester) async {
+    await _pumpBanner(
+      tester,
+      Stream.value([
+        for (final kind in PendingOperationKind.values) _event(id: kind.index + 1, kind: kind),
+      ]),
+    );
+
+    expect(find.text('${PendingOperationKind.values.length} operations queued'), findsOneWidget);
+    expect(tester.widget<AppStatusBanner>(find.byType(AppStatusBanner)).severity, AppStatusBannerSeverity.info);
+  });
+
+  testWidgets('keeps dismissal for unchanged queue and resets after it drains', (tester) async {
+    final controller = StreamController<List<PendingPassportEvent>>();
+    addTearDown(controller.close);
+    controller.add([_event(kind: PendingOperationKind.alertNote)]);
+    await _pumpBanner(tester, controller.stream);
+
+    await tester.tap(find.byTooltip('Dismiss banner'));
+    await tester.pump();
+    controller.add([_event(kind: PendingOperationKind.alertNote)]);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(AppStatusBanner), findsNothing);
+
+    controller.add([]);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(AppStatusBanner), findsNothing);
+
+    controller.add([_event(kind: PendingOperationKind.alertNote)]);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('1 operation queued'), findsOneWidget);
   });
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/database/connection/native.dart' as conn;
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
@@ -13,6 +14,8 @@ import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
 import '../helpers/fake_auth_service.dart';
+import '../utils/fake_auth_notifiers.dart';
+import '../utils/test_user.dart';
 
 /// Connectivity fake whose value can be changed after construction, to
 /// simulate an offline -> online transition mid-test.
@@ -101,7 +104,12 @@ void main() {
 
     test('reconnecting with a pending queue drains it, waits the delay, then refreshes', () async {
       await db.enqueuePendingOperation(
-        PendingOperationsCompanion.insert(platformRef: 'PLT-001', action: 'deploy', payloadJson: '{"a":1}'),
+        PendingOperationsCompanion.insert(
+          platformRef: 'PLT-001',
+          action: 'deploy',
+          payloadJson: '{"a":1}',
+          userRef: createTestUser().id,
+        ),
       );
       final repository = _CombinedGatewayRepository(unclosedMissions: [_samplePlatform()]);
       final connectivity = _ControllableConnectivity(ConnectivityResult.none);
@@ -111,6 +119,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => connectivity),
           gatewayRepositoryProvider.overrideWithValue(repository),
           platformsRefreshDelayProvider.overrideWithValue(const Duration(milliseconds: 20)),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
       );
       addTearDown(container.dispose);
@@ -120,6 +129,7 @@ void main() {
         ..listen(passportEventQueueProvider, (_, _) {})
         ..listen(platformsRefreshProvider, (_, _) {});
       await container.read(checkConnectionProvider.future);
+      await container.read(authProvider.future);
 
       connectivity.set(ConnectivityResult.wifi);
       await pumpEventQueue(); // lets the drain (and its DB writes) settle

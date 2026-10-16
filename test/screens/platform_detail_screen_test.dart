@@ -1,13 +1,24 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/database/db.dart' hide AppDatabase;
 import 'package:smart_tags/models/alert.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 const String testRef = 'TEST-001';
+
+/// Connectivity fixed to online, so the screen's offline banner stays hidden and
+/// no real connectivity plugin timers are started.
+class _OnlineConnectivity extends ConnectivityStatus {
+  @override
+  FutureOr<ConnectivityResult?> build() async => ConnectivityResult.wifi;
+}
 
 /// A fake Drift Platform row used to override the provider in tests.
 final testDbPlatform = Platform(
@@ -83,6 +94,8 @@ Widget buildTestWidget({Platform? platform, List<Alert> alerts = const []}) {
   final row = platform ?? testDbPlatform;
   return ProviderScope(
     overrides: [
+      checkConnectionProvider.overrideWith(_OnlineConnectivity.new),
+      platformsStreamProvider.overrideWith((ref) => Stream.value(const <Platform>[])),
       platformByRefStreamProvider(testRef).overrideWith(
         (ref) => Stream.value(row),
       ),

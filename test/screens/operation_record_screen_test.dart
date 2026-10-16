@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart' hide Platform;
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
@@ -18,6 +19,8 @@ import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/offline_status.dart';
 
 import '../helpers/fake_auth_service.dart';
+import '../utils/fake_auth_notifiers.dart';
+import '../utils/test_user.dart';
 
 /// Applies [OperationSubmitResult] on pop, mirroring the in-app platform detail flow.
 class _OperationRecordHost extends ConsumerWidget {
@@ -589,6 +592,7 @@ void main() {
           checkConnectionProvider.overrideWith(
             _NoConnectivityStatus.new,
           ),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
         child: MaterialApp(
           home: _OperationRecordHost(
@@ -680,6 +684,7 @@ void main() {
           // which never resolves in a widget test and would otherwise hang
           // enqueueOrSend until its 5s connectivity-check timeout.
           checkConnectionProvider.overrideWith(_NoConnectivityStatus.new),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
         ],
         child: MaterialApp(
           home: _OperationRecordHost(
