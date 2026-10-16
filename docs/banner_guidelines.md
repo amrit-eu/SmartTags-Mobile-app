@@ -103,7 +103,9 @@ Use `buildAppSnackBar` for transient feedback at the bottom of the screen. Do no
 ```dart
 ScaffoldMessenger.of(context).showSnackBar(
   buildAppSnackBar(
+    context: context,
     message: 'Platform updated.',
+    severity: AppSnackBarSeverity.success,
   ),
 );
 ```
@@ -115,7 +117,9 @@ final messenger = ScaffoldMessenger.of(context);
 
 messenger.showSnackBar(
   buildAppSnackBar(
+    context: context,
     message: 'Unable to fetch current location',
+    severity: AppSnackBarSeverity.error,
     actionLabel: 'Close',
     onAction: messenger.hideCurrentSnackBar,
   ),
@@ -123,6 +127,10 @@ messenger.showSnackBar(
 ```
 
 `actionLabel` and `onAction` must either both be supplied or both be omitted.
+
+Set `severity` to describe the result. `AppSnackBarSeverity` supports `info` (the default), `success`, `warning` and `error`. Information uses a neutral surface, success uses green, warnings use amber, and errors use the theme's error colours. Each severity includes a distinct icon, and text and action colours adapt to light or dark mode.
+
+Use `info` for cancellations and work saved locally but still queued, `success` for completed operations, `warning` for missing permissions or other conditions requiring attention, and `error` for failed operations. Do not present queued work as successfully synced.
 
 The shared factory applies the standard four-second duration. A SnackBar should not be made persistent. If information must remain visible until its condition is resolved, use a top status banner instead.
 
@@ -133,7 +141,7 @@ Severity controls visual styling, not placement or dismissal.
 | Severity | Use |
 | --- | --- |
 | `info` | Neutral application state or queued work |
-| `success` | Successful state that must remain visible |
+| `success` | A completed operation or successful state |
 | `warning` | Degraded operation or a condition requiring attention |
 | `error` | A failed operation or condition requiring corrective action |
 
@@ -210,3 +218,4 @@ Tests for a new notification should verify the rules relevant to its category:
 - corrective actions invoke the expected callback;
 - top banners are outside scrollable content where applicable;
 - SnackBars use `buildAppSnackBar` and disappear after `appSnackBarDuration`.
+- SnackBar severity colours, icons, and text remain readable in light and dark mode, including optional actions.

@@ -28,7 +28,9 @@ class PendingOperationsScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           buildAppSnackBar(
+            context: context,
             message: 'Synced.',
+            severity: AppSnackBarSeverity.success,
           ),
         );
       }
@@ -37,7 +39,9 @@ class PendingOperationsScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           buildAppSnackBar(
+            context: context,
             message: 'Retry failed: still queued.',
+            severity: AppSnackBarSeverity.error,
           ),
         );
       }

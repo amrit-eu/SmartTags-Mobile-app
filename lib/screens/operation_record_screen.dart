@@ -34,6 +34,7 @@ class OperationSubmitResult {
   const OperationSubmitResult({
     required this.message,
     required this.platformRef,
+    this.severity = AppSnackBarSeverity.success,
   });
 
   /// User-facing confirmation shown after returning to the previous screen.
@@ -41,17 +42,23 @@ class OperationSubmitResult {
 
   /// Platform that was updated.
   final String platformRef;
+
+  /// Visual severity of the returned feedback, including locally queued work.
+  final AppSnackBarSeverity severity;
 }
 
 /// Shows post-submit feedback after [OperationSubmitResult] is returned from the form route.
 void applyOperationSubmitResult({
+  required BuildContext context,
   required ProviderContainer container,
   required OperationSubmitResult result,
   required ScaffoldMessengerState messenger,
 }) {
   messenger.showSnackBar(
     buildAppSnackBar(
+      context: context,
       message: result.message,
+      severity: result.severity,
     ),
   );
 }
@@ -141,7 +148,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             buildAppSnackBar(
+              context: context,
               message: 'Location permission is required for live updates.',
+              severity: AppSnackBarSeverity.warning,
             ),
           );
         }
@@ -180,7 +189,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         if (mounted && useLiveLocation) {
           ScaffoldMessenger.of(context).showSnackBar(
             buildAppSnackBar(
+              context: context,
               message: 'Error fetching live location. Live updates stopped.',
+              severity: AppSnackBarSeverity.error,
             ),
           );
           // addPostFrameCallback used to avoid setState during build
@@ -197,7 +208,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
           if (status == ServiceStatus.disabled && useLiveLocation && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               buildAppSnackBar(
+                context: context,
                 message: 'Location services disabled. Live updates stopped.',
+                severity: AppSnackBarSeverity.warning,
               ),
             );
             // addPostFrameCallback used to avoid setState during build
@@ -276,7 +289,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           buildAppSnackBar(
+            context: context,
             message: 'Missing Gateway platform ID — refresh platform data (reconnect) before syncing.',
+            severity: AppSnackBarSeverity.warning,
           ),
         );
         _closeForm();
@@ -332,7 +347,11 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
       if (mounted) {
         setState(() => _submitInProgress = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          buildAppSnackBar(message: '$_eventType not saved: you need to be logged in.'),
+          buildAppSnackBar(
+            context: context,
+            message: '$_eventType not saved: you need to be logged in.',
+            severity: AppSnackBarSeverity.warning,
+          ),
         );
       }
       return;
@@ -362,7 +381,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         setState(() => _submitInProgress = false);
         ScaffoldMessenger.of(context).showSnackBar(
           buildAppSnackBar(
+            context: context,
             message: 'Failed to update platform.',
+            severity: AppSnackBarSeverity.error,
           ),
         );
       }
@@ -380,6 +401,9 @@ class _DeployPlatformScreenState extends ConsumerState<DeployPlatformScreen> {
         OperationSubmitResult(
           message: message,
           platformRef: widget.platform.platformRef,
+          severity: outcome == PassportEventSubmitOutcome.queued
+              ? AppSnackBarSeverity.info
+              : AppSnackBarSeverity.success,
         ),
       );
     }

@@ -101,7 +101,9 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
         if (next != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             buildAppSnackBar(
+              context: context,
               message: next.message,
+              severity: AppSnackBarSeverity.error,
             ),
           );
           Future.delayed(appSnackBarDuration, () {

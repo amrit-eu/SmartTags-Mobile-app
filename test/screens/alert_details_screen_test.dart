@@ -62,11 +62,22 @@ const _alert = Alert(
   country: 'country',
 );
 
-Future<void> _expectTransientFeedback(WidgetTester tester, String message) async {
+Future<void> _expectTransientFeedback(
+  WidgetTester tester,
+  String message, {
+  AppSnackBarSeverity severity = AppSnackBarSeverity.info,
+}) async {
   expect(find.text(message), findsOneWidget);
   final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
   expect(snackBar.duration, appSnackBarDuration);
   expect(snackBar.persist, isNot(true));
+  final icon = switch (severity) {
+    AppSnackBarSeverity.info => Icons.info_outline,
+    AppSnackBarSeverity.success => Icons.check_circle_outline,
+    AppSnackBarSeverity.warning => Icons.warning_amber_outlined,
+    AppSnackBarSeverity.error => Icons.error_outline,
+  };
+  expect(find.descendant(of: find.byType(SnackBar), matching: find.byIcon(icon)), findsOneWidget);
 
   await tester.pump(appSnackBarDuration);
   await tester.pump(const Duration(milliseconds: 300));
@@ -152,7 +163,7 @@ void main() {
     await tester.tap(find.text('Acknowledge'));
     await tester.pumpAndSettle();
 
-    await _expectTransientFeedback(tester, 'Alert acknowledged');
+    await _expectTransientFeedback(tester, 'Alert acknowledged', severity: AppSnackBarSeverity.success);
   });
 
   testFeedback('rejected alert actions use transient feedback and do not queue work', (tester) async {
@@ -160,7 +171,7 @@ void main() {
     await tester.tap(find.text('Acknowledge'));
     await tester.pumpAndSettle();
 
-    await _expectTransientFeedback(tester, 'Forbidden');
+    await _expectTransientFeedback(tester, 'Forbidden', severity: AppSnackBarSeverity.error);
     expect(await database.getPendingOperationsOrdered(), isEmpty);
   });
 

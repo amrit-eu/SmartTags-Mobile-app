@@ -267,6 +267,7 @@ void main() {
     expect(find.text('AbC/123'), findsOneWidget);
     expect(find.text('Pair to QR Code'), findsNothing);
     expect(find.text('Platform paired to QR code successfully.'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
 
     await database.updatePlatforms([const PlatformsCompanion(ref: Value('DEP-1'), qrCode: Value(null))]);
@@ -289,6 +290,7 @@ void main() {
     await _openScanner(tester);
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Pairing functionality disabled: Offline'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     expect(requests, 0);
   });
 
@@ -303,6 +305,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.text('Pairing cancelled.'), findsOneWidget);
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
     expect((await database.getPlatformByRef('DEP-1')).single.qrCode, isNull);
     expect(requests, 0);
   });
@@ -342,6 +345,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Invalid QR Code format'), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
     expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(appSnackBarDuration);
@@ -384,6 +388,7 @@ void main() {
       expect(find.byType(QrScanScreen), findsNothing);
       expect((await database.getPlatformByRef('DEP-1')).single.qrCode, isNull);
       expect(find.text('Pair to QR Code'), findsOneWidget);
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
       expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
       expect(
         find.text(
@@ -411,6 +416,7 @@ void main() {
     await _openScanner(tester);
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Log in to pair this platform to a QR code.'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     expect(requests, 0);
   });
 

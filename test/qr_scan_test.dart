@@ -181,6 +181,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Invalid QR Code format'), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
     expect(find.byType(SnackBar), findsOneWidget);
 
     final snackBar = tester.widget<SnackBar>(

@@ -96,7 +96,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   if (context.mounted && authState is AsyncData<User?> && authState.value == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       buildAppSnackBar(
+                        context: context,
                         message: 'Logout successful',
+                        severity: AppSnackBarSeverity.success,
                       ),
                     );
                   }

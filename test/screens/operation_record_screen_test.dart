@@ -49,6 +49,7 @@ class _OperationRecordHost extends ConsumerWidget {
           final messenger = ScaffoldMessenger.of(context);
           try {
             applyOperationSubmitResult(
+              context: context,
               container: container,
               result: result,
               messenger: messenger,
@@ -422,6 +423,7 @@ void main() {
 
     // Verify that the success SnackBar reflects the toggled action.
     expect(find.text('Recovery successful! Changes have been saved and synced.'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
 
     // Verify that the platform record in the database was updated as a recovery, not a deployment.
     final updatedPlatform = await (db.select(
@@ -638,6 +640,7 @@ void main() {
       find.text('Recovery successful! Changes have been saved locally and queued for sync.'),
       findsOneWidget,
     );
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
 
     // Verify that the platform record in the database has been updated with the new values
     final updatedPlatform = await (db.select(

@@ -159,7 +159,9 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
                               if (authState is AsyncData<User?> && authState.value != null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   buildAppSnackBar(
+                                    context: context,
                                     message: 'Login successful',
+                                    severity: AppSnackBarSeverity.success,
                                   ),
                                 );
                               }

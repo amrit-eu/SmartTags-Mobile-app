@@ -384,7 +384,10 @@ class AlertDetailsScreen extends ConsumerWidget {
       outcome = await send(ref.read(passportEventQueueProvider.notifier));
     } on GatewayException catch (e) {
       // Rejected by the server (e.g. 403/404): nothing queued, nothing changed locally.
-      messenger.showSnackBar(buildAppSnackBar(message: e.message));
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        buildAppSnackBar(context: context, message: e.message, severity: AppSnackBarSeverity.error),
+      );
       return;
     }
     if (outcome == PassportEventSubmitOutcome.sent) {
@@ -396,7 +399,18 @@ class AlertDetailsScreen extends ConsumerWidget {
       PassportEventSubmitOutcome.notQueuedAuthRequired => 'Not saved — you need to be logged in.',
       PassportEventSubmitOutcome.queued => '$successMessage. Saved locally and queued for sync.',
     };
-    messenger.showSnackBar(buildAppSnackBar(message: message));
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      buildAppSnackBar(
+        context: context,
+        message: message,
+        severity: switch (outcome) {
+          PassportEventSubmitOutcome.sent => AppSnackBarSeverity.success,
+          PassportEventSubmitOutcome.queued => AppSnackBarSeverity.info,
+          PassportEventSubmitOutcome.notQueuedAuthRequired => AppSnackBarSeverity.warning,
+        },
+      ),
+    );
   }
 
   /// Turns a raw attribute key (e.g. `wigos_id`) into a human-readable label.

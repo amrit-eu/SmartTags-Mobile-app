@@ -742,7 +742,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
     scaffold.showSnackBar(
       buildAppSnackBar(
+        context: context,
         message: message,
+        severity: AppSnackBarSeverity.error,
         actionLabel: label,
         onAction: scaffold.hideCurrentSnackBar,
       ),

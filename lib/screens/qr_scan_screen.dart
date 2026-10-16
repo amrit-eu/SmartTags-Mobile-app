@@ -104,7 +104,9 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
     messenger?.clearSnackBars();
     messenger?.showSnackBar(
       buildAppSnackBar(
+        context: context,
         message: message,
+        severity: AppSnackBarSeverity.error,
       ),
     );
   }
