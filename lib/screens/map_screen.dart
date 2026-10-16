@@ -358,13 +358,25 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         .ignore();
   }
 
+  /// Ignores one map background tap in the same frame as marker/cluster selection (tap
+  /// propagation). Must not stay set until the next user tap — that breaks
+  /// dismiss after switching away and back with the popup still open.
+  void _ignoreBackgroundTapForCurrentFrame() {
+    _ignoreNextBackgroundTap = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _ignoreNextBackgroundTap = false;
+      }
+    });
+  }
+
   void _selectPlatformMarker(
     Platform dbPlatform,
     LatLng position, {
     bool recenter = true,
     bool persistSelection = true,
   }) {
-    _ignoreNextBackgroundTap = true;
+    _ignoreBackgroundTapForCurrentFrame();
     final previousRef = _selectedPlatformNotifier.value?.platformRef;
     _selectedPlatformNotifier.value = dbPlatform.toDomain();
     _updateMarkerHighlight(previousRef: previousRef, newRef: dbPlatform.ref);
@@ -380,7 +392,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   }
 
   void _onClusterTap(MarkerClusterNode cluster) {
-    _ignoreNextBackgroundTap = true;
+    _ignoreBackgroundTapForCurrentFrame();
     _dismissSelectedPlatform();
     _stopMapPanAnimation();
     // Camera pan/zoom + spiderfy are handled by [MarkerClusterLayer] animations.
