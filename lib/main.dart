@@ -57,6 +57,8 @@ class MainNavigation extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationState extends ConsumerState<MainNavigation> {
+  static const int _scanTabIndex = 2;
+
   int _selectedIndex = 0;
 
   late final List<Widget> _pages;
@@ -110,7 +112,15 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
             Expanded(
               child: IndexedStack(
                 index: _selectedIndex,
-                children: _pages,
+                children: [
+                  _pages[0],
+                  _pages[1],
+                  // Keep the camera/scanner off until Scan is selected (#132 review).
+                  if (_selectedIndex == _scanTabIndex)
+                    _pages[_scanTabIndex]
+                  else
+                    const SizedBox.shrink(),
+                ],
               ),
             ),
           ],
