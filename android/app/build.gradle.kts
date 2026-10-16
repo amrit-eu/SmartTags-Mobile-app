@@ -1,9 +1,23 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
+// CI supplies secrets through environment variables; local releases can use
+// android/key.properties (gitignored).
+fun signingProperty(environmentVariable: String, property: String): String? =
+    System.getenv(environmentVariable)?.takeIf { it.isNotBlank() }
+        ?: keystoreProperties.getProperty(property)
 
 android {
     namespace = "com.example.flutter_amrit"
@@ -30,13 +44,43 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+    signingConfigs {
+        create("release") {
+            keyAlias = signingProperty("ANDROID_KEY_ALIAS", "keyAlias")
+            keyPassword = signingProperty("ANDROID_KEY_PASSWORD", "keyPassword")
+            storePassword = signingProperty("ANDROID_KEYSTORE_PASSWORD", "storePassword")
+            storeFile = signingProperty("ANDROID_KEYSTORE_PATH", "storeFile")?.let {
+                rootProject.file(it)
+            }
         }
     }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+}
+
+val validateReleaseSigning by tasks.registering {
+    doLast {
+        val signing = android.signingConfigs.getByName("release")
+        check(
+            !signing.keyAlias.isNullOrBlank() &&
+                !signing.keyPassword.isNullOrBlank() &&
+                !signing.storePassword.isNullOrBlank() &&
+                signing.storeFile?.isFile == true
+        ) {
+            "Release signing requires a keystore, alias, and passwords. " +
+                "Configure android/key.properties or the ANDROID_KEYSTORE_PATH, " +
+                "ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD " +
+                "environment variables. See docs/android_releases.md."
+        }
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateReleaseSigning)
 }
 
 flutter {
