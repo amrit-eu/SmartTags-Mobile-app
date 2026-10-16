@@ -6,7 +6,6 @@ import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
-import 'package:smart_tags/models/platforms_sync_progress.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
@@ -27,15 +26,6 @@ class _PhaseNotifier extends PlatformsSyncPhaseNotifier {
 
   @override
   PlatformsSyncPhase build() => fixedPhase;
-}
-
-class _ProgressNotifier extends PlatformsSyncProgressNotifier {
-  _ProgressNotifier(this.fixedProgress);
-
-  final PlatformsSyncProgress fixedProgress;
-
-  @override
-  PlatformsSyncProgress build() => fixedProgress;
 }
 
 class _ErrorRefreshNotifier extends PlatformsRefreshNotifier {
@@ -279,7 +269,7 @@ void main() {
     expect(find.text('Downloading platforms…'), findsOneWidget);
   });
 
-  testWidgets('shows N/M counts while downloading platforms', (tester) async {
+  testWidgets('shows saving banner during save phase', (tester) async {
     final platform = Platform(
       id: 1,
       ref: 'PLT-001',
@@ -305,10 +295,7 @@ void main() {
         pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         platformsSyncPhaseProvider.overrideWith(
-          () => _PhaseNotifier(PlatformsSyncPhase.downloading),
-        ),
-        platformsSyncProgressProvider.overrideWith(
-          () => _ProgressNotifier(const PlatformsSyncProgress(completed: 12, total: 120)),
+          () => _PhaseNotifier(PlatformsSyncPhase.saving),
         ),
         ],
         child: MaterialApp(
@@ -318,6 +305,6 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Downloading platforms 12/120'), findsOneWidget);
+    expect(find.text('Saving platforms…'), findsOneWidget);
   });
 }

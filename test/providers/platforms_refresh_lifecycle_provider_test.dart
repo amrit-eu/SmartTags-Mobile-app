@@ -54,9 +54,7 @@ class _CombinedGatewayRepository extends GatewayRepository {
   int submitCallCount = 0;
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions({
-    GatewayDownloadProgressCallback? onDownloadProgress,
-  }) async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     fetchUnclosedMissionsCallCount++;
     return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
   }

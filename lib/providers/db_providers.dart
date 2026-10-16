@@ -101,14 +101,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     // request is in flight isn't missed by the first delta refresh.
     final now = DateTime.now().toUtc();
     try {
-      final result = await repository.fetchUnclosedMissions(
-        onDownloadProgress: (downloaded, total) {
-          ref.read(platformsSyncProgressProvider.notifier).setProgress(
-                completed: downloaded,
-                total: total,
-              );
-        },
-      );
+      final result = await repository.fetchUnclosedMissions();
       await persistGatewayPassportsResult(
         ref: ref,
         db: db,

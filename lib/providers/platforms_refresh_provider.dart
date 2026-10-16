@@ -99,14 +99,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
             'unclosed missions instead of an unfiltered search',
           );
         }
-        final result = await repository.fetchUnclosedMissions(
-          onDownloadProgress: (downloaded, total) {
-            ref.read(platformsSyncProgressProvider.notifier).setProgress(
-                  completed: downloaded,
-                  total: total,
-                );
-          },
-        );
+        final result = await repository.fetchUnclosedMissions();
         await persistGatewayPassportsResult(
           ref: ref,
           db: db,

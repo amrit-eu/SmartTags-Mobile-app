@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
-import 'package:smart_tags/models/platforms_sync_progress.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
@@ -22,13 +21,8 @@ class InitialSyncShell extends ConsumerStatefulWidget {
   ConsumerState<InitialSyncShell> createState() => _InitialSyncShellState();
 }
 
-/// Indeterminate bar while downloading (counts are in the label only).
-double? _bannerProgress(PlatformsSyncPhase phase, PlatformsSyncProgress syncProgress) {
-  if (phase == PlatformsSyncPhase.downloading) {
-    return null;
-  }
-  return syncProgress.fraction;
-}
+String _syncPhaseMessage(PlatformsSyncPhase phase) =>
+    phase.bannerMessage ?? 'Downloading platforms…';
 
 class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
   static const Duration _displayPhaseTimeout = Duration(seconds: 8);
@@ -62,7 +56,6 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     final platformCount = ref.watch(platformsStreamProvider).value?.length ?? 0;
     final markersPainted = ref.watch(mapMarkersPaintedProvider);
     final phase = ref.watch(platformsSyncPhaseProvider);
-    final syncProgress = ref.watch(platformsSyncProgressProvider);
     final refresh = ref.watch(platformsRefreshProvider);
 
     ref.listen(platformsStreamProvider, (previous, next) {
@@ -75,8 +68,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (phase != PlatformsSyncPhase.idle) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return PlatformsLoadingBanner(
-        message: syncProgress.bannerMessage(phase),
-        progress: _bannerProgress(phase, syncProgress),
+        message: _syncPhaseMessage(phase),
       );
     }
 
@@ -106,8 +98,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (syncAsync.isLoading) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return PlatformsLoadingBanner(
-        message: syncProgress.bannerMessage(phase),
-        progress: _bannerProgress(phase, syncProgress),
+        message: _syncPhaseMessage(phase),
       );
     }
 

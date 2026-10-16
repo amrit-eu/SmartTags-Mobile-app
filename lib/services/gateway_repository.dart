@@ -30,9 +30,6 @@ class GatewayAuthException extends GatewayException {
   const GatewayAuthException(super.message);
 }
 
-/// Called after each paginated Gateway page during unclosed-missions download.
-typedef GatewayDownloadProgressCallback = void Function(int downloaded, int total);
-
 /// Fetches platform passport data from, and submits passport events to, the
 /// Amrit Gateway API.
 class GatewayRepository {
@@ -44,43 +41,27 @@ class GatewayRepository {
   final http.Client _client;
   final AuthService _authService;
 
-  static const int _unclosedPageSize = 50;
-
-  /// Loads unclosed missions via paginated enriched passport search.
-  ///
-  /// [onDownloadProgress] receives item counts (`downloaded` / `total`) after
-  /// each page so the UI can show `Downloading platforms N/M` during the
-  /// network phase.
-  Future<GatewayPassportsResult> fetchUnclosedMissions({
-    GatewayDownloadProgressCallback? onDownloadProgress,
-  }) async {
+  /// Loads unclosed missions from the cached Gateway export endpoint.
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+    final uri = GatewayConfig.unclosedPassportsUri;
     try {
-      final allItems = <Map<String, dynamic>>[];
-      var offset = 0;
-      int? reportedTotal;
+      if (kDebugMode) {
+        debugPrint('Gateway GET $uri');
+      }
+      final response = await _client.get(uri);
 
-      while (true) {
-        final dto = PassportFilterDto.unclosedPaginated(
-          limit: _unclosedPageSize,
-          offset: offset,
+      if (!_isSuccess(response.statusCode)) {
+        throw Exception(
+          'Failed to load unclosed missions '
+          '(Status ${response.statusCode}, body=${_truncate(response.body)})',
         );
-        final jsonResponse = await _postPassportSearch(dto);
-        final pageItems =
-            (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
-        reportedTotal ??= jsonResponse['total'] as int?;
-        allItems.addAll(pageItems);
-
-        final total = reportedTotal ?? allItems.length;
-        onDownloadProgress?.call(allItems.length, total);
-
-        if (pageItems.isEmpty || pageItems.length < _unclosedPageSize || allItems.length >= total) {
-          break;
-        }
-        offset += pageItems.length;
       }
 
+      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+      final items = (jsonResponse['items'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
+      final reportedTotal = jsonResponse['total'] as int?;
       final result = GatewayPassportMapper.fromEnrichedPassportItems(
-        allItems,
+        items,
         reportedTotal: reportedTotal,
       );
 

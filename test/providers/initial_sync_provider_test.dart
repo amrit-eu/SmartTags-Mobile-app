@@ -143,9 +143,7 @@ class _FakeGatewayRepository extends GatewayRepository {
   final List<PlatformsCompanion> platforms;
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions({
-    GatewayDownloadProgressCallback? onDownloadProgress,
-  }) async =>
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async =>
       GatewayPassportsResult(platforms: platforms, alerts: const []);
 }
 
@@ -153,9 +151,7 @@ class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions({
-    GatewayDownloadProgressCallback? onDownloadProgress,
-  }) async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     throw Exception('Network error');
   }
 }
@@ -167,9 +163,7 @@ class _ToggleGatewayRepository extends GatewayRepository {
   bool shouldSucceed = false;
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions({
-    GatewayDownloadProgressCallback? onDownloadProgress,
-  }) async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
     if (!shouldSucceed) {
       throw Exception('Network error');
     }

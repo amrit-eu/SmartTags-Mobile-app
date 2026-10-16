@@ -3,7 +3,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 
-/// Writes [result] to Drift (save phase uses indeterminate banner, no `N/M`).
+/// Writes [result] to Drift after the Gateway download completes.
 Future<void> persistGatewayPassportsResult({
   required Ref ref,
   required AppDatabase db,
