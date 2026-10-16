@@ -100,7 +100,9 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         child: Column(
           children: [
             if (phase != PlatformsSyncPhase.idle)
-              PlatformsLoadingBanner(message: phase.bannerMessage ?? 'Downloading platforms…'),
+              PlatformsLoadingBanner(
+                message: phase.bannerMessage ?? 'Downloading platforms…',
+              ),
             Expanded(
               child: PullToRefresh(
                 // App bar + platform title + filter chips: pull-from-top chrome.
