@@ -11,6 +11,7 @@ import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/theme.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/initial_sync_shell.dart';
 import 'package:smart_tags/widgets/pending_operations_banner.dart';
@@ -98,15 +99,15 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
       errorNotificationProvider,
       (previous, next) {
         if (next != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(next.message),
-              ),
-            );
-            Future.delayed(const Duration(seconds: 4), () {
-              ref.read(errorNotificationProvider.notifier).clearError();
-            });
+          ScaffoldMessenger.of(context).showSnackBar(
+            buildAppSnackBar(
+              context: context,
+              message: next.message,
+              severity: AppSnackBarSeverity.error,
+            ),
+          );
+          Future.delayed(appSnackBarDuration, () {
+            ref.read(errorNotificationProvider.notifier).clearError();
           });
         }
       },

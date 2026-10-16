@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// Lists queued/failed operations (deploy/recover events, alert actions and
@@ -25,12 +26,24 @@ class PendingOperationsScreen extends ConsumerWidget {
     try {
       await ref.read(passportEventQueueProvider.notifier).retryFailed(event.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Synced.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          buildAppSnackBar(
+            context: context,
+            message: 'Synced.',
+            severity: AppSnackBarSeverity.success,
+          ),
+        );
       }
     } on Object catch (e) {
       debugPrint('Retry failed for pending operation ${event.id}: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Retry failed: still queued.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          buildAppSnackBar(
+            context: context,
+            message: 'Retry failed: still queued.',
+            severity: AppSnackBarSeverity.error,
+          ),
+        );
       }
     }
   }
