@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/screens/user_login.dart';
 
 import '../utils/fake_auth_notifiers.dart';
@@ -13,6 +15,8 @@ void main() {
       ProviderScope(
         overrides: [
           authProvider.overrideWith(FakeAuthSuccessNotifier.new),
+          // The profile screen shows the user's queued operations.
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
           home: Scaffold(
