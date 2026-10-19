@@ -147,9 +147,6 @@ void main() {
     expect(find.byType(PlatformCard), findsOneWidget);
     expect(tester.widget<PlatformCard>(find.byType(PlatformCard)).platform.ref, 'DEP-3');
 
-    await tester.tap(find.text('Clear scan'));
-    await tester.pump();
-    expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
     await db.close();

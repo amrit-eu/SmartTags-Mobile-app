@@ -6,9 +6,11 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/helpers/catalogue_search_history_filter.dart';
+import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/providers/catalogue_search_history_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
@@ -189,7 +191,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
               child: GestureDetector(
                 onTap: _closeSearchHistory,
                 behavior: HitTestBehavior.translucent,
-                child: _buildResults(hideEmptyPrompt: showHistory && _searchQuery.trim().isEmpty),
+                child: _buildResults(),
               ),
             ),
           ],
@@ -198,7 +200,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     );
   }
 
-  Widget _buildResults({required bool hideEmptyPrompt}) {
+  Widget _buildResults() {
     final scan = ref.watch(qrPassportLookupProvider);
     switch (scan.phase) {
       case QrLookupPhase.loading:
@@ -228,67 +230,84 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
       case QrLookupPhase.idle:
         break;
     }
-    if (_searchQuery.isEmpty) {
-      if (hideEmptyPrompt) {
-        return const SizedBox.shrink();
-      }
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 96),
-          Center(
-            child: _CataloguePlaceholder(
-              icon: Icons.manage_search_rounded,
-              headline: 'Start searching',
-              message: 'Enter a platform ID or model to search',
+    final query = _searchQuery.trim();
+    final isPreview = query.isEmpty;
+    final isSyncing = ref.watch(platformsSyncPhaseProvider) != PlatformsSyncPhase.idle;
+    final platformsAsync = isPreview ? ref.watch(cataloguePreviewProvider) : ref.watch(platformsWatchProvider(query));
+
+    return platformsAsync.when(
+      data: (platforms) {
+        if (platforms.isEmpty) {
+          if (isPreview && isSyncing) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              const SizedBox(height: 96),
+              Center(
+                child: _CataloguePlaceholder(
+                  icon: isPreview ? Icons.storage_rounded : Icons.search_off_rounded,
+                  headline: isPreview ? 'No platforms stored on this device' : 'No results found',
+                  message: isPreview
+                      ? 'Connect to the internet and pull down to download platforms'
+                      : 'Try another ID, model, or WIGOS identifier',
+                ),
+              ),
+            ],
+          );
+        }
+
+        return isPreview ? _cataloguePreview(platforms) : _platformGrid(platforms);
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) {
+        if (kDebugMode) {
+          debugPrint('Error: $error \n Stack: $stack');
+        }
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 96),
+            Center(
+              child: _CataloguePlaceholder(
+                icon: Icons.cloud_off_outlined,
+                headline: 'Failed to fetch platforms',
+                message: 'Pull down to refresh and try again',
+              ),
             ),
-          ),
-        ],
-      );
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _cataloguePreview(List<Platform> platforms) {
+    final total = ref.watch(platformCountProvider).value;
+    final String summary;
+    if (total == platforms.length) {
+      summary = 'Showing all $total platforms';
+    } else if (total != null && total > platforms.length) {
+      summary = 'Showing ${platforms.length} of $total platforms — type to search';
+    } else {
+      summary = 'Showing ${platforms.length} platforms — type to search';
     }
 
-    return ref
-        .watch(platformsWatchProvider(_searchQuery))
-        .when(
-          data: (platforms) {
-            if (platforms.isEmpty) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 96),
-                  Center(
-                    child: _CataloguePlaceholder(
-                      icon: Icons.search_off_rounded,
-                      headline: 'No results found',
-                      message: 'Try another ID, model, or WIGOS identifier',
-                    ),
-                  ),
-                ],
-              );
-            }
-
-            return _platformGrid(platforms);
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) {
-            if (kDebugMode) {
-              debugPrint('Error: $error \n Stack: $stack');
-            }
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 96),
-                Center(
-                  child: _CataloguePlaceholder(
-                    icon: Icons.cloud_off_outlined,
-                    headline: 'Failed to fetch platforms',
-                    message: 'Pull down to refresh and try again',
-                  ),
-                ),
-              ],
-            );
-          },
-        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Text(
+            summary,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(child: _platformGrid(platforms)),
+      ],
+    );
   }
 
   Widget _scanMessage(String message, String action, VoidCallback onPressed) {
@@ -509,16 +528,14 @@ abstract final class _HistoryRowMetrics {
 
   static double get avatarDiameter => avatarRadius * 2;
 
-  static TextStyle? titleStyle(ThemeData theme) =>
-      theme.textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: theme.colorScheme.onSurface,
-      );
+  static TextStyle? titleStyle(ThemeData theme) => theme.textTheme.titleSmall?.copyWith(
+    fontWeight: FontWeight.w600,
+    color: theme.colorScheme.onSurface,
+  );
 
-  static TextStyle? subtitleStyle(ThemeData theme) =>
-      theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      );
+  static TextStyle? subtitleStyle(ThemeData theme) => theme.textTheme.bodySmall?.copyWith(
+    color: theme.colorScheme.onSurfaceVariant,
+  );
 
   /// Height of one text line at the current text scale.
   static double _line(TextScaler scaler, TextStyle? style) =>
@@ -529,9 +546,7 @@ abstract final class _HistoryRowMetrics {
     final theme = Theme.of(context);
     final scaler = MediaQuery.textScalerOf(context);
 
-    final textColumn = _line(scaler, titleStyle(theme)) +
-        titleSubtitleGap +
-        _line(scaler, subtitleStyle(theme));
+    final textColumn = _line(scaler, titleStyle(theme)) + titleSubtitleGap + _line(scaler, subtitleStyle(theme));
 
     final height = verticalPadding * 2 + math.max(avatarDiameter, textColumn);
 
@@ -542,9 +557,7 @@ abstract final class _HistoryRowMetrics {
   /// the list's bottom padding).
   static double viewportHeight(BuildContext context, int rowCount) {
     final rows = rowCount.clamp(1, maxVisibleRows);
-    return rows * rowHeight(context) +
-        (rows - 1) * dividerHeight +
-        listBottomPadding;
+    return rows * rowHeight(context) + (rows - 1) * dividerHeight + listBottomPadding;
   }
 }
 
@@ -641,7 +654,10 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
                       itemCount: suggestions.length,
                       separatorBuilder: (_, _) => Padding(
                         padding: const EdgeInsets.symmetric(horizontal: _HistoryRowMetrics.horizontalPadding),
-                        child: Divider(height: _HistoryRowMetrics.dividerHeight, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        child: Divider(
+                          height: _HistoryRowMetrics.dividerHeight,
+                          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        ),
                       ),
                       itemBuilder: (context, index) {
                         final entry = suggestions[index];
