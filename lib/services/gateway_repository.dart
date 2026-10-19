@@ -141,8 +141,7 @@ class GatewayRepository {
 
     final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
     final rawItems = jsonResponse['items'];
-    if (rawItems != null &&
-        (rawItems is! List<dynamic> || rawItems.any((item) => item is! Map<String, dynamic>))) {
+    if (rawItems is! List<dynamic> || rawItems.any((item) => item is! Map<String, dynamic>)) {
       throw const FormatException('Invalid passport search response');
     }
     return jsonResponse;
