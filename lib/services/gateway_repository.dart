@@ -139,24 +139,13 @@ class GatewayRepository {
       );
     }
 
-      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      final rawItems = jsonResponse['items'];
-      if (rawItems is! List<dynamic> || rawItems.any((item) => item is! Map<String, dynamic>)) {
-        throw const FormatException('Invalid passport search response');
-      }
-      final items = rawItems.cast<Map<String, dynamic>>();
-      final result = GatewayPassportMapper.fromEnrichedPassportItems(items);
-
-      if (kDebugMode) {
-        debugPrint('Gateway returned ${result.platforms.length} passports (${result.alerts.length} alerts)');
-      }
-      return result;
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Gateway searchPassports error: $e\n$st');
-      }
-      rethrow;
+    final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
+    final rawItems = jsonResponse['items'];
+    if (rawItems != null &&
+        (rawItems is! List<dynamic> || rawItems.any((item) => item is! Map<String, dynamic>))) {
+      throw const FormatException('Invalid passport search response');
     }
+    return jsonResponse;
   }
 
   /// The Gateway returns `201 Created` for some POST endpoints (e.g. the
