@@ -21,6 +21,9 @@ class InitialSyncShell extends ConsumerStatefulWidget {
   ConsumerState<InitialSyncShell> createState() => _InitialSyncShellState();
 }
 
+String _syncPhaseMessage(PlatformsSyncPhase phase) =>
+    phase.bannerMessage ?? 'Downloading platforms…';
+
 class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
   static const Duration _displayPhaseTimeout = Duration(seconds: 8);
 
@@ -65,7 +68,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (phase != PlatformsSyncPhase.idle) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return PlatformsLoadingBanner(
-        message: phase.bannerMessage ?? 'Downloading platforms…',
+        message: _syncPhaseMessage(phase),
       );
     }
 
@@ -95,7 +98,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (syncAsync.isLoading) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return PlatformsLoadingBanner(
-        message: phase.bannerMessage ?? 'Downloading platforms…',
+        message: _syncPhaseMessage(phase),
       );
     }
 
