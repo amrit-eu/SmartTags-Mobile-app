@@ -10,6 +10,7 @@ import 'package:smart_tags/providers/catalogue_search_history_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
+import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -69,11 +70,22 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     await ref.read(platformsRefreshProvider.notifier).refresh();
   }
 
-  void _applyHistoryEntry(String platformRef) {
-    _searchController
-      ..text = platformRef
-      ..selection = TextSelection.collapsed(offset: platformRef.length);
-    _searchFocusNode.unfocus();
+  Future<void> _openHistoryEntry(CatalogueSearchHistory entry) async {
+    _closeSearchHistory();
+    await recordCatalogueSearchHistory(
+      ref,
+      platformRef: entry.platformRef,
+      platformModel: entry.platformModel,
+      wigosId: entry.wigosId,
+    );
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => PlatformDetailScreen(platformRef: entry.platformRef),
+      ),
+    );
   }
 
   void _closeSearchHistory() {
@@ -165,7 +177,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
                 searchQuery: _searchQuery,
                 showHistory: showHistory,
                 suggestions: suggestions,
-                onSelectHistory: _applyHistoryEntry,
+                onSelectHistory: _openHistoryEntry,
                 onClearHistory: _confirmClearSearchHistory,
               ),
             ),
@@ -399,7 +411,7 @@ class _CatalogueSearchChrome extends StatelessWidget {
   final String searchQuery;
   final bool showHistory;
   final List<CatalogueSearchHistory> suggestions;
-  final ValueChanged<String> onSelectHistory;
+  final Future<void> Function(CatalogueSearchHistory entry) onSelectHistory;
   final VoidCallback onClearHistory;
 
   @override
@@ -488,7 +500,7 @@ class _LatestViewedPlatformsPanel extends StatefulWidget {
   static const int maxVisibleRows = 3;
 
   final List<CatalogueSearchHistory> suggestions;
-  final ValueChanged<String> onSelect;
+  final Future<void> Function(CatalogueSearchHistory entry) onSelect;
   final VoidCallback onClearHistory;
 
   @override
@@ -652,7 +664,7 @@ class _LatestViewedPlatformsPanelState extends State<_LatestViewedPlatformsPanel
                             key: Key('catalogue-search-history-${entry.platformRef}'),
                             platformRef: entry.platformRef,
                             subtitle: subtitle,
-                            onTap: () => widget.onSelect(entry.platformRef),
+                            onTap: () => widget.onSelect(entry),
                           ),
                         );
                       },

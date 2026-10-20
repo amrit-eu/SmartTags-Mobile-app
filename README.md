@@ -54,6 +54,14 @@ lib/
     flutter run
     ```
 
+### Android releases
+
+Push a version tag such as `v1.0.0` to build, test, sign, and publish an Android APK as a GitHub Release asset. The tag must match the version in `pubspec.yaml`; its `+BUILD` suffix supplies the Android build number.
+
+Use a prerelease tag such as `v0.0.1-alpha.1` to test a feature-branch commit. Prereleases are published separately from the website's latest stable download.
+
+See [Android release setup and distribution](docs/android_releases.md) for signing secrets, release commands, device checks, and the download link for the AMRIT website.
+
 ### Local database (DBeaver)
 
 The app stores SQLite in the platform app sandbox. For development, scripts copy or link it to a stable path:
