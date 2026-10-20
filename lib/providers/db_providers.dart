@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
@@ -47,7 +46,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       return;
     }
 
-    if (!isDeviceOnline(await _currentConnectivity())) {
+    if (!isDeviceOnline(await readCurrentConnectivity(ref))) {
       state = const AsyncValue.data(InitialSyncStatus.skippedOffline);
       return;
     }
@@ -89,7 +88,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       return InitialSyncStatus.notNeeded;
     }
 
-    final connectivity = await _currentConnectivity();
+    final connectivity = await readCurrentConnectivity(ref);
     if (!isDeviceOnline(connectivity)) {
       return InitialSyncStatus.skippedOffline;
     }
@@ -113,22 +112,6 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       return InitialSyncStatus.completed;
     } finally {
       phase.setIdle();
-    }
-  }
-
-  Future<ConnectivityResult?> _currentConnectivity() async {
-    final async = ref.read(checkConnectionProvider);
-    final value = async.value;
-    if (value != null) {
-      return value;
-    }
-    if (async.hasError) {
-      return null;
-    }
-    try {
-      return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
-    } on Object {
-      return null;
     }
   }
 }

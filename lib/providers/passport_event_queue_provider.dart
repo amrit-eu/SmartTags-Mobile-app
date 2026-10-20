@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/database/db.dart';
@@ -74,7 +73,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
     final db = ref.read(databaseProvider);
     final bodyJson = jsonEncode(PassportEventMapper.toJson(request));
 
-    final connectivity = await _currentConnectivity();
+    final connectivity = await readCurrentConnectivity(ref);
 
     if (isDeviceOnline(connectivity)) {
       try {
@@ -148,7 +147,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
     final db = ref.read(databaseProvider);
     final bodyJson = jsonEncode(payload);
 
-    final connectivity = await _currentConnectivity();
+    final connectivity = await readCurrentConnectivity(ref);
 
     if (isDeviceOnline(connectivity)) {
       try {
@@ -268,18 +267,6 @@ class PassportEventQueueNotifier extends Notifier<void> {
     if (async.hasError) return null;
     try {
       return (await ref.read(authProvider.future).timeout(const Duration(seconds: 5)))?.id;
-    } on Object {
-      return null;
-    }
-  }
-
-  Future<ConnectivityResult?> _currentConnectivity() async {
-    final async = ref.read(checkConnectionProvider);
-    final value = async.value;
-    if (value != null) return value;
-    if (async.hasError) return null;
-    try {
-      return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
     } on Object {
       return null;
     }

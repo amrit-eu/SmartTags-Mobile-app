@@ -148,15 +148,7 @@ final qrPassportLookupRepositoryProvider = Provider<QrPassportLookupRepository>(
   return QrPassportLookupRepository(
     database: ref.watch(databaseProvider),
     gateway: ref.watch(gatewayRepositoryProvider),
-    connectivity: () async {
-      final current = ref.read(checkConnectionProvider);
-      if (current.hasValue || current.hasError) return current.value;
-      try {
-        return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
-      } on Object {
-        return null;
-      }
-    },
+    connectivity: () => readCurrentConnectivity(ref),
   );
 });
 
