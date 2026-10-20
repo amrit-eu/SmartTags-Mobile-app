@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_tags/helpers/qr_code_reference.dart';
 import 'package:smart_tags/models/qr_scan_result.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
 /// A screen that provides QR code scanning functionality.
@@ -99,12 +100,13 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
 
   void _showMessage(String message) {
     final messenger = _messengerKey.currentState;
+
     messenger?.clearSnackBars();
     messenger?.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        persist: true,
-        dismissDirection: DismissDirection.none,
+      buildAppSnackBar(
+        context: context,
+        message: message,
+        severity: AppSnackBarSeverity.error,
       ),
     );
   }

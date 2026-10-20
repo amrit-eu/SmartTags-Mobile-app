@@ -29,6 +29,7 @@ import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
@@ -66,15 +67,12 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     super.dispose();
   }
 
-  void _showPairingMessage(String message, {bool success = false}) {
+  void _showPairingMessage(String message, {AppSnackBarSeverity severity = AppSnackBarSeverity.error}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ),
+        buildAppSnackBar(context: context, message: message, severity: severity),
       );
   }
 
@@ -94,7 +92,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     if (!mounted) return false;
     final online = await _isOnlineForPairing();
     if (!mounted) return false;
-    if (!online) _showPairingMessage(_offlinePairingMessage);
+    if (!online) _showPairingMessage(_offlinePairingMessage, severity: AppSnackBarSeverity.warning);
     return online;
   }
 
@@ -113,10 +111,13 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       if (mounted) {
         _showPairingMessage(
           isDeviceOnline(ref.read(checkConnectionProvider).value) ? error.message : _offlinePairingMessage,
+          severity: isDeviceOnline(ref.read(checkConnectionProvider).value)
+              ? AppSnackBarSeverity.error
+              : AppSnackBarSeverity.warning,
         );
       }
     } on RefreshException {
-      _showPairingMessage('Session expired. Please log in again.');
+      _showPairingMessage('Session expired. Please log in again.', severity: AppSnackBarSeverity.warning);
     } on Object {
       _showPairingMessage('Unable to pair platform to QR code. Please try again.');
     } finally {
@@ -126,19 +127,23 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
 
   String? _validatePairingPlatform(Platform platform) {
     if (ref.read(authProvider).value == null) {
-      _showPairingMessage('Log in to pair this platform to a QR code.');
+      _showPairingMessage('Log in to pair this platform to a QR code.', severity: AppSnackBarSeverity.warning);
       return null;
     }
     if (!ref.read(permissionProvider).canEdit(Resource.deployment, programId: platform.program?.id ?? 0)) {
       _showPairingMessage(
         "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program.",
+        severity: AppSnackBarSeverity.warning,
       );
       return null;
     }
     final ptfId = platform.ptfId;
     final numericId = ptfId == null ? null : int.tryParse(ptfId.trim(), radix: 10);
     if (numericId == null || numericId <= 0) {
-      _showPairingMessage('Platform ID is unavailable. Refresh platform data and try again.');
+      _showPairingMessage(
+        'Platform ID is unavailable. Refresh platform data and try again.',
+        severity: AppSnackBarSeverity.warning,
+      );
       return null;
     }
     return ptfId;
@@ -150,7 +155,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     );
     if (!mounted) return null;
     if (result == null) {
-      _showPairingMessage('Pairing cancelled.');
+      _showPairingMessage('Pairing cancelled.', severity: AppSnackBarSeverity.info);
       return null;
     }
     if (result.qrCode == null) {
@@ -177,7 +182,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       ),
     );
     if (!mounted) return false;
-    if (confirmed != true) _showPairingMessage('Pairing cancelled.');
+    if (confirmed != true) _showPairingMessage('Pairing cancelled.', severity: AppSnackBarSeverity.info);
     return confirmed ?? false;
   }
 
@@ -185,7 +190,10 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     if (!await _checkPairingConnection() || !mounted) return;
     final currentPlatform = ref.read(platformByRefStreamProvider(widget.platformRef)).value;
     if (currentPlatform == null) {
-      _showPairingMessage('Platform is no longer available. Refresh platform data and try again.');
+      _showPairingMessage(
+        'Platform is no longer available. Refresh platform data and try again.',
+        severity: AppSnackBarSeverity.warning,
+      );
       return;
     }
     if (currentPlatform.qrCode?.trim().isNotEmpty ?? false) {
@@ -193,7 +201,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
         currentPlatform.qrCode == qrCode
             ? 'Platform is already paired to this QR code.'
             : 'Platform is already paired to a different QR code.',
-        success: currentPlatform.qrCode == qrCode,
+        severity: currentPlatform.qrCode == qrCode ? AppSnackBarSeverity.success : AppSnackBarSeverity.warning,
       );
       return;
     }
@@ -213,10 +221,13 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       ]);
     } on Object catch (error) {
       debugPrint('Could not save confirmed QR pairing locally: $error');
-      _showPairingMessage('Platform paired to QR code. Refresh to update local data.', success: true);
+      _showPairingMessage(
+        'Platform paired to QR code. Refresh to update local data.',
+        severity: AppSnackBarSeverity.warning,
+      );
       return;
     }
-    _showPairingMessage('Platform paired to QR code successfully.', success: true);
+    _showPairingMessage('Platform paired to QR code successfully.', severity: AppSnackBarSeverity.success);
   }
 
   @override
@@ -357,7 +368,11 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                 ? "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program."
                 : 'Log in to edit this platform.';
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(message)),
+              buildAppSnackBar(
+                context: context,
+                message: message,
+                severity: AppSnackBarSeverity.warning,
+              ),
             );
             return;
           }
@@ -373,6 +388,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           );
           if (!context.mounted || result == null) return;
           applyOperationSubmitResult(
+            context: context,
             container: ProviderScope.containerOf(context, listen: false),
             result: result,
             messenger: ScaffoldMessenger.of(context),

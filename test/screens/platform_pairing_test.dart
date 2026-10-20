@@ -21,6 +21,7 @@ import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 
 import '../utils/test_user.dart';
 
@@ -201,7 +202,7 @@ void main() {
     expect(find.text('Pair to QR Code'), findsNothing);
   });
 
-  testPairing('pairs once, returns to details, persists the code and shows green feedback', (tester) async {
+  testPairing('pairs once, returns to details, persists the code and shows transient feedback', (tester) async {
     final response = Completer<http.Response>();
     await mount(
       tester,
@@ -266,7 +267,8 @@ void main() {
     expect(find.text('AbC/123'), findsOneWidget);
     expect(find.text('Pair to QR Code'), findsNothing);
     expect(find.text('Platform paired to QR code successfully.'), findsOneWidget);
-    expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.green);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+    expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
 
     await database.updatePlatforms([const PlatformsCompanion(ref: Value('DEP-1'), qrCode: Value(null))]);
     await tester.pump();
@@ -288,6 +290,7 @@ void main() {
     await _openScanner(tester);
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Pairing functionality disabled: Offline'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     expect(requests, 0);
   });
 
@@ -302,6 +305,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.text('Pairing cancelled.'), findsOneWidget);
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
     expect((await database.getPlatformByRef('DEP-1')).single.qrCode, isNull);
     expect(requests, 0);
   });
@@ -333,7 +337,7 @@ void main() {
     expect(requests, 0);
   });
 
-  testPairing('invalid scans return to details with red feedback and no POST', (tester) async {
+  testPairing('invalid scans return to details with transient feedback and no POST', (tester) async {
     await mount(tester);
     await _openScanner(tester);
     _scan(tester, 'https://example.com/?code=AbC');
@@ -341,7 +345,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Invalid QR Code format'), findsOneWidget);
-    expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(appSnackBarDuration);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(SnackBar), findsNothing);
     expect(requests, 0);
   });
 
@@ -367,7 +376,7 @@ void main() {
   });
 
   for (final status in [401, 409, 500]) {
-    testPairing('a Gateway $status response leaves the platform unpaired with red feedback', (tester) async {
+    testPairing('a Gateway $status response leaves the platform unpaired with transient feedback', (tester) async {
       await mount(tester, response: (_) async => http.Response('Failed', status));
       await _openScanner(tester);
       _scan(tester, 'https://www.ocean-ops.org/tracking/?code=AbC');
@@ -379,7 +388,8 @@ void main() {
       expect(find.byType(QrScanScreen), findsNothing);
       expect((await database.getPlatformByRef('DEP-1')).single.qrCode, isNull);
       expect(find.text('Pair to QR Code'), findsOneWidget);
-      expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
       expect(
         find.text(
           switch (status) {
@@ -406,6 +416,7 @@ void main() {
     await _openScanner(tester);
     expect(find.byType(QrScanScreen), findsNothing);
     expect(find.text('Log in to pair this platform to a QR code.'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     expect(requests, 0);
   });
 
@@ -417,7 +428,7 @@ void main() {
       find.text("You don't have permission to edit this platform. You must be member of the Argo Australia program."),
       findsOneWidget,
     );
-    expect(tester.widget<SnackBar>(find.byType(SnackBar)).backgroundColor, Colors.red);
+    expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, appSnackBarDuration);
     expect(requests, 0);
   });
 }

@@ -11,6 +11,7 @@ import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
+import 'package:smart_tags/widgets/common/app_status_banner.dart';
 import '../helpers/static_initial_sync_notifier.dart';
 import '../helpers/test_main_navigation_pages.dart';
 
@@ -60,26 +61,104 @@ void main() {
     await tester.pump();
 
     expect(find.text('Downloading platforms…'), findsOneWidget);
+    expect(
+      find.widgetWithIcon(IconButton, Icons.close),
+      findsNothing,
+    );
   });
 
-  testWidgets('shows offline banner when sync skipped and database is empty', (tester) async {
+  testWidgets('shows non-dismissible offline empty state', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier(InitialSyncStatus.skippedOffline),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(
+              InitialSyncStatus.skippedOffline,
+            ),
+          ),
+          platformsStreamProvider.overrideWith(
+            (ref) => Stream.value([]),
+          ),
+          pendingPassportEventsProvider.overrideWith(
+            (ref) => Stream.value(
+              const <PendingPassportEvent>[],
+            ),
+          ),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationShellPages()),
+          home: MainNavigation(
+            pages: testMainNavigationShellPages(),
+          ),
         ),
       ),
     );
     await tester.pump();
 
-    expect(find.text('No local data. Connect to the internet to download platforms.'), findsOneWidget);
+    expect(
+      find.text(
+        'No local data. Connect to the internet to download platforms.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithIcon(IconButton, Icons.close),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows and dismisses initial sync failure banner', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        retry: (_, _) => null,
+        overrides: [
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier.error(
+              Exception('failed'),
+            ),
+          ),
+          platformsStreamProvider.overrideWith(
+            (ref) => Stream.value([]),
+          ),
+          pendingPassportEventsProvider.overrideWith(
+            (ref) => Stream.value(
+              const <PendingPassportEvent>[],
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(
+            pages: testMainNavigationShellPages(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text('Could not load platforms'),
+      findsOneWidget,
+    );
+    expect(find.text('Retry'), findsOneWidget);
+
+    final dismissButton = find.widgetWithIcon(
+      IconButton,
+      Icons.close,
+    );
+
+    expect(dismissButton, findsOneWidget);
+
+    await tester.tap(dismissButton);
+    await tester.pump();
+
+    expect(
+      find.text('Could not load platforms'),
+      findsNothing,
+    );
+    expect(find.text('Retry'), findsNothing);
   });
 
   testWidgets('does not show sync banner when local database already has data', (tester) async {
@@ -102,14 +181,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
-        // Markers already painted: local data was already displayed, so no
-        // "Displaying platforms…" banner is expected either.
-        mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          // Markers already painted: local data was already displayed, so no
+          // "Displaying platforms…" banner is expected either.
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationShellPages()),
@@ -143,11 +222,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier.error(Exception('failed')),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier.error(Exception('failed')),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationShellPages()),
@@ -163,11 +242,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier(InitialSyncStatus.completed),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.completed),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationShellPages()),
@@ -204,13 +283,13 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
-        mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
-        platformsRefreshProvider.overrideWith(() => refreshNotifier),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+          platformsRefreshProvider.overrideWith(() => refreshNotifier),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationShellPages()),
@@ -219,14 +298,38 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Could not refresh platforms'), findsOneWidget);
+    expect(
+      find.text('Could not refresh platforms'),
+      findsOneWidget,
+    );
     expect(find.byType(SnackBar), findsNothing);
+
+    final refreshBanner = find.ancestor(
+      of: find.text('Could not refresh platforms'),
+      matching: find.byType(AppStatusBanner),
+    );
+
+    expect(refreshBanner, findsOneWidget);
+    expect(
+      find.descendant(
+        of: refreshBanner,
+        matching: find.widgetWithIcon(
+          IconButton,
+          Icons.close,
+        ),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Retry'));
     await tester.pump();
 
     expect(refreshNotifier.refreshCount, 1);
-    expect(find.text('Could not refresh platforms'), findsNothing);
+    expect(
+      find.text('Could not refresh platforms'),
+      findsNothing,
+    );
+    expect(refreshBanner, findsNothing);
   });
 
   testWidgets('shows loading banner while sync phase is downloading', (tester) async {
@@ -249,15 +352,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
-        mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
-        platformsSyncPhaseProvider.overrideWith(
-          () => _PhaseNotifier(PlatformsSyncPhase.downloading),
-        ),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+          platformsSyncPhaseProvider.overrideWith(
+            () => _PhaseNotifier(PlatformsSyncPhase.downloading),
+          ),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationShellPages()),
@@ -288,15 +391,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-        initialSyncProvider.overrideWith(
-          () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
-        ),
-        platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
-        pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
-        mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
-        platformsSyncPhaseProvider.overrideWith(
-          () => _PhaseNotifier(PlatformsSyncPhase.saving),
-        ),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+          platformsSyncPhaseProvider.overrideWith(
+            () => _PhaseNotifier(PlatformsSyncPhase.saving),
+          ),
         ],
         child: MaterialApp(
           home: MainNavigation(pages: testMainNavigationShellPages()),

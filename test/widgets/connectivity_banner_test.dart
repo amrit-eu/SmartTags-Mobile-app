@@ -21,6 +21,10 @@ class _FixedConnectivity extends ConnectivityStatus {
 
   @override
   FutureOr<ConnectivityResult?> build() async => result;
+
+  void setConnectivity(ConnectivityResult? result) {
+    state = AsyncValue.data(result);
+  }
 }
 
 Platform _samplePlatform() {
@@ -42,7 +46,7 @@ Platform _samplePlatform() {
 }
 
 void main() {
-  testWidgets('shows offline banner when offline and local data exists', (tester) async {
+  testWidgets('shows and dismisses offline banner when local data exists', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -63,6 +67,21 @@ void main() {
 
     expect(find.text('Offline — showing local data'), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
+
+    final dismissButton = find.widgetWithIcon(
+      IconButton,
+      Icons.close,
+    );
+
+    expect(dismissButton, findsOneWidget);
+
+    await tester.tap(dismissButton);
+    await tester.pump();
+
+    expect(
+      find.text('Offline — showing local data'),
+      findsNothing,
+    );
   });
 
   testWidgets('hides offline banner when back online', (tester) async {
@@ -87,5 +106,72 @@ void main() {
     await tester.pump();
 
     expect(find.text('Offline — showing local data'), findsNothing);
+  });
+
+  testWidgets('shows dismissed offline banner again after reconnecting', (tester) async {
+    final connectivity = _FixedConnectivity(
+      ConnectivityResult.none,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          checkConnectionProvider.overrideWith(
+            () => connectivity,
+          ),
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(
+              InitialSyncStatus.notNeeded,
+            ),
+          ),
+          platformsStreamProvider.overrideWith(
+            (ref) => Stream.value([_samplePlatform()]),
+          ),
+          pendingPassportEventsProvider.overrideWith(
+            (ref) => Stream.value(
+              const <PendingPassportEvent>[],
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(
+            pages: testMainNavigationShellPages(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(
+      find.text('Offline — showing local data'),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.widgetWithIcon(IconButton, Icons.close),
+    );
+    await tester.pump();
+
+    expect(
+      find.text('Offline — showing local data'),
+      findsNothing,
+    );
+
+    connectivity.setConnectivity(ConnectivityResult.wifi);
+    await tester.pump();
+
+    expect(
+      find.text('Offline — showing local data'),
+      findsNothing,
+    );
+
+    connectivity.setConnectivity(ConnectivityResult.none);
+    await tester.pump();
+
+    expect(
+      find.text('Offline — showing local data'),
+      findsOneWidget,
+    );
   });
 }
