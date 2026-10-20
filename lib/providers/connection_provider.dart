@@ -5,24 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// A provider that checks the device's connectivity status and updates in real-time.
 final checkConnectionProvider = AsyncNotifierProvider<ConnectivityStatus, ConnectivityResult?>(ConnectivityStatus.new);
 
-/// Reads cached connectivity, or waits up to five seconds for it to load.
-/// Returns `null` when connectivity fails or cannot be resolved in time.
-Future<ConnectivityResult?> readCurrentConnectivity(Ref ref) async {
-  final current = ref.read(checkConnectionProvider);
-  final value = current.value;
-  if (value != null) {
-    return value;
-  }
-  if (current.hasError) {
-    return null;
-  }
-  try {
-    return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
-  } on Object {
-    return null;
-  }
-}
-
 /// An AsyncNotifier that listens to connectivity changes and updates the state accordingly.
 class ConnectivityStatus extends AsyncNotifier<ConnectivityResult?> {
   late StreamSubscription<List<ConnectivityResult>> _sub;
