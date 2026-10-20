@@ -12,3 +12,10 @@ List<Widget> testMainNavigationPages() {
     const QrScanScreen(),
   ];
 }
+
+/// Placeholder tabs for shell/banner tests (avoids map session, Drift streams, QR).
+List<Widget> testMainNavigationShellPages() => const [
+      SizedBox.shrink(),
+      SizedBox.shrink(),
+      SizedBox.shrink(),
+    ];

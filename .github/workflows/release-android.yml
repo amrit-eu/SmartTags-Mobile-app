@@ -1,0 +1,196 @@
+name: Release Android APK
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build and verify signed APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ steps.version.outputs.build_number }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate tag and application version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! package_version=$(yq -er '.version | select(tag == "!!str")' pubspec.yaml); then
+            echo '::error::pubspec.yaml must contain a string version.'
+            exit 1
+          fi
+          version=${package_version%+*}
+          build_number=${package_version##*+}
+          number='(0|[1-9][0-9]*)'
+          identifier="($number|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+          version_pattern="^$number\.$number\.$number(-$identifier(\.$identifier)*)?$"
+          if [[ "$package_version" != *+* || ! "$version" =~ $version_pattern || ! "$build_number" =~ ^[1-9][0-9]*$ ]]; then
+            echo '::error::pubspec.yaml must contain a version such as 1.0.0+1 or 0.0.1-alpha.1+1.'
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "v$version" ]]; then
+            echo "::error::Release tag must be v$version to match pubspec.yaml."
+            exit 1
+          fi
+          prerelease=false
+          if [[ "$version" == *-* ]]; then
+            prerelease=true
+          fi
+          {
+            printf 'version=%s\n' "$version"
+            printf 'build_number=%s\n' "$build_number"
+            printf 'prerelease=%s\n' "$prerelease"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.0'
+          cache: true
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Restore release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for variable in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!variable}" ]]; then
+              echo "::error::Missing repository secret: $variable"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/android-release.jks"
+
+      - name: Build universal release APK
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/android-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+        run: |
+          flutter build apk --release --no-pub \
+            --build-name="$APP_VERSION" --build-number="$BUILD_NUMBER" \
+            --target-platform=android-arm,android-arm64,android-x64
+
+      - name: Verify APK and prepare release assets
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+        run: |
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          "$build_tools/apksigner" verify --verbose --print-certs "$apk"
+          "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "versionCode='$BUILD_NUMBER'" "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "versionName='$APP_VERSION'" "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "uses-permission: name='android.permission.INTERNET'" "$RUNNER_TEMP/apk-badging.txt"
+          native_code=$(sed -n '/^native-code:/p' "$RUNNER_TEMP/apk-badging.txt")
+          for abi in armeabi-v7a arm64-v8a x86_64; do
+            if [[ "$native_code" != *"'$abi'"* ]]; then
+              echo "::error::Release APK is missing architecture: $abi"
+              exit 1
+            fi
+          done
+          if grep -q 'application-debuggable' "$RUNNER_TEMP/apk-badging.txt"; then
+            echo '::error::Release APK must not be debuggable.'
+            exit 1
+          fi
+          min_sdk=$(sed -n "s/^sdkVersion:'\([0-9]*\)'$/\1/p" "$RUNNER_TEMP/apk-badging.txt")
+          test -n "$min_sdk"
+          mkdir -p release-assets
+          cp "$apk" release-assets/smart-tags.apk
+          (cd release-assets && sha256sum smart-tags.apk > smart-tags.apk.sha256)
+          cat > release-assets/release-notes.md <<EOF
+          SmartTags Android **$APP_VERSION**, build **$BUILD_NUMBER**.
+
+          Source commit: $GITHUB_SHA
+          Minimum Android API level: $min_sdk
+          Architectures: armeabi-v7a, arm64-v8a, x86_64.
+
+          Download **smart-tags.apk** and open it on your Android device. Allow your browser or file manager to install unknown apps when prompted.
+          To verify the download, use the accompanying **smart-tags.apk.sha256** file.
+          EOF
+          cat release-assets/release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove release keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/android-release.jks"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-release-${{ github.ref_name }}
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: android-release-${{ github.ref_name }}
+          path: release-assets/
+
+      - name: Publish verified APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          APP_VERSION: ${{ needs.build.outputs.version }}
+          BUILD_NUMBER: ${{ needs.build.outputs.build_number }}
+          IS_PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        shell: bash
+        run: |
+          cd release-assets
+          sha256sum --check smart-tags.apk.sha256
+          release_options=()
+          if [[ "$IS_PRERELEASE" == 'true' ]]; then
+            release_options+=(--prerelease --latest=false)
+          fi
+          gh release create "$RELEASE_TAG" smart-tags.apk smart-tags.apk.sha256 \
+            --verify-tag --title "SmartTags $APP_VERSION (build $BUILD_NUMBER)" \
+            --notes-file release-notes.md "${release_options[@]}"

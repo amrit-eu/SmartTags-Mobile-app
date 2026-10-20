@@ -54,11 +54,10 @@ void main() {
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(find.text('Downloading platforms…'), findsOneWidget);
@@ -88,12 +87,11 @@ void main() {
         ],
         child: MaterialApp(
           home: MainNavigation(
-            pages: testMainNavigationPages(),
+            pages: testMainNavigationShellPages(),
           ),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(
@@ -131,7 +129,7 @@ void main() {
         ],
         child: MaterialApp(
           home: MainNavigation(
-            pages: testMainNavigationPages(),
+            pages: testMainNavigationShellPages(),
           ),
         ),
       ),
@@ -193,11 +191,10 @@ void main() {
           mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(find.text('Downloading platforms…'), findsNothing);
@@ -232,11 +229,10 @@ void main() {
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(find.text('Could not load platforms'), findsNothing);
@@ -253,11 +249,10 @@ void main() {
           pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(find.text('Displaying platforms…'), findsOneWidget);
@@ -297,11 +292,10 @@ void main() {
           platformsRefreshProvider.overrideWith(() => refreshNotifier),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(
@@ -369,13 +363,51 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: MainNavigation(pages: testMainNavigationPages()),
+          home: MainNavigation(pages: testMainNavigationShellPages()),
         ),
       ),
     );
-
     await tester.pump();
 
     expect(find.text('Downloading platforms…'), findsOneWidget);
+  });
+
+  testWidgets('shows saving banner during save phase', (tester) async {
+    final platform = Platform(
+      id: 1,
+      ref: 'PLT-001',
+      model: 'Test',
+      network: 'Net',
+      lat: 0,
+      lon: 0,
+      status: 'OPERATIONAL',
+      operationalStatus: 'Deployed',
+      lastUpdated: DateTime.utc(2025),
+      operationLat: 0,
+      operationLon: 0,
+      hasLatestObservation: false,
+      category: 'Profiling Float',
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+          platformsSyncPhaseProvider.overrideWith(
+            () => _PhaseNotifier(PlatformsSyncPhase.saving),
+          ),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationShellPages()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Saving platforms…'), findsOneWidget);
   });
 }
