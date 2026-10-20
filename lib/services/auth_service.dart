@@ -1,10 +1,13 @@
 import 'dart:convert';
+
 import 'package:clock/clock.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/config/gateway_config.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
+import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/helpers/jwt_decode.dart';
 import 'package:smart_tags/models/auth_response.dart';
 import 'package:smart_tags/models/user.dart';
@@ -40,13 +43,16 @@ class AuthService {
     required AuthDao authDao,
     http.Client? client,
     FlutterSecureStorage? storage,
+    Future<ConnectivityResult?> Function()? connectivityForRefresh,
   }) : _authDao = authDao,
        _client = client ?? http.Client(),
-       _storage = storage ?? const FlutterSecureStorage();
+       _storage = storage ?? const FlutterSecureStorage(),
+       _connectivityForRefresh = connectivityForRefresh;
 
   final AuthDao _authDao;
   final http.Client _client;
   final FlutterSecureStorage _storage;
+  final Future<ConnectivityResult?> Function()? _connectivityForRefresh;
 
   String? _cachedToken;
   String? _cachedUserId;
@@ -89,6 +95,18 @@ class AuthService {
       debugPrint('Failed to decode JWT claims: ${exc.message}');
       return true;
     }
+  }
+
+  Future<ConnectivityResult?> _readConnectivityForRefresh() async {
+    final read = _connectivityForRefresh;
+    if (read != null) {
+      return read();
+    }
+    final results = await Connectivity().checkConnectivity();
+    if (results.isEmpty) {
+      return null;
+    }
+    return results.first;
   }
 
   /// Attempts to refresh the access token using the stored refresh token.
@@ -170,8 +188,13 @@ class AuthService {
     // Return null if no token is found.
     if (token == null) return null;
 
-    // Refresh if expired.
+    // Refresh if expired (only while online — avoids refresh HTTP when offline).
     if (_isExpired(token)) {
+      if (!isDeviceOnline(await _readConnectivityForRefresh())) {
+        debugPrint('Skipping token refresh while offline');
+        _cachedToken = token;
+        return token;
+      }
       try {
         token = await _refreshToken();
       } on RefreshException {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -20,6 +21,10 @@ import 'auth_service_test.mocks.dart';
 void main() {
   late MockAuthDao mockAuthDao;
   late MockFlutterSecureStorage mockFlutterSecureStorage;
+
+  Future<ConnectivityResult?> onlineConnectivity() async => ConnectivityResult.wifi;
+
+  Future<ConnectivityResult?> offlineConnectivity() async => ConnectivityResult.none;
 
   setUp(() {
     mockAuthDao = MockAuthDao();
@@ -306,7 +311,11 @@ void main() {
     when(mockFlutterSecureStorage.read(key: 'userId')).thenAnswer((_) async => '123456');
     when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
     when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => null);
-    final authService = AuthService(authDao: mockAuthDao, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
 
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
@@ -324,7 +333,12 @@ void main() {
       return http.Response('Invalid refresh token', 401);
     });
 
-    final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
 
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
       await expectLater(authService.getAccessToken(), throwsA(isA<RefreshException>()));
@@ -340,7 +354,12 @@ void main() {
       return http.Response('Server error', 500);
     });
 
-    final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
       await expectLater(authService.getAccessToken(), throwsA(isA<AuthException>()));
@@ -355,7 +374,12 @@ void main() {
       return http.Response('invalid json {', 200);
     });
 
-    final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
       await expectLater(authService.getAccessToken(), throwsA(isA<AuthException>()));
@@ -368,10 +392,39 @@ void main() {
     final client = MockClient((request) async {
       throw http.ClientException('Failed to refresh token');
     });
-    final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
       await expectLater(authService.getAccessToken(), throwsA(isA<http.ClientException>()));
+    });
+  });
+
+  test('does not call refresh endpoint while offline when access token is expired', () async {
+    when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+    when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
+
+    var refreshCalls = 0;
+    final client = MockClient((request) async {
+      refreshCalls++;
+      return http.Response(json.encode(mockAuthResponse), 200);
+    });
+
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: offlineConnectivity,
+    );
+
+    await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
+      final token = await authService.getAccessToken();
+      expect(token, mockJwt);
+      expect(refreshCalls, 0);
     });
   });
 
@@ -393,7 +446,12 @@ void main() {
         200,
       );
     });
-    final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
 
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {
@@ -424,7 +482,12 @@ void main() {
         200,
       );
     });
-    final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+    final authService = AuthService(
+      authDao: mockAuthDao,
+      client: client,
+      storage: mockFlutterSecureStorage,
+      connectivityForRefresh: onlineConnectivity,
+    );
 
     // Use a fixed clock to ensure token is expired during the test.
     await withClock(Clock.fixed(DateTime(2026, 01, 02)), () async {

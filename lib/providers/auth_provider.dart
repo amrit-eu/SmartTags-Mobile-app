@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_tags/models/user.dart';
+import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
@@ -9,7 +10,24 @@ import 'package:smart_tags/services/auth_service.dart';
 /// Riverpod provider exposing an [AuthService] instance.
 /// Use this provider to access authentication API via the [AuthNotifier].
 final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService(authDao: ref.watch(databaseProvider).authDao);
+  return AuthService(
+    authDao: ref.watch(databaseProvider).authDao,
+    connectivityForRefresh: () async {
+      final async = ref.read(checkConnectionProvider);
+      final value = async.value;
+      if (value != null) {
+        return value;
+      }
+      if (async.hasError) {
+        return null;
+      }
+      try {
+        return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
+      } on Object {
+        return null;
+      }
+    },
+  );
 });
 
 /// A Riverpod [AsyncNotifier] managing authentication state.
