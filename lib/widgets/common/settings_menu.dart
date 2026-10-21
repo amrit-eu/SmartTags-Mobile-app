@@ -37,8 +37,8 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
         menuItem(SwitchListTile(
           title: const Text('Theme Mode: Use System Default'),
           value: ref.watch(themeProvider) == ThemeMode.system,
-          onChanged: (bool? checked) {
-            if (checked ?? false) {
+          onChanged: (checked) {
+            if (checked) {
               ref.read(themeProvider.notifier).useSystem();
             } else {
               ref.read(themeProvider.notifier).useLight();
@@ -52,7 +52,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
           value: Theme.of(context).brightness == Brightness.dark,
           onChanged: ref.watch(themeProvider) == ThemeMode.system
               ? null // disables the switch
-              : (bool value) {
+              : (value) {
                   if (value) {
                     ref.read(themeProvider.notifier).useDark();
                   } else {
@@ -63,8 +63,8 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
         menuItem(SwitchListTile(
           title: const Text('Text Size: Use System Default'),
           value: useSystemTextScale,
-          onChanged: (bool? checked) {
-            if (checked ?? false) {
+          onChanged: (checked) {
+            if (checked) {
               ref.read(textScaleProvider.notifier).useSystem();
             } else {
               ref.read(textScaleProvider.notifier).useCustom();
@@ -108,7 +108,7 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
           ],
         )),
       ],
-      builder: (_, MenuController controller, Widget? child) {
+      builder: (_, controller, child) {
         return IconButton(
           focusNode: _buttonFocusNode,
           onPressed: () {

@@ -42,7 +42,7 @@ class _UserLoginState extends ConsumerState<UserLoginScreen> {
             // If user is not null, navigate to the user profile screen.
             await Navigator.of(context).pushReplacement(
               MaterialPageRoute<UserProfileScreen>(
-                builder: (BuildContext ctx) => UserProfileScreen(
+                builder: (ctx) => UserProfileScreen(
                   user: user,
                 ),
               ),

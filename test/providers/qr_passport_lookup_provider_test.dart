@@ -44,7 +44,9 @@ void main() {
   late AppDatabase db;
 
   setUp(() => db = AppDatabase.executor(conn.inMemoryConnection()));
-  tearDown(() async => db.close());
+  tearDown(() async {
+    await db.close();
+  });
 
   GatewayRepository gateway(http.Client client) => GatewayRepository(
     client: client,

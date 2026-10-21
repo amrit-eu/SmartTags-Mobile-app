@@ -3,7 +3,7 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
 
-import '../utils/test_user.dart';
+import 'test_user.dart';
 
 class FakeAuthNotifier extends AuthNotifier {
   FakeAuthNotifier(this._user);

@@ -51,12 +51,12 @@ class AuthNotifier extends AsyncNotifier<User?> {
   /// On failure, sets state to [AsyncError].
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      return _authService.login(
+    state = await AsyncValue.guard(
+      () => _authService.login(
         email: email,
         password: password,
-      );
-    });
+      ),
+    );
   }
 
   /// Logs out the current user.

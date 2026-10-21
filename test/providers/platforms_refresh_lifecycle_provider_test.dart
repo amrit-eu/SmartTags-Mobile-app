@@ -73,7 +73,9 @@ void main() {
     late AppDatabase db;
 
     setUp(() => db = AppDatabase.executor(conn.inMemoryConnection()));
-    tearDown(() async => db.close());
+    tearDown(() async {
+      await db.close();
+    });
 
     test('reconnecting with no pending queue refreshes immediately, without the delay', () async {
       final repository = _CombinedGatewayRepository(unclosedMissions: [_samplePlatform()]);

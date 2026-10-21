@@ -435,7 +435,8 @@ void main() {
 
     response.complete(http.Response('{"items":[]}', 200));
     await lookup;
-    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await disposeCatalogue(tester);
   });
 
   testWidgets('scanned catalogue shows empty state and scan again button', (tester) async {
