@@ -159,7 +159,22 @@ final platformsStreamProvider = StreamProvider<List<Platform>>((ref) {
   return db.select(db.platforms).watch();
 });
 
-///
+/// Maximum platforms displayed before the user enters a catalogue search.
+const cataloguePreviewLimit = 50;
+
+/// Watches the first local platforms for the catalogue's initial preview.
+final StreamProvider<List<Platform>> cataloguePreviewProvider = StreamProvider.autoDispose<List<Platform>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchPlatforms(limit: cataloguePreviewLimit);
+});
+
+/// Watches the total local platform count for the catalogue preview label.
+final StreamProvider<int> platformCountProvider = StreamProvider.autoDispose<int>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.watchPlatformCount();
+});
+
+/// Watches all platforms matching the catalogue search, without a preview limit.
 final StreamProviderFamily<List<Platform>, String> platformsWatchProvider =
     StreamProvider.family<List<Platform>, String>((ref, String query) {
       final db = ref.watch(databaseProvider);

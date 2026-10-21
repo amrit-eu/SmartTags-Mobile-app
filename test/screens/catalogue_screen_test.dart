@@ -10,6 +10,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
@@ -98,7 +99,7 @@ void main() {
     return container;
   }
 
-  testWidgets('CatalogueScreen shows prompt initially', (tester) async {
+  testWidgets('CatalogueScreen previews local platforms initially', (tester) async {
     await populateDb();
     await tester.pumpWidget(
       ProviderScope(
@@ -113,8 +114,12 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
-    expect(find.byType(PlatformCard), findsNothing);
+    expect(find.text('Showing all 2 platforms'), findsOneWidget);
+    expect(find.byType(PlatformCard), findsNWidgets(2));
+    expect(tester.widgetList<PlatformCard>(find.byType(PlatformCard)).map((card) => card.platform.ref), [
+      'PLT-001',
+      'PLT-002',
+    ]);
 
     await disposeCatalogue(tester);
   });
@@ -136,7 +141,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify initial state
-    expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
+    expect(find.text('Showing all 2 platforms'), findsOneWidget);
 
     // Enter search text
     await tester.enterText(find.byType(TextField), 'Argo Float');
@@ -175,6 +180,91 @@ void main() {
     await disposeCatalogue(tester);
   });
 
+  testWidgets('Catalogue preview is limited and clearing a search restores it', (tester) async {
+    await populateDb();
+    await db.insertPlatforms([
+      for (var number = 3; number <= 51; number++)
+        PlatformsCompanion.insert(
+          ref: 'PLT-${number.toString().padLeft(3, '0')}',
+          model: 'Additional platform $number',
+          category: 'Profiling Float',
+          network: 'Argo',
+          lat: 1,
+          lon: 2,
+          status: 'OPERATIONAL',
+          operationalStatus: 'Deployed',
+          lastUpdated: DateTime.utc(2026, 10, 19),
+          operationLat: 1,
+          operationLon: 2,
+        ),
+    ]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
+        ],
+        child: const MaterialApp(home: CatalogueScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    const summary = 'Showing 50 of 51 platforms — type to search';
+    expect(find.text(summary), findsOneWidget);
+    final container = ProviderScope.containerOf(tester.element(find.byType(CatalogueScreen)));
+    final preview = container.read(cataloguePreviewProvider).requireValue;
+    expect(preview, hasLength(50));
+    expect(preview.last.ref, 'PLT-050');
+
+    await tester.enterText(find.byType(TextField), ' PLT-051 ');
+    await tester.pumpAndSettle();
+    expect(tester.widget<PlatformCard>(find.byType(PlatformCard)).platform.ref, 'PLT-051');
+    expect(find.text(summary), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.clear));
+    await tester.pumpAndSettle();
+    expect(find.text(summary), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.pumpAndSettle();
+    expect(find.text(summary), findsOneWidget);
+
+    await disposeCatalogue(tester);
+  });
+
+  testWidgets('Catalogue shows an empty local state and updates after sync', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          authProvider.overrideWith(() => FakeAuthNotifier(null)),
+        ],
+        child: const MaterialApp(home: CatalogueScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No platforms stored on this device'), findsOneWidget);
+    expect(find.text('No results found'), findsNothing);
+
+    final container = ProviderScope.containerOf(tester.element(find.byType(CatalogueScreen)));
+    container.read(platformsSyncPhaseProvider.notifier).setDownloading();
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('No platforms stored on this device'), findsNothing);
+
+    await populateDb();
+    container.read(platformsSyncPhaseProvider.notifier).setIdle();
+    await tester.pumpAndSettle();
+    expect(find.text('Showing all 2 platforms'), findsOneWidget);
+    expect(find.byType(PlatformCard), findsNWidgets(2));
+
+    await db.delete(db.platforms).go();
+    await tester.pumpAndSettle();
+    expect(find.text('No platforms stored on this device'), findsOneWidget);
+
+    await disposeCatalogue(tester);
+  });
+
   testWidgets('Catalogue shows search history when field is focused (#143)', (tester) async {
     await populateDb();
     await db.recordCatalogueSearchEntry(
@@ -201,6 +291,7 @@ void main() {
 
     expect(find.text('Latest viewed platforms'), findsOneWidget);
     expect(find.byKey(const Key('catalogue-search-history-PLT-001')), findsOneWidget);
+    expect(find.text('Showing all 2 platforms'), findsOneWidget);
     expect(find.text('Argo Float · 0-22000-0-5904198'), findsOneWidget);
 
     await disposeCatalogue(tester);
@@ -361,7 +452,8 @@ void main() {
     await tester.tap(find.text('Scan again'));
     await tester.pump();
     expect(scanAgainCalled, isTrue);
-    expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('No platforms stored on this device'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

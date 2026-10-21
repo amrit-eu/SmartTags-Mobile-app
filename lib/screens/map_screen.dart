@@ -18,6 +18,7 @@ import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/map_session_state_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/map_skeleton_loader.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -76,10 +77,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   final Map<String, _PlatformMapMarkerState> _platformMarkerStates = {};
   var _ignoreNextBackgroundTap = false;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
-
-  // Initial map center (Atlantic Ocean, near Europe as in reference image)
-  static const LatLng _defaultCenter = LatLng(45, -5);
-  static const double _defaultZoom = 4;
 
   static const int _minBaseTilesBeforeHideSkeleton = 4;
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
@@ -739,8 +736,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           child: FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _defaultCenter,
-              initialZoom: _defaultZoom,
+              initialCenter: MapConfig.defaultCenter,
+              initialZoom: MapConfig.defaultZoom,
               interactionOptions: const InteractionOptions(
                 keyboardOptions: KeyboardOptions(
                   enableRFZooming: true,
@@ -836,10 +833,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   void _showToast(BuildContext context, String message, String label) {
     final scaffold = ScaffoldMessenger.of(context);
+
     scaffold.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: SnackBarAction(label: label, onPressed: scaffold.hideCurrentSnackBar),
+      buildAppSnackBar(
+        context: context,
+        message: message,
+        severity: AppSnackBarSeverity.error,
+        actionLabel: label,
+        onAction: scaffold.hideCurrentSnackBar,
       ),
     );
   }

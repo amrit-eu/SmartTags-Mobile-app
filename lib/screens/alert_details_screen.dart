@@ -13,8 +13,10 @@ import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/widgets/alert_chip.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
+import 'package:smart_tags/widgets/pending_operations_banner.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -188,6 +190,7 @@ class AlertDetailsScreen extends ConsumerWidget {
       body: Column(
         children: [
           const ConnectivityBanner(),
+          const PendingOperationsBanner(),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(16, 16, 16, actionCount == 0 ? 16 : 16 + actionCount * 68.0 + 16),
@@ -381,7 +384,10 @@ class AlertDetailsScreen extends ConsumerWidget {
       outcome = await send(ref.read(passportEventQueueProvider.notifier));
     } on GatewayException catch (e) {
       // Rejected by the server (e.g. 403/404): nothing queued, nothing changed locally.
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        buildAppSnackBar(context: context, message: e.message, severity: AppSnackBarSeverity.error),
+      );
       return;
     }
     if (outcome == PassportEventSubmitOutcome.sent) {
@@ -393,7 +399,18 @@ class AlertDetailsScreen extends ConsumerWidget {
       PassportEventSubmitOutcome.notQueuedAuthRequired => 'Not saved — you need to be logged in.',
       PassportEventSubmitOutcome.queued => '$successMessage. Saved locally and queued for sync.',
     };
-    messenger.showSnackBar(SnackBar(content: Text(message)));
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      buildAppSnackBar(
+        context: context,
+        message: message,
+        severity: switch (outcome) {
+          PassportEventSubmitOutcome.sent => AppSnackBarSeverity.success,
+          PassportEventSubmitOutcome.queued => AppSnackBarSeverity.info,
+          PassportEventSubmitOutcome.notQueuedAuthRequired => AppSnackBarSeverity.warning,
+        },
+      ),
+    );
   }
 
   /// Turns a raw attribute key (e.g. `wigos_id`) into a human-readable label.
