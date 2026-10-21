@@ -25,3 +25,23 @@ class ConnectivityStatus extends AsyncNotifier<ConnectivityResult?> {
     return initialStatus;
   }
 }
+
+/// Reads the latest connectivity from [checkConnectionProvider], waiting briefly if still loading.
+Future<ConnectivityResult?> readCurrentConnectivity(
+  Ref ref, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final async = ref.read(checkConnectionProvider);
+  final value = async.value;
+  if (value != null) {
+    return value;
+  }
+  if (async.hasError) {
+    return null;
+  }
+  try {
+    return await ref.read(checkConnectionProvider.future).timeout(timeout);
+  } on Object {
+    return null;
+  }
+}
