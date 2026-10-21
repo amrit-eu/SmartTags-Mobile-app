@@ -1,31 +1,49 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Key under which the [ThemeMode] name is stored.
+const String themeModePrefsKey = 'settings.themeMode';
+
+/// Key under which the custom text scale factor is stored.
+/// Absent when the system text size is used.
+const String textScalePrefsKey = 'settings.textScale';
+
+/// Provides the on-device key-value store used to persist user settings.
+///
+/// Overridden with an initialised instance in `main()`. The default is `null`
+/// (settings kept in memory only), so tests that don't care about persistence
+/// need no setup.
+final sharedPreferencesProvider = Provider<SharedPreferencesWithCache?>((ref) => null);
 
 /// Provides updates about changes to the app theme
 final themeProvider = NotifierProvider<AppThemeMode, ThemeMode>(AppThemeMode.new);
 
 /// Defines a provider to toggle the app theme (light/dark/system)
 class AppThemeMode extends Notifier<ThemeMode> {
-  /// Load initial state. Currently statically initialised.
-  /// Change to using AsyncNotifier once we load from a DB or similar.
+  SharedPreferencesWithCache? get _prefs => ref.read(sharedPreferencesProvider);
+
+  /// Loads the persisted theme, defaulting to the system theme.
   @override
   ThemeMode build() {
-    return ThemeMode.system;
+    final stored = _prefs?.getString(themeModePrefsKey);
+    return ThemeMode.values.asNameMap()[stored] ?? ThemeMode.system;
   }
 
   /// Resets to system theme
-  void useSystem() {
-    state = ThemeMode.system;
-  }
+  void useSystem() => _set(ThemeMode.system);
 
   /// Enables dark mode
-  void useDark() {
-    state = ThemeMode.dark;
-  }
+  void useDark() => _set(ThemeMode.dark);
 
   /// Enables light mode
-  void useLight() {
-    state = ThemeMode.light;
+  void useLight() => _set(ThemeMode.light);
+
+  void _set(ThemeMode mode) {
+    state = mode;
+    unawaited(_prefs?.setString(themeModePrefsKey, mode.name));
   }
 }
 
@@ -43,20 +61,31 @@ class AppTextScale extends Notifier<double?> {
   /// (max - min) / step
   static const int divisions = 6;
 
-  /// Load initial state. Currently statically initialised.
-  /// Change to using AsyncNotifier once we load from a DB or similar.
+  SharedPreferencesWithCache? get _prefs => ref.read(sharedPreferencesProvider);
+
+  /// Loads the persisted text scale, or null to use the system default.
   @override
-  double? build() => null;
+  double? build() {
+    final stored = _prefs?.getDouble(textScalePrefsKey);
+    return stored == null || !stored.isFinite ? null : _snap(stored);
+  }
 
   /// Reset text scale factor to system default size
-  void useSystem() => state = null;
+  void useSystem() {
+    state = null;
+    unawaited(_prefs?.remove(textScalePrefsKey));
+  }
 
   /// Enable custom scaling (starts at 1.0, i.e. identical to system size)
-  void useCustom() => state = 1.0;
+  void useCustom() => _setCustom(1);
 
   /// Set text scale factor from user input
-  void set(double relativeScale){
-    final snapped = (relativeScale / step).round() * step;
-    state = snapped.clamp(min, max);
+  void set(double relativeScale) => _setCustom(_snap(relativeScale));
+
+  void _setCustom(double scale) {
+    state = scale;
+    unawaited(_prefs?.setDouble(textScalePrefsKey, scale));
   }
+
+  static double _snap(double scale) => ((scale / step).round() * step).clamp(min, max);
 }
