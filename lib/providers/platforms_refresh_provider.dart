@@ -66,7 +66,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
   }
 
   Future<void> _performRefresh() async {
-    final connectivity = await _currentConnectivity();
+    final connectivity = await readCurrentConnectivity(ref);
     if (!isDeviceOnline(connectivity)) {
       final error = StateError('Offline — connect to refresh platforms');
       _logRefreshFailure(error, StackTrace.current, connectivity: connectivity);
@@ -166,21 +166,6 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
     );
   }
 
-  Future<ConnectivityResult?> _currentConnectivity() async {
-    final async = ref.read(checkConnectionProvider);
-    final value = async.value;
-    if (value != null) {
-      return value;
-    }
-    if (async.hasError) {
-      return null;
-    }
-    try {
-      return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
-    } on Object {
-      return null;
-    }
-  }
 }
 
 /// Refreshes platforms after connectivity is regained (offline → online).
