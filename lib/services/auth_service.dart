@@ -116,16 +116,11 @@ class AuthService {
     // Log the user out in this case since they need to log in again to get a new refresh token.
     final refreshToken = await _storage.read(key: 'refresh_token');
     if (refreshToken == null) {
-      if (kDebugMode) {
-        debugPrint('Auth: no refresh token in storage');
-      }
+      debugPrint('No refresh token found in storage');
       throw const RefreshException('No refresh token available');
     }
 
     final uri = GatewayConfig.refreshUri;
-    if (kDebugMode) {
-      debugPrint('Auth: POST $uri (token refresh)');
-    }
     try {
       final response = await _client.post(
         uri,
@@ -141,9 +136,6 @@ class AuthService {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
         await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
-        if (kDebugMode) {
-          debugPrint('Auth: token refresh successful');
-        }
         // Return the new access token so the caller can retry the original request.
         return authResponse.accessTokenRs256;
       } else if (response.statusCode == 401) {
@@ -196,18 +188,7 @@ class AuthService {
 
     // Refresh if expired (only while online — avoids refresh HTTP when offline).
     if (_isExpired(token)) {
-      final connectivity = await _readConnectivityForRefresh();
-      final online = isDeviceOnline(connectivity);
-      if (kDebugMode) {
-        debugPrint(
-          'Auth: access token expired '
-          '(connectivity=${connectivity?.name ?? 'unknown'}, online=$online)',
-        );
-      }
-      if (!online) {
-        if (kDebugMode) {
-          debugPrint('Auth: skipping token refresh while offline');
-        }
+      if (!isDeviceOnline(await _readConnectivityForRefresh())) {
         _cachedToken = token;
         return token;
       }
@@ -220,9 +201,7 @@ class AuthService {
         rethrow;
       } on (AuthException, http.ClientException) catch (exc) {
         // Network error or server error during refresh - keep user logged in with old token and let them retry.
-        if (kDebugMode) {
-          debugPrint('Auth: token refresh failed: $exc');
-        }
+        debugPrint('Token refresh failed: $exc');
         rethrow;
       }
     }
