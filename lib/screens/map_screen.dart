@@ -78,10 +78,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   var _ignoreNextBackgroundTap = false;
   ProviderSubscription<AsyncValue<Platform?>>? _selectedPlatformSubscription;
 
-  // Initial map center (Atlantic Ocean, near Europe as in reference image)
-  static const LatLng _defaultCenter = LatLng(45, -5);
-  static const double _defaultZoom = 4;
-
   static const int _minBaseTilesBeforeHideSkeleton = 4;
   static const Duration _mapSkeletonTimeout = Duration(seconds: 8);
   static const Duration _mapPanDuration = Duration(milliseconds: 450);
@@ -740,8 +736,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           child: FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter: _defaultCenter,
-              initialZoom: _defaultZoom,
+              initialCenter: MapConfig.defaultCenter,
+              initialZoom: MapConfig.defaultZoom,
               interactionOptions: const InteractionOptions(
                 keyboardOptions: KeyboardOptions(
                   enableRFZooming: true,
