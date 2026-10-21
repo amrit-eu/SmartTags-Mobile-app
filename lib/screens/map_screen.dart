@@ -11,9 +11,11 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/platform_mapper.dart';
 import 'package:smart_tags/helpers/coordinate_format.dart';
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/helpers/map_focus_zoom.dart';
 import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_focus_request_provider.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/map_session_state_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
@@ -172,6 +174,30 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       recenter: false,
       persistSelection: false,
     );
+    _popupAnimationController.value = 1;
+  }
+
+  Future<void> _applyMapFocusRequest(MapFocusRequest request) async {
+    ref.read(mapFocusRequestProvider.notifier).clear();
+
+    final rows = await ref.read(databaseProvider).getPlatformByRef(request.platformRef);
+    if (!mounted || rows.isEmpty) {
+      if (mounted && rows.isEmpty) {
+        await ref.read(mapSessionStateProvider.notifier).persistSelection(null);
+      }
+      return;
+    }
+
+    final dbPlatform = rows.first;
+    final position = LatLng(dbPlatform.lat, dbPlatform.lon);
+    final platforms = ref.read(platformsStreamProvider).value ?? [];
+    final zoom = resolvePlatformFocusZoom(position, platforms);
+
+    _dismissSelectedPlatform();
+    _mapController.move(position, zoom);
+    ref.read(mapSessionStateProvider.notifier).schedulePersistCamera(position, zoom);
+
+    _selectPlatformMarker(dbPlatform, position);
     _popupAnimationController.value = 1;
   }
 
@@ -689,6 +715,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<MapFocusRequest?>(mapFocusRequestProvider, (previous, next) {
+      if (next != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            unawaited(_applyMapFocusRequest(next));
+          }
+        });
+      }
+    });
+
     final platformsAsync = ref.watch(platformsStreamProvider);
 
     final platforms = platformsAsync.value ?? [];

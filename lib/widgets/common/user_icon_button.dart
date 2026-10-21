@@ -33,7 +33,7 @@ class UserIconButton extends ConsumerWidget {
               if (user != null) {
                 await Navigator.of(context).push(
                   MaterialPageRoute<UserProfileScreen>(
-                    builder: (BuildContext ctx) => UserProfileScreen(
+                    builder: (ctx) => UserProfileScreen(
                       user: user,
                     ),
                   ),
@@ -41,7 +41,7 @@ class UserIconButton extends ConsumerWidget {
               } else {
                 await Navigator.of(context).push(
                   MaterialPageRoute<UserLoginScreen>(
-                    builder: (BuildContext ctx) => const UserLoginScreen(),
+                    builder: (ctx) => const UserLoginScreen(),
                   ),
                 );
               }

@@ -18,4 +18,13 @@ abstract final class MapConfig {
 
   /// Initial map zoom level.
   static const double defaultZoom = 4;
+
+  /// Preferred zoom when opening a platform from details (surroundings context).
+  static const double platformFocusMinZoom = 8;
+
+  /// Highest zoom when de-clustering; kept low so focus stays wider (popup identifies the platform).
+  static const double platformFocusMaxZoom = 10.5;
+
+  /// Matches the main map cluster `maxClusterRadius` for focus zoom heuristics.
+  static const double platformClusterRadiusPx = 120;
 }

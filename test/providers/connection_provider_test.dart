@@ -49,9 +49,7 @@ Platform _samplePlatform() {
 }
 
 void main() {
-  testWidgets('does not show connectivity snackbar on network changes', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('does not show connectivity snackbar on network changes', (tester) async {
     final testNotifier = TestConnectivityStatus();
     final mockDatabase = AppDatabase.executor(conn.inMemoryConnection());
     await tester.pumpWidget(

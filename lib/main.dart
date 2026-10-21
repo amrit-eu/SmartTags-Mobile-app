@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/map_focus_request_provider.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
@@ -107,6 +108,12 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<MapFocusRequest?>(mapFocusRequestProvider, (previous, next) {
+      if (next != null && _selectedIndex != 0) {
+        setState(() => _selectedIndex = 0);
+      }
+    });
+
     ref.listen<ErrorNotification?>(
       errorNotificationProvider,
       (previous, next) {
