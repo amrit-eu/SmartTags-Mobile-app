@@ -614,8 +614,9 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
-  /// Watches all platforms, optionally filtered by a search query.
-  Stream<List<Platform>> watchPlatforms({String? query}) {
+  /// Watches platforms ordered by reference, optionally filtered and limited.
+  /// Omitting [limit] returns all matching platforms.
+  Stream<List<Platform>> watchPlatforms({String? query, int? limit}) {
     final queryBuilder = select(platforms);
 
     if (query != null && query.isNotEmpty) {
@@ -627,7 +628,18 @@ class AppDatabase extends _$AppDatabase {
       });
     }
 
+    queryBuilder.orderBy([(p) => OrderingTerm.asc(p.ref)]);
+    if (limit != null) {
+      queryBuilder.limit(limit);
+    }
+
     return queryBuilder.watch();
+  }
+
+  /// Watches the local platform total without loading platform records.
+  Stream<int> watchPlatformCount() {
+    final count = platforms.id.count();
+    return (selectOnly(platforms)..addColumns([count])).map((row) => row.read(count)!).watchSingle();
   }
 
   /// Helper function to select a specific platform by its reference. Returns a list

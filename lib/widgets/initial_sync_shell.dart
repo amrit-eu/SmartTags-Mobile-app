@@ -8,6 +8,7 @@ import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
+import 'package:smart_tags/widgets/common/app_status_banner.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 
 /// Non-blocking sync feedback shown above any tab in the main shell.
@@ -77,10 +78,14 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       final error = refresh.error!;
       final message = error is StateError ? error.message : 'Could not refresh platforms';
+
       return _SyncFailedBanner(
+        key: const ValueKey('refresh-failure'),
         message: message,
         onRetry: () {
-          unawaited(ref.read(platformsRefreshProvider.notifier).refresh());
+          unawaited(
+            ref.read(platformsRefreshProvider.notifier).refresh(),
+          );
         },
       );
     }
@@ -105,6 +110,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     if (syncAsync.hasError) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return _SyncFailedBanner(
+        key: const ValueKey('initial-sync-failure'),
         message: 'Could not load platforms',
         onRetry: () {
           unawaited(ref.read(initialSyncProvider.notifier).retry());
@@ -125,57 +131,40 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
   }
 }
 
-class _SyncFailedBanner extends StatelessWidget {
+class _SyncFailedBanner extends StatefulWidget {
   const _SyncFailedBanner({
     required this.message,
     required this.onRetry,
+    super.key,
   });
 
   final String message;
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<_SyncFailedBanner> createState() => _SyncFailedBannerState();
+}
 
-    return Material(
-      color: theme.colorScheme.errorContainer,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.cloud_off,
-                  size: 18,
-                  color: theme.colorScheme.onErrorContainer,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onErrorContainer,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ],
-      ),
+class _SyncFailedBannerState extends State<_SyncFailedBanner> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) {
+      return const SizedBox.shrink();
+    }
+
+    return AppStatusBanner(
+      message: widget.message,
+      severity: AppStatusBannerSeverity.error,
+      icon: Icons.cloud_off,
+      actionLabel: 'Retry',
+      onAction: widget.onRetry,
+      onDismiss: () {
+        setState(() {
+          _dismissed = true;
+        });
+      },
     );
   }
 }
@@ -185,43 +174,10 @@ class _OfflineEmptyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.cloud_off_outlined,
-                  size: 18,
-                  color: theme.colorScheme.outline,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'No local data. Connect to the internet to download platforms.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ],
-      ),
+    return const AppStatusBanner(
+      message: 'No local data. Connect to the internet to download platforms.',
+      severity: AppStatusBannerSeverity.warning,
+      icon: Icons.cloud_off_outlined,
     );
   }
 }

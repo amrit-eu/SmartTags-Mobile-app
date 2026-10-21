@@ -18,6 +18,7 @@ import 'package:smart_tags/screens/platform_detail_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
+import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 
 import 'helpers/static_initial_sync_notifier.dart';
@@ -147,38 +148,54 @@ void main() {
     expect(find.byType(PlatformCard), findsOneWidget);
     expect(tester.widget<PlatformCard>(find.byType(PlatformCard)).platform.ref, 'DEP-3');
 
-    await tester.tap(find.text('Clear scan'));
-    await tester.pump();
-    expect(find.text('Enter a platform ID or model to search'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
     await db.close();
   });
 
-  testWidgets('invalid URL format error stays visible while the scanner is open', (tester) async {
+  testWidgets('invalid URL format error uses transient feedback', (
+    tester,
+  ) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [databaseProvider.overrideWithValue(db)],
-        child: const MaterialApp(home: Scaffold(body: QrScanScreen())),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: QrScanScreen(),
+          ),
+        ),
       ),
     );
+
     await tester.pump(const Duration(milliseconds: 500));
-    scan(tester, 'https://www.ocean-ops.org/tracking/?code=A&code=B');
+
+    scan(
+      tester,
+      'https://www.ocean-ops.org/tracking/?code=A&code=B',
+    );
     await tester.pump();
+
     expect(find.text('Invalid QR Code format'), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsOneWidget);
     expect(find.byType(SnackBar), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Invalid QR Code format'), findsOneWidget);
-    scan(tester, 'https://www.ocean-ops.org/tracking/?code=A&code=B');
-    await tester.pump();
-    expect(find.text('Invalid QR Code format'), findsOneWidget);
+
+    final snackBar = tester.widget<SnackBar>(
+      find.byType(SnackBar),
+    );
+
+    expect(snackBar.duration, appSnackBarDuration);
+    expect(snackBar.persist, isNot(true));
+    expect(
+      snackBar.dismissDirection,
+      isNot(DismissDirection.none),
+    );
+
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     await db.close();
   });
-
   testWidgets('invalid scan message stays on scanner and clears for a valid scan', (tester) async {
     final db = AppDatabase.executor(conn.inMemoryConnection());
     final gateway = GatewayRepository(

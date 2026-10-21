@@ -49,6 +49,7 @@ class _OperationRecordHost extends ConsumerWidget {
           final messenger = ScaffoldMessenger.of(context);
           try {
             applyOperationSubmitResult(
+              context: context,
               container: container,
               result: result,
               messenger: messenger,
@@ -422,6 +423,7 @@ void main() {
 
     // Verify that the success SnackBar reflects the toggled action.
     expect(find.text('Recovery successful! Changes have been saved and synced.'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
 
     // Verify that the platform record in the database was updated as a recovery, not a deployment.
     final updatedPlatform = await (db.select(
@@ -638,6 +640,7 @@ void main() {
       find.text('Recovery successful! Changes have been saved locally and queued for sync.'),
       findsOneWidget,
     );
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
 
     // Verify that the platform record in the database has been updated with the new values
     final updatedPlatform = await (db.select(
@@ -953,7 +956,9 @@ void main() {
     expect(find.text('Longitude is required'), findsOneWidget);
     expect(find.text('Deployment Time is required'), findsOneWidget);
   });
-  testWidgets('Offline status shows when the device is offline.', (tester) async {
+  testWidgets('Offline status is fixed above the form and can be dismissed', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -969,10 +974,37 @@ void main() {
         ),
       ),
     );
+
     await tester.pumpAndSettle();
 
-    // Verify that the expected offline widget is shown.
+    const message = 'You are offline. Changes will be saved locally and synced when you are back online.';
+
     expect(find.byType(OfflineStatus), findsOneWidget);
+    expect(find.text(message), findsOneWidget);
+
+    // The status banner is fixed above the independently scrolling form.
+    expect(
+      find.descendant(
+        of: find.byType(SingleChildScrollView),
+        matching: find.byType(OfflineStatus),
+      ),
+      findsNothing,
+    );
+
+    final dismissButton = find.descendant(
+      of: find.byType(OfflineStatus),
+      matching: find.widgetWithIcon(
+        IconButton,
+        Icons.close,
+      ),
+    );
+
+    expect(dismissButton, findsOneWidget);
+
+    await tester.tap(dismissButton);
+    await tester.pump();
+
+    expect(find.text(message), findsNothing);
   });
   testWidgets('Offline status does not show when the device is online.', (tester) async {
     await tester.pumpWidget(
