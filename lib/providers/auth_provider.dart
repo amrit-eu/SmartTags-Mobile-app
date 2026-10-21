@@ -12,21 +12,7 @@ import 'package:smart_tags/services/auth_service.dart';
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(
     authDao: ref.watch(databaseProvider).authDao,
-    connectivityForRefresh: () async {
-      final async = ref.read(checkConnectionProvider);
-      final value = async.value;
-      if (value != null) {
-        return value;
-      }
-      if (async.hasError) {
-        return null;
-      }
-      try {
-        return await ref.read(checkConnectionProvider.future).timeout(const Duration(seconds: 5));
-      } on Object {
-        return null;
-      }
-    },
+    connectivityForRefresh: () => readCurrentConnectivity(ref),
   );
 });
 
