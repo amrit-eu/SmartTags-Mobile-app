@@ -11,7 +11,6 @@ import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_focus_request_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
-import 'package:riverpod/riverpod.dart' show ProviderContainer;
 
 const String testRef = 'TEST-001';
 

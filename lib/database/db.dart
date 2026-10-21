@@ -412,10 +412,10 @@ class AppDatabase extends _$AppDatabase {
   // uninstall/reinstall the app, so onCreate is enough.
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (Migrator m) async {
+    onCreate: (m) async {
       await m.createAll();
     },
-    onUpgrade: (Migrator m, int from, int to) async {
+    onUpgrade: (m, from, to) async {
       if (from < 2) {
         await m.createTable(mapSessionStates);
       }

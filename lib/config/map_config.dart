@@ -25,6 +25,6 @@ abstract final class MapConfig {
   /// Highest zoom when de-clustering; kept low so focus stays wider (popup identifies the platform).
   static const double platformFocusMaxZoom = 10.5;
 
-  /// Matches [MapScreen] cluster `maxClusterRadius` for focus zoom heuristics.
+  /// Matches the main map cluster `maxClusterRadius` for focus zoom heuristics.
   static const double platformClusterRadiusPx = 120;
 }

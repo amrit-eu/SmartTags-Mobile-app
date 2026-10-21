@@ -160,7 +160,7 @@ final StreamProvider<int> platformCountProvider = StreamProvider.autoDispose<int
 
 /// Watches all platforms matching the catalogue search, without a preview limit.
 final StreamProviderFamily<List<Platform>, String> platformsWatchProvider =
-    StreamProvider.family<List<Platform>, String>((ref, String query) {
+    StreamProvider.family<List<Platform>, String>((ref, query) {
       final db = ref.watch(databaseProvider);
       return db.watchPlatforms(query: query);
     });
