@@ -14,6 +14,7 @@ import 'package:smart_tags/helpers/location/location_fetcher.dart';
 import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:smart_tags/models/platform.dart' as model;
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_focus_request_provider.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/map_session_state_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
@@ -174,6 +175,27 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       LatLng(dbPlatform.lat, dbPlatform.lon),
       recenter: false,
       persistSelection: false,
+    );
+    _popupAnimationController.value = 1;
+  }
+
+  Future<void> _applyMapFocusRequest(MapFocusRequest request) async {
+    final rows = await ref.read(databaseProvider).getPlatformByRef(request.platformRef);
+    if (!mounted) {
+      return;
+    }
+    ref.read(mapFocusRequestProvider.notifier).clear();
+    if (rows.isEmpty) {
+      return;
+    }
+    final dbPlatform = rows.first;
+    final position = LatLng(dbPlatform.lat, dbPlatform.lon);
+    _mapController.move(position, request.zoom);
+    ref.read(mapSessionStateProvider.notifier).schedulePersistCamera(position, request.zoom);
+    _selectPlatformMarker(
+      dbPlatform,
+      position,
+      recenter: false,
     );
     _popupAnimationController.value = 1;
   }
@@ -692,6 +714,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<MapFocusRequest?>(mapFocusRequestProvider, (previous, next) {
+      if (next != null) {
+        unawaited(_applyMapFocusRequest(next));
+      }
+    });
+
     final platformsAsync = ref.watch(platformsStreamProvider);
 
     final platforms = platformsAsync.value ?? [];

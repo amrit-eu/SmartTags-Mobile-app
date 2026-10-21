@@ -21,7 +21,9 @@ import 'package:smart_tags/models/qr_scan_result.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_focus_request_provider.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
+import 'package:smart_tags/providers/platform_detail_scroll_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/screens/alerts_screen.dart';
 import 'package:smart_tags/screens/operation_record_screen.dart';
@@ -49,6 +51,7 @@ class PlatformDetailScreen extends ConsumerStatefulWidget {
 
 class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   late final MapController _mapController;
+  late final ScrollController _scrollController;
   bool _isPairing = false;
   String? _confirmedQrCode;
 
@@ -58,12 +61,34 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
   void initState() {
     super.initState();
     _mapController = MapController();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final saved = ref.read(platformDetailScrollProvider.notifier).take(widget.platformRef);
+      if (saved != null) {
+        _scrollController.jumpTo(saved);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _openOnMainMap(Platform platform) {
+    if (_scrollController.hasClients) {
+      ref.read(platformDetailScrollProvider.notifier).save(
+            widget.platformRef,
+            _scrollController.offset,
+          );
+    }
+    ref.read(mapFocusRequestProvider.notifier).showPlatform(platform.platformRef);
+    Navigator.of(context).pop();
   }
 
   void _showPairingMessage(String message, {bool success = false}) {
@@ -256,6 +281,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           const ConnectivityBanner(),
           Expanded(
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,6 +341,19 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                                 'Latest observation',
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _openOnMainMap(platform),
+                                child: Semantics(
+                                  button: true,
+                                  label: 'Show on map',
+                                  child: const SizedBox.expand(),
                                 ),
                               ),
                             ),

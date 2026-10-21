@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/riverpod.dart' show ProviderContainer;
 import 'package:smart_tags/database/db.dart' hide AppDatabase;
 import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/map_focus_request_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
 
 const String testRef = 'TEST-001';
@@ -120,6 +122,59 @@ void main() {
     await tester.pumpWidget(buildTestWidget());
     await tester.pump();
     expect(find.byType(FlutterMap), findsOneWidget);
+  });
+
+  testWidgets('Tapping preview map requests main map focus (#168)', (tester) async {
+    MapFocusRequest? focus;
+    final container = ProviderContainer(
+      overrides: [
+        checkConnectionProvider.overrideWith(_OnlineConnectivity.new),
+        platformsStreamProvider.overrideWith((ref) => Stream.value(const <Platform>[])),
+        platformByRefStreamProvider(testRef).overrideWith(
+          (ref) => Stream.value(testDbPlatform),
+        ),
+        alertsByResourceStreamProvider(testRef).overrideWith(
+          (ref) => Stream.value(const []),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.listen(mapFocusRequestProvider, (_, next) => focus = next, fireImmediately: true);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => const PlatformDetailScreen(platformRef: testRef),
+                        ),
+                      );
+                    },
+                    child: const Text('Open'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Show on map'));
+    await tester.pumpAndSettle();
+
+    expect(focus?.platformRef, testRef);
+    expect(find.text('Platform Details'), findsNothing);
   });
 
   testWidgets('Platform Details has marker on map', (tester) async {

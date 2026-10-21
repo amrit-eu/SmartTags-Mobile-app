@@ -10,4 +10,7 @@ abstract final class MapConfig {
 
   /// User agent sent with tile requests (required by flutter_map).
   static const String userAgentPackageName = 'com.example.flutter_amrit';
+
+  /// Zoom on the main map when opening a platform from details (surroundings).
+  static const double platformSurroundingsZoom = 8;
 }
