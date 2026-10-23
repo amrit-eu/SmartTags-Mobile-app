@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,11 +16,14 @@ import 'auth_provider_test.mocks.dart';
 void main() {
   final mockService = MockAuthService();
   late ProviderContainer container;
+  late StreamController<AuthSessionEvent> sessionEvents;
 
   final testUser = createTestUser();
 
   setUp(() {
     reset(mockService);
+    sessionEvents = StreamController<AuthSessionEvent>.broadcast();
+    when(mockService.sessionEvents).thenAnswer((_) => sessionEvents.stream);
     container = ProviderContainer(
       overrides: [
         authServiceProvider.overrideWithValue(mockService),
@@ -26,8 +31,9 @@ void main() {
     );
   });
 
-  tearDown(() {
+  tearDown(() async {
     container.dispose();
+    await sessionEvents.close();
   });
 
   test('initial state is null if no user is authenticated', () async {
@@ -40,6 +46,20 @@ void main() {
     when(mockService.getAuthenticatedUser()).thenAnswer((_) async => testUser);
     final result = await container.read(authProvider.future);
     expect(result, testUser);
+  });
+
+  test('a refresh rejection overrides a profile restore still in progress', () async {
+    final restore = Completer<User?>();
+    when(mockService.getAuthenticatedUser()).thenAnswer((_) => restore.future);
+    final initial = container.read(authProvider.future);
+
+    sessionEvents.add(const AuthSessionExpired(RefreshException('Invalid refresh token')));
+    await container.pump();
+    restore.complete(testUser);
+    await initial;
+    await container.pump();
+
+    expect(container.read(authProvider).value, isNull);
   });
 
   test('login emits loading then data', () async {
