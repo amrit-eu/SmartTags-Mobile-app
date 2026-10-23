@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -10,10 +12,12 @@ import 'package:smart_tags/services/auth_service.dart';
 /// Riverpod provider exposing an [AuthService] instance.
 /// Use this provider to access authentication API via the [AuthNotifier].
 final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService(
+  final service = AuthService(
     authDao: ref.watch(databaseProvider).authDao,
     connectivityForRefresh: () => readCurrentConnectivity(ref),
   );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 /// A Riverpod [AsyncNotifier] managing authentication state.
@@ -29,19 +33,32 @@ final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(AuthNotifier.new
 ///   via [AuthService].
 /// - [logout] sets the state to `null`.
 class AuthNotifier extends AsyncNotifier<User?> {
-  late final AuthService _authService;
+  late AuthService _authService;
 
   @override
   Future<User?> build() async {
-    _authService = ref.read(authServiceProvider);
-    try {
-      final result = await _callWithRefreshHandling<User?>(
-        () => _authService.getAuthenticatedUser(),
-      );
-      return result;
-    } on RefreshException {
-      return null;
-    }
+    _authService = ref.watch(authServiceProvider);
+    var receivedSessionEvent = false;
+    User? latestUser;
+    // Listen for session events to update state accordingly.
+    final subscription = _authService.sessionEvents.listen((event) {
+      receivedSessionEvent = true;
+      switch (event) {
+        case AuthUserRefreshed(user: final user):
+          latestUser = user;
+          state = AsyncData(user);
+        case AuthSessionExpired(error: final error):
+          latestUser = null;
+          _handleRefreshException(error);
+      }
+    });
+    ref.onDispose(() => unawaited(subscription.cancel()));
+
+    final user = await _callWithRefreshHandling<User?>(
+      () => _authService.getAuthenticatedUser(),
+    );
+    // Prevents a late session event from overwriting the user we just fetched.
+    return receivedSessionEvent ? latestUser : user;
   }
 
   /// Logs in a user using [email] and [password].

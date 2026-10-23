@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
@@ -31,6 +32,29 @@ class RefreshException extends AuthException {
   const RefreshException(super.message);
 }
 
+/// A session change caused by a token refresh outside the auth notifier.
+sealed class AuthSessionEvent {
+  const AuthSessionEvent();
+}
+
+/// Updated contact information received after a successful token refresh.
+final class AuthUserRefreshed extends AuthSessionEvent {
+  /// Creates an event containing the persisted [user].
+  const AuthUserRefreshed(this.user);
+
+  /// The current user, including their latest global and program roles.
+  final User user;
+}
+
+/// A definitive refresh rejection that requires online reauthentication.
+final class AuthSessionExpired extends AuthSessionEvent {
+  /// Creates an event describing why the session expired.
+  const AuthSessionExpired(this.error);
+
+  /// The refresh failure that invalidated the session.
+  final RefreshException error;
+}
+
 /// A service responsible for handling authentication-related API calls.
 ///
 /// This service communicates with the backend API to log in a user
@@ -53,9 +77,23 @@ class AuthService {
   final http.Client _client;
   final FlutterSecureStorage _storage;
   final Future<ConnectivityResult?> Function()? _connectivityForRefresh;
+  final _sessionEvents = StreamController<AuthSessionEvent>.broadcast();
+
+  /// Refresh outcomes that must update the app's user and permissions.
+  Stream<AuthSessionEvent> get sessionEvents => _sessionEvents.stream;
 
   String? _cachedToken;
   String? _cachedUserId;
+
+  /// Releases the HTTP client and session notifications.
+  void dispose() {
+    _client.close();
+    unawaited(_sessionEvents.close());
+  }
+
+  void _emitSessionEvent(AuthSessionEvent event) {
+    if (!_sessionEvents.isClosed) _sessionEvents.add(event);
+  }
 
   Future<void> _saveToken(String token, String refreshToken) async {
     try {
@@ -136,6 +174,12 @@ class AuthService {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
         await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
+        // Update the user info in the local database with the new contact info from the refresh response.
+        final userInfo = authResponse.contact;
+        _cachedUserId = userInfo.id.toString();
+        await _storage.write(key: 'userId', value: userInfo.id.toString());
+        await _saveUserInfo(userInfo);
+        _emitSessionEvent(AuthUserRefreshed(userInfo));
         // Return the new access token so the caller can retry the original request.
         return authResponse.accessTokenRs256;
       } else if (response.statusCode == 401) {
@@ -194,8 +238,10 @@ class AuthService {
       }
       try {
         token = await _refreshToken();
-      } on RefreshException {
+      } on RefreshException catch (e) {
         // refresh error (401 or no refresh token found) - force logout
+        // Invalidate UI permissions before awaiting backend/local cleanup.
+        _emitSessionEvent(AuthSessionExpired(e));
         await logout();
         // Rethrow to notify caller of the logout event so it can update UI accordingly.
         rethrow;

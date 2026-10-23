@@ -40,7 +40,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         next.whenOrNull(
           data: (user) async {
             // If the user becomes null, it means they have logged out, so navigate back to the login screen.
-            if (!context.mounted) return;
+            if (user != null || !context.mounted) return;
             await Navigator.of(context).pushReplacement(
               MaterialPageRoute<MainNavigation>(
                 builder: (BuildContext ctx) => const UserLoginScreen(),
@@ -55,6 +55,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       );
     });
 
+    final user = ref.watch(authProvider).value ?? widget.user;
     final events = ref.watch(pendingPassportEventsProvider).value ?? const <PendingPassportEvent>[];
     final failedCount = events.where((event) => event.status == PendingOperationStatus.failed).length;
 
@@ -79,17 +80,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 children: [
                   ContainerRow(
                     label: 'User ID',
-                    value: widget.user.id.toString(),
+                    value: user.id.toString(),
                   ),
                   const Divider(height: 16),
                   ContainerRow(
                     label: 'Email',
-                    value: widget.user.email,
+                    value: user.email,
                   ),
                   const Divider(height: 16),
                   ContainerRow(
                     label: 'Full Name',
-                    value: widget.user.fullName,
+                    value: user.fullName,
                   ),
                 ],
               ),
