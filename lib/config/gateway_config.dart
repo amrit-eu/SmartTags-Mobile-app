@@ -1,9 +1,7 @@
 /// Gateway API configuration for SmartTags.
 abstract final class GatewayConfig {
   /// Public Gateway base URL on Isival (Apache proxy → NestJS).
-  //static const String baseUrl = 'https://amrit.isival.ifremer.fr/amrit-gateway';
-  static const String baseUrl = 'http://localhost:3001';
-
+  static const String baseUrl = 'https://amrit.isival.ifremer.fr/amrit-gateway';
 
   /// Builds a Gateway API URI from a path relative to `/api/`.
   static Uri apiUri(String path) => Uri.parse('$baseUrl/api/$path');
