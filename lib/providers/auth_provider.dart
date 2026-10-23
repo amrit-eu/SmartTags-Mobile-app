@@ -44,10 +44,10 @@ class AuthNotifier extends AsyncNotifier<User?> {
     final subscription = _authService.sessionEvents.listen((event) {
       receivedSessionEvent = true;
       switch (event) {
-        case AuthUserRefreshed(user: final user):
+        case AuthUserRefreshed(:final user):
           latestUser = user;
           state = AsyncData(user);
-        case AuthSessionExpired(error: final error):
+        case AuthSessionExpired(:final error):
           latestUser = null;
           _handleRefreshException(error);
       }
