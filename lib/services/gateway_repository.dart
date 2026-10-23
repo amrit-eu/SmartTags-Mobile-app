@@ -183,7 +183,7 @@ class GatewayRepository {
     GatewayDownloadProgressCallback? onDownloadProgress,
   }) async {
     if (searchDto == null) {
-      return fetchUnclosedMissions(onDownloadProgress: onDownloadProgress);
+      return await fetchUnclosedMissions(onDownloadProgress: onDownloadProgress);
     }
 
     try {
