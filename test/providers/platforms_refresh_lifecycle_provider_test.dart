@@ -86,7 +86,9 @@ void main() {
     late AppDatabase db;
 
     setUp(() => db = AppDatabase.executor(conn.inMemoryConnection()));
-    tearDown(() async => db.close());
+    tearDown(() async {
+      await db.close();
+    });
 
     test('reconnecting with no pending queue refreshes immediately, without the delay', () async {
       await db.syncPlatforms([_samplePlatform()]);

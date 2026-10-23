@@ -59,9 +59,7 @@ void main() {
     final printed = <String>[];
     final loc = await runZoned(
       // Used to capture stdout prints
-      () async {
-        return fetcher.getUserLocation();
-      },
+      fetcher.getUserLocation,
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) {
           printed.add(line);
@@ -94,9 +92,7 @@ void main() {
     final printed = <String>[];
     final loc = await runZoned(
       // Used to capture stdout prints
-      () async {
-        return fetcher.getUserLocation();
-      },
+      fetcher.getUserLocation,
       zoneSpecification: ZoneSpecification(
         print: (self, parent, zone, line) {
           printed.add(line);

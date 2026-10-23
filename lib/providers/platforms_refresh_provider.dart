@@ -39,7 +39,8 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
   Future<void> refresh() async {
     final ongoing = _ongoingRefresh;
     if (ongoing != null) {
-      return ongoing;
+      await ongoing;
+      return;
     }
 
     final refresh = _performRefresh();
