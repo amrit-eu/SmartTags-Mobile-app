@@ -244,7 +244,7 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
     }
     final query = _searchQuery.trim();
     final isPreview = query.isEmpty;
-    final isSyncing = ref.watch(platformsSyncPhaseProvider) != PlatformsSyncPhase.idle;
+    final isSyncing = ref.watch(platformsSyncPhaseProvider).phase != PlatformsSyncPhase.idle;
     final platformsAsync = isPreview ? ref.watch(cataloguePreviewProvider) : ref.watch(platformsWatchProvider(query));
 
     return platformsAsync.when(

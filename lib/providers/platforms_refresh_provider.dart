@@ -2,11 +2,13 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/helpers/platforms_download_progress.dart';
 import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/providers/platforms_refresh_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 
 /// Manual / pull-to-refresh Gateway → local platforms sync.
@@ -74,11 +76,15 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
       return;
     }
 
-    final phase = ref.read(platformsSyncPhaseProvider.notifier);
-    state = const AsyncValue.loading();
-    phase.setDownloading();
-
     final db = ref.read(databaseProvider);
+    if (await db.isEmpty() && ref.read(firstLoadSyncActiveProvider)) {
+      return;
+    }
+
+    final phase = ref.read(platformsSyncPhaseProvider.notifier);
+    ref.read(platformsRefreshFeedbackProvider.notifier).clear();
+    state = const AsyncValue.loading();
+
     // Captured before the network call so a change that happens while the
     // request is in flight isn't missed by the next delta refresh.
     final now = DateTime.now().toUtc();
@@ -88,6 +94,7 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
       final repository = ref.read(gatewayRepositoryProvider);
 
       if (lastRefresh == null) {
+        phase.setDownloading();
         // No baseline yet (e.g. an install that predates this feature, so
         // the initial sync never stamped one). Searching without
         // `cachedSince` would re-fetch the entire dataset, so fall back to
@@ -99,7 +106,15 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
             'unclosed missions instead of an unfiltered search',
           );
         }
-        final result = await repository.fetchUnclosedMissions();
+        final result = await repository.fetchUnclosedMissions(
+          onDownloadProgress: (received, length) {
+            schedulePlatformsDownloadProgress(
+              ref,
+              bytesReceived: received,
+              contentLength: length,
+            );
+          },
+        );
         await persistGatewayPassportsResult(
           ref: ref,
           db: db,
@@ -113,6 +128,8 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
         state = const AsyncValue.data(null);
         return;
       }
+
+      phase.setChecking();
 
       final cachedSince = lastRefresh.toUtc().toIso8601String();
       if (kDebugMode) {
@@ -137,10 +154,15 @@ class PlatformsRefreshNotifier extends AsyncNotifier<void> {
             'Platforms/alerts refresh: synced ${result.platforms.length} platforms and ${result.alerts.length} alerts',
           );
         }
-      } else if (kDebugMode) {
-        debugPrint(
-          'Platforms refresh: gateway returned 0 platforms and 0 alerts (local DB unchanged)',
-        );
+      } else {
+        if (kDebugMode) {
+          debugPrint(
+            'Platforms refresh: gateway returned 0 platforms and 0 alerts (local DB unchanged)',
+          );
+        }
+        if (result.reportedTotal == 0) {
+          ref.read(platformsRefreshFeedbackProvider.notifier).showEverythingUpToDate();
+        }
       }
       await db.setLastPlatformsRefresh(now);
       state = const AsyncValue.data(null);
@@ -187,8 +209,16 @@ final platformsRefreshLifecycleProvider = Provider<void>((ref) {
   ref.listen(
     checkConnectionProvider.select((async) => async.value),
     (previous, next) async {
+      // Skip the first connectivity emission (null → online); only react to
+      // offline → online. Avoids a second full download racing initial sync.
+      if (previous == null) {
+        return;
+      }
       if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
         final db = ref.read(databaseProvider);
+        if (await db.isEmpty()) {
+          return;
+        }
         final hadPending = (await db.getPendingOperationsOrdered()).any((row) => row.status == 'pending');
 
         // No-op (fast) if there was nothing queued; joins the in-flight

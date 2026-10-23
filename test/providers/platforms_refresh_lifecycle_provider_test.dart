@@ -9,6 +9,7 @@ import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -54,11 +55,23 @@ class _CombinedGatewayRepository extends GatewayRepository {
 
   final List<PlatformsCompanion> unclosedMissions;
   int fetchUnclosedMissionsCallCount = 0;
+  int searchPassportsCallCount = 0;
   int submitCallCount = 0;
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     fetchUnclosedMissionsCallCount++;
+    return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
+  }
+
+  @override
+  Future<GatewayPassportsResult> searchPassports(
+    PassportFilterDto? searchDto, {
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
+    searchPassportsCallCount++;
     return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
   }
 
@@ -76,6 +89,9 @@ void main() {
     tearDown(() async => db.close());
 
     test('reconnecting with no pending queue refreshes immediately, without the delay', () async {
+      await db.syncPlatforms([_samplePlatform()]);
+      await db.setLastPlatformsRefresh(DateTime.utc(2025, 6, 1));
+
       final repository = _CombinedGatewayRepository(unclosedMissions: [_samplePlatform()]);
       final connectivity = _ControllableConnectivity(ConnectivityResult.none);
       final container = ProviderContainer(
@@ -99,10 +115,12 @@ void main() {
       connectivity.set(ConnectivityResult.wifi);
       await pumpEventQueue();
 
-      expect(repository.fetchUnclosedMissionsCallCount, 1);
+      expect(repository.searchPassportsCallCount, 1);
     });
 
     test('reconnecting with a pending queue drains it, waits the delay, then refreshes', () async {
+      await db.syncPlatforms([_samplePlatform()]);
+      await db.setLastPlatformsRefresh(DateTime.utc(2025, 6, 1));
       await db.enqueuePendingOperation(
         PendingOperationsCompanion.insert(
           platformRef: 'PLT-001',
@@ -137,10 +155,10 @@ void main() {
       // Drain finished — the queued row is gone — but the 20ms delay
       // hasn't elapsed yet, so refresh must not have fired.
       expect(await db.getPendingOperationsOrdered(), isEmpty);
-      expect(repository.fetchUnclosedMissionsCallCount, 0);
+      expect(repository.searchPassportsCallCount, 0);
 
       await Future<void>.delayed(const Duration(milliseconds: 60));
-      expect(repository.fetchUnclosedMissionsCallCount, 1);
+      expect(repository.searchPassportsCallCount, 1);
       expect(repository.submitCallCount, 1);
     });
   });
