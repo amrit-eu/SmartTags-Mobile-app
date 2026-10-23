@@ -13,6 +13,17 @@ import 'package:smart_tags/services/gateway_repository.dart';
 
 import '../helpers/fake_auth_service.dart';
 
+Future<void> _waitForInitialSyncToSettle(ProviderContainer container) async {
+  for (var i = 0; i < 100; i++) {
+    final sync = container.read(initialSyncProvider);
+    if (sync.hasError || sync.hasValue) {
+      return;
+    }
+    await Future<void>.delayed(Duration.zero);
+  }
+  fail('initialSyncProvider did not settle');
+}
+
 class _FixedConnectivity extends ConnectivityStatus {
   _FixedConnectivity(this.result);
 
@@ -107,8 +118,7 @@ void main() {
       addTearDown(container.dispose);
 
       container.listen(initialSyncProvider, (_, _) {});
-      await Future<void>.delayed(Duration.zero);
-
+      await _waitForInitialSyncToSettle(container);
       expect(container.read(initialSyncProvider).hasError, isTrue);
     });
 
@@ -125,7 +135,7 @@ void main() {
       addTearDown(container.dispose);
 
       container.listen(initialSyncProvider, (_, _) {});
-      await Future<void>.delayed(Duration.zero);
+      await _waitForInitialSyncToSettle(container);
       expect(container.read(initialSyncProvider).hasError, isTrue);
 
       repository.shouldSucceed = true;
@@ -143,7 +153,9 @@ class _FakeGatewayRepository extends GatewayRepository {
   final List<PlatformsCompanion> platforms;
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async =>
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async =>
       GatewayPassportsResult(platforms: platforms, alerts: const []);
 }
 
@@ -151,7 +163,9 @@ class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     throw Exception('Network error');
   }
 }
@@ -163,7 +177,9 @@ class _ToggleGatewayRepository extends GatewayRepository {
   bool shouldSucceed = false;
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     if (!shouldSucceed) {
       throw Exception('Network error');
     }

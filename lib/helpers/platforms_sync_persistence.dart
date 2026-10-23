@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/helpers/platforms_download_progress.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 
@@ -14,7 +15,9 @@ Future<void> persistGatewayPassportsResult({
     return;
   }
 
+  await paintFullDownloadProgressBeforeSave(ref);
   ref.read(platformsSyncPhaseProvider.notifier).setSaving();
+  await yieldForDownloadProgressUi();
 
   if (replaceAll) {
     await db.syncPlatforms(result.platforms);

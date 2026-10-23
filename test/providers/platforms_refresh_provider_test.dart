@@ -8,6 +8,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -40,8 +41,11 @@ PlatformsCompanion _samplePlatform({String ref = 'PLT-001'}) {
 }
 
 class _FakeGatewayRepository extends GatewayRepository {
-  _FakeGatewayRepository({this.unclosedMissions = const [], this.searchResults = const []})
-    : super(authService: NoOpAuthService());
+  _FakeGatewayRepository({
+    this.unclosedMissions = const [],
+    this.searchResults = const [],
+    this.searchReportedTotal,
+  }) : super(authService: NoOpAuthService());
 
   /// Returned by [fetchUnclosedMissions] — used as the fallback fetch when
   /// there's no stored `cachedSince` baseline yet.
@@ -50,21 +54,33 @@ class _FakeGatewayRepository extends GatewayRepository {
   /// Returned by [searchPassports] once a baseline is stored.
   final List<PlatformsCompanion> searchResults;
 
+  /// Optional [GatewayPassportsResult.reportedTotal] for search responses.
+  final int? searchReportedTotal;
+
   int fetchUnclosedMissionsCallCount = 0;
 
   /// The DTO passed to [searchPassports] on each call, in order.
   final List<PassportFilterDto?> capturedSearchDtos = [];
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     fetchUnclosedMissionsCallCount++;
     return GatewayPassportsResult(platforms: unclosedMissions, alerts: const []);
   }
 
   @override
-  Future<GatewayPassportsResult> searchPassports(PassportFilterDto? searchDto) async {
+  Future<GatewayPassportsResult> searchPassports(
+    PassportFilterDto? searchDto, {
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     capturedSearchDtos.add(searchDto);
-    return GatewayPassportsResult(platforms: searchResults, alerts: const []);
+    return GatewayPassportsResult(
+      platforms: searchResults,
+      alerts: const [],
+      reportedTotal: searchReportedTotal,
+    );
   }
 }
 
@@ -72,12 +88,17 @@ class _ThrowingGatewayRepository extends GatewayRepository {
   _ThrowingGatewayRepository() : super(authService: NoOpAuthService());
 
   @override
-  Future<GatewayPassportsResult> fetchUnclosedMissions() async {
+  Future<GatewayPassportsResult> fetchUnclosedMissions({
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     throw Exception('Network error');
   }
 
   @override
-  Future<GatewayPassportsResult> searchPassports(PassportFilterDto? searchDto) async {
+  Future<GatewayPassportsResult> searchPassports(
+    PassportFilterDto? searchDto, {
+    GatewayDownloadProgressCallback? onDownloadProgress,
+  }) async {
     throw Exception('Network error');
   }
 }
@@ -210,6 +231,31 @@ void main() {
       await container.read(platformsRefreshProvider.notifier).refresh();
 
       expect(container.read(platformsRefreshProvider).hasError, isTrue);
+    });
+
+    test('delta refresh with X-Total-Count 0 shows up-to-date feedback', () async {
+      final fakeRepository = _FakeGatewayRepository(
+        unclosedMissions: [_samplePlatform()],
+        searchReportedTotal: 0,
+      );
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(
+            () => _FixedConnectivity(ConnectivityResult.wifi),
+          ),
+          gatewayRepositoryProvider.overrideWithValue(fakeRepository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.listen(platformsRefreshProvider, (_, _) {});
+      await container.read(platformsRefreshProvider.future);
+
+      await container.read(platformsRefreshProvider.notifier).refresh();
+      await container.read(platformsRefreshProvider.notifier).refresh();
+
+      expect(container.read(platformsRefreshFeedbackProvider), isTrue);
     });
 
     test('platformsRefreshDelayProvider defaults to 3 seconds', () {

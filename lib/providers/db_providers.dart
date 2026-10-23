@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/mappers/alert_mapper.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
+import 'package:smart_tags/helpers/platforms_download_progress.dart';
 import 'package:smart_tags/helpers/platforms_sync_persistence.dart';
 import 'package:smart_tags/models/alert.dart' as domain;
 import 'package:smart_tags/models/initial_sync_status.dart';
@@ -29,6 +30,25 @@ final gatewayRepositoryProvider = Provider<GatewayRepository>((ref) {
 final initialSyncProvider = AsyncNotifierProvider<InitialSyncNotifier, InitialSyncStatus>(
   InitialSyncNotifier.new,
 );
+
+/// True while [InitialSyncNotifier] is downloading into an empty local DB.
+///
+/// Used during pull-to-refresh to avoid racing the first-load sync without
+/// reading `initialSyncProvider` (which would start that sync).
+final firstLoadSyncActiveProvider = NotifierProvider<FirstLoadSyncActiveNotifier, bool>(
+  FirstLoadSyncActiveNotifier.new,
+);
+
+/// Tracks whether the empty-database initial Gateway download is in progress.
+class FirstLoadSyncActiveNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Whether the first-load sync owns the empty local database.
+  bool get active => state;
+
+  set active(bool value) => state = value;
+}
 
 /// Coordinates the one-time initial Gateway → Drift sync.
 class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
@@ -94,13 +114,23 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       return InitialSyncStatus.skippedOffline;
     }
 
+    ref.read(firstLoadSyncActiveProvider.notifier).active = true;
+    ref.read(platformsSyncPhaseProvider.notifier).setDownloading();
+    await yieldForDownloadProgressUi();
     final repository = ref.read(gatewayRepositoryProvider);
-    final phase = ref.read(platformsSyncPhaseProvider.notifier)..setDownloading();
     // Captured before the network call so a change that happens while the
     // request is in flight isn't missed by the first delta refresh.
     final now = DateTime.now().toUtc();
     try {
-      final result = await repository.fetchUnclosedMissions();
+      final result = await repository.fetchUnclosedMissions(
+        onDownloadProgress: (received, length) {
+          schedulePlatformsDownloadProgress(
+            ref,
+            bytesReceived: received,
+            contentLength: length,
+          );
+        },
+      );
       await persistGatewayPassportsResult(
         ref: ref,
         db: db,
@@ -112,7 +142,8 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       await db.setLastPlatformsRefresh(now);
       return InitialSyncStatus.completed;
     } finally {
-      phase.setIdle();
+      ref.read(firstLoadSyncActiveProvider.notifier).active = false;
+      ref.read(platformsSyncPhaseProvider.notifier).setIdle();
     }
   }
 
@@ -123,6 +154,9 @@ final initialSyncLifecycleProvider = Provider<void>((ref) {
   ref.listen(
     checkConnectionProvider.select((async) => async.value),
     (previous, next) async {
+      if (previous == null) {
+        return;
+      }
       if (!isDeviceOnline(previous) && isDeviceOnline(next)) {
         final db = ref.read(databaseProvider);
         if (await db.isEmpty()) {
