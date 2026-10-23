@@ -37,6 +37,7 @@ class PlatformsSyncPhaseNotifier extends Notifier<PlatformsSyncState> {
     state = const PlatformsSyncState(phase: PlatformsSyncPhase.checking);
   }
 
+  /// Updates byte counters while [PlatformsSyncPhase.downloading].
   void updateDownloadProgress({
     required int bytesReceived,
     int? contentLength,

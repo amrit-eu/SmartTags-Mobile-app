@@ -33,19 +33,21 @@ final initialSyncProvider = AsyncNotifierProvider<InitialSyncNotifier, InitialSy
 
 /// True while [InitialSyncNotifier] is downloading into an empty local DB.
 ///
-/// Used by [platformsRefreshProvider] to avoid racing the first-load sync
-/// without reading [initialSyncProvider] (which would start that sync).
+/// Used during pull-to-refresh to avoid racing the first-load sync without
+/// reading `initialSyncProvider` (which would start that sync).
 final firstLoadSyncActiveProvider = NotifierProvider<FirstLoadSyncActiveNotifier, bool>(
   FirstLoadSyncActiveNotifier.new,
 );
 
+/// Tracks whether the empty-database initial Gateway download is in progress.
 class FirstLoadSyncActiveNotifier extends Notifier<bool> {
   @override
   bool build() => false;
 
-  void setActive(bool active) {
-    state = active;
-  }
+  /// Whether the first-load sync owns the empty local database.
+  bool get active => state;
+
+  set active(bool value) => state = value;
 }
 
 /// Coordinates the one-time initial Gateway → Drift sync.
@@ -112,7 +114,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       return InitialSyncStatus.skippedOffline;
     }
 
-    ref.read(firstLoadSyncActiveProvider.notifier).setActive(true);
+    ref.read(firstLoadSyncActiveProvider.notifier).active = true;
     ref.read(platformsSyncPhaseProvider.notifier).setDownloading();
     await yieldForDownloadProgressUi();
     final repository = ref.read(gatewayRepositoryProvider);
@@ -140,7 +142,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       await db.setLastPlatformsRefresh(now);
       return InitialSyncStatus.completed;
     } finally {
-      ref.read(firstLoadSyncActiveProvider.notifier).setActive(false);
+      ref.read(firstLoadSyncActiveProvider.notifier).active = false;
       ref.read(platformsSyncPhaseProvider.notifier).setIdle();
     }
   }

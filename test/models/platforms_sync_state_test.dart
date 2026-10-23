@@ -32,11 +32,11 @@ void main() {
   test('late download progress does not clobber saving phase', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
-    final notifier = container.read(platformsSyncPhaseProvider.notifier)
+    container.read(platformsSyncPhaseProvider.notifier)
       ..setDownloading(contentLength: 100)
       ..updateDownloadProgress(bytesReceived: 100, contentLength: 100)
-      ..setSaving();
-    notifier.updateDownloadProgress(bytesReceived: 100, contentLength: 100);
+      ..setSaving()
+      ..updateDownloadProgress(bytesReceived: 100, contentLength: 100);
     expect(container.read(platformsSyncPhaseProvider).phase, PlatformsSyncPhase.saving);
   });
 }

@@ -2,14 +2,20 @@ import 'package:smart_tags/models/platforms_sync_phase.dart';
 
 /// Gateway sync phase plus optional byte progress for the download step.
 class PlatformsSyncState {
+  /// Creates sync UI state for the current [phase] and optional byte counters.
   const PlatformsSyncState({
     this.phase = PlatformsSyncPhase.idle,
     this.downloadBytesReceived = 0,
     this.downloadContentLength,
   });
 
+  /// Current step of Gateway → local sync.
   final PlatformsSyncPhase phase;
+
+  /// Bytes received so far during [PlatformsSyncPhase.downloading].
   final int downloadBytesReceived;
+
+  /// Total response size when the Gateway sends `Content-Length`.
   final int? downloadContentLength;
 
   /// Determinate download progress in `0..1`, when [downloadContentLength] is known.
@@ -52,6 +58,7 @@ class PlatformsSyncState {
     return '$bytes B';
   }
 
+  /// Returns a copy with selectively updated download progress fields.
   PlatformsSyncState copyWith({
     PlatformsSyncPhase? phase,
     int? downloadBytesReceived,

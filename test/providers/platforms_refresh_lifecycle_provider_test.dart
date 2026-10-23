@@ -5,11 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/database/connection/native.dart' as conn;
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
-import 'package:smart_tags/models/passport_filter_dto.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -90,7 +90,7 @@ void main() {
 
     test('reconnecting with no pending queue refreshes immediately, without the delay', () async {
       await db.syncPlatforms([_samplePlatform()]);
-      await db.setLastPlatformsRefresh(DateTime.utc(2025, 6, 1));
+      await db.setLastPlatformsRefresh(DateTime.utc(2025, 6));
 
       final repository = _CombinedGatewayRepository(unclosedMissions: [_samplePlatform()]);
       final connectivity = _ControllableConnectivity(ConnectivityResult.none);
@@ -120,7 +120,7 @@ void main() {
 
     test('reconnecting with a pending queue drains it, waits the delay, then refreshes', () async {
       await db.syncPlatforms([_samplePlatform()]);
-      await db.setLastPlatformsRefresh(DateTime.utc(2025, 6, 1));
+      await db.setLastPlatformsRefresh(DateTime.utc(2025, 6));
       await db.enqueuePendingOperation(
         PendingOperationsCompanion.insert(
           platformRef: 'PLT-001',
