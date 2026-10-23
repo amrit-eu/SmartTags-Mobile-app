@@ -8,7 +8,7 @@ import 'package:smart_tags/providers/settings_providers.dart';
 
 Future<SharedPreferencesWithCache> _openPrefs([Map<String, Object> initial = const {}]) async {
   SharedPreferencesAsyncPlatform.instance = InMemorySharedPreferencesAsync.withData(initial);
-  return SharedPreferencesWithCache.create(
+  return await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
   );
 }

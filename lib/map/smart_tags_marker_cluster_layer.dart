@@ -15,7 +15,6 @@ import 'package:flutter_map_marker_cluster/src/map_calculator.dart';
 import 'package:flutter_map_marker_cluster/src/map_widget.dart';
 import 'package:flutter_map_marker_cluster/src/marker_widget.dart';
 import 'package:flutter_map_marker_cluster/src/node/marker_node.dart';
-import 'package:flutter_map_marker_cluster/src/node/marker_or_cluster_node.dart';
 import 'package:flutter_map_marker_cluster/src/rotate.dart';
 import 'package:flutter_map_marker_cluster/src/translate.dart';
 import 'package:latlong2/latlong.dart';
@@ -200,7 +199,7 @@ class _SmartTagsMarkerClusterLayerState extends State<SmartTagsMarkerClusterLaye
         markerChildBehavior: widget.options.markerChildBehavior,
         onTap: _onMarkerTap(marker),
         onDoubleTap: _onMarkerDoubleTap(marker),
-        onHover: (bool value) => _onMarkerHover(marker, value),
+        onHover: (value) => _onMarkerHover(marker, value),
         buildOnHover: widget.options.popupOptions?.buildPopupOnHover ?? false,
       ),
     );
@@ -587,7 +586,7 @@ class _SmartTagsMarkerClusterLayerState extends State<SmartTagsMarkerClusterLaye
       _currentZoom,
       widget.options.disableClusteringAtZoom,
       recursionBounds,
-      (MarkerOrClusterNode layer) {
+      (layer) {
         // This is the performance critical hot path recursed on every map event!
 
         // Cull markers/clusters that are not on screen.

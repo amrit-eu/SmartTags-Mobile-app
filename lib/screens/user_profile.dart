@@ -43,7 +43,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             if (!context.mounted) return;
             await Navigator.of(context).pushReplacement(
               MaterialPageRoute<MainNavigation>(
-                builder: (BuildContext ctx) => const UserLoginScreen(),
+                builder: (ctx) => const UserLoginScreen(),
               ),
             );
           },

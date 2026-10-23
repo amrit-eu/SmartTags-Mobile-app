@@ -4,7 +4,7 @@ import 'package:smart_tags/widgets/common/container.dart';
 
 void main() {
   group('SectionContainer', () {
-    testWidgets('renders child widget', (WidgetTester tester) async {
+    testWidgets('renders child widget', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -18,7 +18,7 @@ void main() {
       expect(find.text('Test Child'), findsOneWidget);
     });
 
-    testWidgets('applies full width when width is not specified', (WidgetTester tester) async {
+    testWidgets('applies full width when width is not specified', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -37,7 +37,7 @@ void main() {
       expect(containerWidget.constraints!.maxWidth, double.infinity);
     });
 
-    testWidgets('applies custom height and width', (WidgetTester tester) async {
+    testWidgets('applies custom height and width', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -57,7 +57,7 @@ void main() {
   });
 
   group('ContainerRow', () {
-    testWidgets('displays label and value', (WidgetTester tester) async {
+    testWidgets('displays label and value', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -73,7 +73,7 @@ void main() {
       expect(find.text('John Doe'), findsOneWidget);
     });
 
-    testWidgets('applies custom color to value', (WidgetTester tester) async {
+    testWidgets('applies custom color to value', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -90,7 +90,7 @@ void main() {
       expect((tester.widget(find.text('Active')) as Text).style!.color, Colors.green);
     });
 
-    testWidgets('arranges children in column layout', (WidgetTester tester) async {
+    testWidgets('arranges children in column layout', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
