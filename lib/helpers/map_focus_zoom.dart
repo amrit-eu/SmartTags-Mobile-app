@@ -4,7 +4,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/config/map_config.dart';
 import 'package:smart_tags/database/db.dart';
 
-const Distance _distance = Distance();
+/// Haversine avoids Vincenty convergence failures on some platform pairs (e.g. WWTNLUG).
+const Distance _distance = DistanceHaversine();
 
 /// Approximate metres per pixel at [zoom] for Web Mercator tiles (256 px).
 double metersPerPixelAtZoom(double zoom, double latitude) {
