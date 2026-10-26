@@ -239,7 +239,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _mapController.move(position, zoom);
     ref.read(mapSessionStateProvider.notifier).schedulePersistCamera(position, zoom);
 
-    _selectPlatformMarker(dbPlatform, position);
+    _selectPlatformMarker(dbPlatform, position, recenter: false);
     _popupAnimationController.value = 1;
     WidgetsBinding.instance.addPostFrameCallback((_) => _requestMapKeyboardFocus());
   }
@@ -727,7 +727,27 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     }
     if (newRef != null) {
       _platformMarkerStates[newRef]?.setSelected(selected: true);
+      _scheduleSelectionRingSync(newRef);
     }
+  }
+
+  /// Re-applies the selection ring after the cluster layer builds markers for a new viewport.
+  void _scheduleSelectionRingSync(String platformRef, {int framesLeft = 10}) {
+    void onFrame() {
+      if (!mounted || _selectedPlatformNotifier.value?.platformRef != platformRef) {
+        return;
+      }
+      final markerState = _platformMarkerStates[platformRef];
+      if (markerState != null) {
+        markerState.setSelected(selected: true);
+        return;
+      }
+      if (framesLeft > 0) {
+        _scheduleSelectionRingSync(platformRef, framesLeft: framesLeft - 1);
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => onFrame());
   }
 
   List<Marker> _platformMarkersFor(List<Platform> databasePlatforms) {
