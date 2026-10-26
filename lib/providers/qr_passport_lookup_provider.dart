@@ -81,7 +81,7 @@ class QrPassportLookupRepository {
   Future<QrPassportLookupResult> lookupByQrCode(String qrCode) async {
     // If no connectivity, return local DB results.
     if (!isDeviceOnline(await connectivity())) {
-      return _local(qrCode, reason: 'device offline');
+      return await _local(qrCode, reason: 'device offline');
     }
     // else, try to fetch from the Gateway API.
     try {
@@ -111,10 +111,10 @@ class QrPassportLookupRepository {
     } on Object catch (error) {
       // If the Gateway request fails, fall back to local DB results.
       if (error is http.ClientException) {
-        return _local(qrCode, reason: 'Gateway transport failure');
+        return await _local(qrCode, reason: 'Gateway transport failure');
       }
       if (!isDeviceOnline(await connectivity())) {
-        return _local(qrCode, reason: 'connection lost during Gateway request');
+        return await _local(qrCode, reason: 'connection lost during Gateway request');
       }
       rethrow;
     }

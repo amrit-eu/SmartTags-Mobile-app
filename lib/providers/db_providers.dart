@@ -36,7 +36,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
 
   @override
   Future<InitialSyncStatus> build() async {
-    return _runSyncIfNeeded();
+    return await _runSyncIfNeeded();
   }
 
   /// Retries the initial sync when the database is still empty.
@@ -182,7 +182,7 @@ final StreamProviderFamily<Platform?, String> platformByRefStreamProvider = Stre
 ///
 /// The data is fetched from the local database only.
 final FutureProviderFamily<List<Platform>, String> platformByRefProvider =
-    FutureProvider.family<List<Platform>, String>(retry: (retryCount, error) => null, (ref, platformRef) async {
+    FutureProvider.family<List<Platform>, String>(retry: (retryCount, error) => null, (ref, platformRef) {
       final db = ref.watch(databaseProvider);
       return db.getPlatformByRef(platformRef);
     });

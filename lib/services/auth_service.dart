@@ -100,7 +100,7 @@ class AuthService {
   Future<ConnectivityResult?> _readConnectivityForRefresh() async {
     final read = _connectivityForRefresh;
     if (read != null) {
-      return read();
+      return await read();
     }
     final results = await Connectivity().checkConnectivity();
     if (results.isEmpty) {
@@ -213,8 +213,7 @@ class AuthService {
   Future<User?> getAuthenticatedUser() async {
     final userId = await getUserId();
     if (userId == null) return null;
-    final user = _authDao.loadProfile(int.parse(userId));
-    return user;
+    return await _authDao.loadProfile(int.parse(userId));
   }
 
   /// Authenticates a user with the given [email] and [password].

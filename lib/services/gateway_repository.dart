@@ -96,7 +96,7 @@ class GatewayRepository {
   /// of issuing a search request.
   Future<GatewayPassportsResult> searchPassports(PassportFilterDto? searchDto) async {
     if (searchDto == null) {
-      return fetchUnclosedMissions();
+      return await fetchUnclosedMissions();
     }
 
     try {

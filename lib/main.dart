@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/providers/map_focus_request_provider.dart';
@@ -20,7 +21,16 @@ import 'package:smart_tags/widgets/pending_operations_banner.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const ProviderScope(child: MyApp()));
+  final prefs = await SharedPreferencesWithCache.create(
+    cacheOptions: const SharedPreferencesWithCacheOptions(),
+  );
+
+  runApp(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// The root widget of the application.
