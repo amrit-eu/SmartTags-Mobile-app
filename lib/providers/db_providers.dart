@@ -9,6 +9,7 @@ import 'package:smart_tags/models/alert.dart' as domain;
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
+import 'package:smart_tags/providers/initial_sync_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
@@ -115,6 +116,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
     }
 
     ref.read(firstLoadSyncActiveProvider.notifier).active = true;
+    ref.read(initialSyncFeedbackProvider.notifier).clear();
     ref.read(platformsSyncPhaseProvider.notifier).setDownloading();
     await yieldForDownloadProgressUi();
     final repository = ref.read(gatewayRepositoryProvider);
@@ -140,6 +142,7 @@ class InitialSyncNotifier extends AsyncNotifier<InitialSyncStatus> {
       // Establishes the baseline `updatedSince` for the next (delta)
       // platforms refresh, so it doesn't have to re-fetch everything.
       await db.setLastPlatformsRefresh(now);
+      ref.read(initialSyncFeedbackProvider.notifier).showFirstLoadComplete();
       return InitialSyncStatus.completed;
     } finally {
       ref.read(firstLoadSyncActiveProvider.notifier).active = false;

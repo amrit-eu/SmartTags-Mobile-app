@@ -7,6 +7,7 @@ import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/models/platforms_sync_state.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/initial_sync_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
@@ -67,6 +68,7 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     final markersPainted = ref.watch(mapMarkersPaintedProvider);
     final syncState = ref.watch(platformsSyncPhaseProvider);
     final refresh = ref.watch(platformsRefreshProvider);
+    final showFirstLoadComplete = ref.watch(initialSyncFeedbackProvider);
     final showUpToDate = ref.watch(platformsRefreshFeedbackProvider);
 
     ref.listen(platformsStreamProvider, (previous, next) {
@@ -83,6 +85,15 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
       return PlatformsLoadingBanner(
         message: _syncPhaseMessage(syncState),
         progress: showByteProgress ? syncState.downloadProgress : null,
+      );
+    }
+
+    if (showFirstLoadComplete) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const AppStatusBanner(
+        message: 'First load completed successfully',
+        severity: AppStatusBannerSeverity.success,
+        icon: Icons.check_circle,
       );
     }
 

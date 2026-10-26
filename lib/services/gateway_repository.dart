@@ -87,7 +87,9 @@ class GatewayRepository {
       }
       if (contentLength != null && contentLength > 0) {
         onDownloadProgress?.call(0, contentLength);
-        await yieldForDownloadProgressUi();
+        if (onDownloadProgress != null) {
+          await yieldForDownloadProgressUi();
+        }
       }
       final bodyBytes = await _collectStreamedBody(
         streamedResponse.stream,
@@ -232,7 +234,9 @@ class GatewayRepository {
     final contentLength = _responseContentLength(streamedResponse);
     if (contentLength != null && contentLength > 0) {
       onDownloadProgress?.call(0, contentLength);
-      await yieldForDownloadProgressUi();
+      if (onDownloadProgress != null) {
+        await yieldForDownloadProgressUi();
+      }
     }
     final responseBytes = await _collectStreamedBody(
       streamedResponse.stream,

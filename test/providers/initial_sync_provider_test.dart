@@ -8,6 +8,7 @@ import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/initial_sync_feedback_provider.dart';
 import 'package:smart_tags/services/gateway_passport_mapper.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
@@ -102,6 +103,7 @@ void main() {
 
       final status = await container.read(initialSyncProvider.future);
       expect(status, InitialSyncStatus.completed);
+      expect(container.read(initialSyncFeedbackProvider), isTrue);
       expect(await db.isEmpty(), isFalse);
       // Stamps a baseline so the first manual refresh can go delta.
       expect(await db.getLastPlatformsRefresh(), isNotNull);

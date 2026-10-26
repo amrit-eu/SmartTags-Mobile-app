@@ -179,10 +179,16 @@ class QrPassportLookupNotifier extends Notifier<QrLookupState> {
     state = QrLookupState(phase: QrLookupPhase.loading, qrCode: qrCode);
     try {
       final result = await ref.read(qrPassportLookupRepositoryProvider).lookupByQrCode(qrCode);
+      if (!ref.mounted) {
+        return;
+      }
       if (requestId == _requestId) {
         state = QrLookupState(phase: QrLookupPhase.data, qrCode: qrCode, result: result);
       }
     } on Object {
+      if (!ref.mounted) {
+        return;
+      }
       if (requestId == _requestId) {
         state = QrLookupState(
           phase: QrLookupPhase.error,

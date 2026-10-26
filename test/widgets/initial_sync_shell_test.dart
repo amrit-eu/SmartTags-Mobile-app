@@ -10,6 +10,7 @@ import 'package:smart_tags/models/platforms_sync_state.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
+import 'package:smart_tags/providers/initial_sync_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/common/app_status_banner.dart';
@@ -17,6 +18,11 @@ import '../helpers/static_initial_sync_notifier.dart';
 import '../helpers/test_main_navigation_pages.dart';
 
 class _PaintedMapMarkersNotifier extends MapMarkersPaintedNotifier {
+  @override
+  bool build() => true;
+}
+
+class _AlwaysShowInitialSyncFeedback extends InitialSyncFeedbackNotifier {
   @override
   bool build() => true;
 }
@@ -237,6 +243,29 @@ void main() {
     await tester.pump();
 
     expect(find.text('Could not load platforms'), findsNothing);
+  });
+
+  testWidgets('shows first load success banner when feedback is active', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.completed),
+          ),
+          initialSyncFeedbackProvider.overrideWith(_AlwaysShowInitialSyncFeedback.new),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationShellPages()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('First load completed successfully'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(find.text('Displaying platforms…'), findsNothing);
   });
 
   testWidgets('shows displaying banner after sync until markers are painted', (tester) async {
