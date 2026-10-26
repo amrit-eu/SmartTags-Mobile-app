@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,6 +73,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   late AnimationController _popupAnimationController;
   AnimationController? _mapPanAnimationController;
   late final ValueNotifier<model.Platform?> _selectedPlatformNotifier;
+  late final FocusNode _mapKeyboardFocusNode;
 
   /// Cached platform markers — rebuilt only when the platforms list changes.
   List<Platform>? _markersCacheSource;
@@ -87,7 +89,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   /// Spiderfy pin distance from cluster badge (px); default 40 overlaps 44px markers + ring.
   static const int _clusterSpiderfyCircleRadius = 58;
-  static const double _clusterMaxZoom = 15;
+  static const double _clusterMaxZoom = MapConfig.platformClusterMaxZoom;
 
   var _loadedBaseTileCount = 0;
   var _mapSkeletonVisible = false;
@@ -129,10 +131,50 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       duration: const Duration(milliseconds: 350),
     );
     _selectedPlatformNotifier = ValueNotifier<model.Platform?>(null);
+    _mapKeyboardFocusNode = FocusNode(debugLabel: 'SmartTagsMapKeyboard');
+    HardwareKeyboard.instance.addHandler(_handleMapHardwareKey);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_restoreMapSession());
     });
+  }
+
+  void _requestMapKeyboardFocus() {
+    if (mounted && !_mapKeyboardFocusNode.hasFocus) {
+      _mapKeyboardFocusNode.requestFocus();
+    }
+  }
+
+  void _onMapPointerDown(PointerDownEvent event, LatLng point) {
+    _requestMapKeyboardFocus();
+  }
+
+  void _stepKeyboardZoom(double delta) {
+    final camera = _mapController.camera;
+    final nextZoom = camera.zoom + delta;
+    _mapController.move(camera.center, nextZoom);
+    if (!_restoringMapSession) {
+      ref.read(mapSessionStateProvider.notifier).schedulePersistCamera(
+            camera.center,
+            nextZoom,
+          );
+    }
+  }
+
+  /// flutter_map matches R/F by [PhysicalKeyboardKey]; on some layouts F zoom-out
+  /// is missed — handle logical F here when the map owns focus.
+  bool _handleMapHardwareKey(KeyEvent event) {
+    if (!mounted || event is! KeyDownEvent) {
+      return false;
+    }
+    if (!_mapKeyboardFocusNode.hasFocus) {
+      return false;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyF) {
+      _stepKeyboardZoom(-0.5);
+      return true;
+    }
+    return false;
   }
 
   Future<void> _restoreMapSession() async {
@@ -199,6 +241,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
     _selectPlatformMarker(dbPlatform, position);
     _popupAnimationController.value = 1;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _requestMapKeyboardFocus());
   }
 
   void _onMapEvent(MapEvent event) {
@@ -228,6 +271,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleMapHardwareKey);
+    _mapKeyboardFocusNode.dispose();
     _mapSkeletonTimeoutTimer?.cancel();
     _mapPanAnimationController?.dispose();
     _pulseController.dispose();
@@ -476,6 +521,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   /// Clears the selected platform.
   void _clearSelection() {
     _dismissSelectedPlatform();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _requestMapKeyboardFocus());
   }
 
   void _onBaseTileLoaded(TileImage tile) {
@@ -660,7 +706,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
   Marker _platformMarkerFor(Platform dbPlatform) {
     final point = LatLng(dbPlatform.lat, dbPlatform.lon);
-    final selectedRef = _selectedPlatformNotifier.value?.platformRef;
     return Marker(
       key: ValueKey('platform-marker-${dbPlatform.ref}'),
       point: point,
@@ -669,7 +714,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       alignment: Alignment.center,
       child: _PlatformMapMarker(
         dbPlatform: dbPlatform,
-        initiallySelected: dbPlatform.ref == selectedRef,
+        resolveSelectedRef: () => _selectedPlatformNotifier.value?.platformRef,
         onTap: () => _selectPlatformMarker(dbPlatform, point),
         states: _platformMarkerStates,
       ),
@@ -774,11 +819,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             options: MapOptions(
               initialCenter: MapConfig.defaultCenter,
               initialZoom: MapConfig.defaultZoom,
-              interactionOptions: const InteractionOptions(
+              interactionOptions: InteractionOptions(
                 keyboardOptions: KeyboardOptions(
                   enableRFZooming: true,
+                  focusNode: _mapKeyboardFocusNode,
                 ),
               ),
+              onPointerDown: _onMapPointerDown,
               onTap: _onMapBackgroundTap,
               onMapEvent: _onMapEvent,
             ),
@@ -887,7 +934,7 @@ class _PlatformMapMarker extends StatefulWidget {
     required this.dbPlatform,
     required this.onTap,
     required this.states,
-    required this.initiallySelected,
+    required this.resolveSelectedRef,
   });
 
   static const markerSize = 44.0;
@@ -895,7 +942,7 @@ class _PlatformMapMarker extends StatefulWidget {
   final Platform dbPlatform;
   final VoidCallback onTap;
   final Map<String, _PlatformMapMarkerState> states;
-  final bool initiallySelected;
+  final String? Function() resolveSelectedRef;
 
   @override
   State<_PlatformMapMarker> createState() => _PlatformMapMarkerState();
@@ -912,8 +959,17 @@ class _PlatformMapMarkerState extends State<_PlatformMapMarker> {
   @override
   void initState() {
     super.initState();
-    _selected = widget.initiallySelected;
+    _selected = false;
     widget.states[widget.dbPlatform.ref] = this;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncSelectionRingFromNotifier());
+  }
+
+  void _syncSelectionRingFromNotifier() {
+    if (!mounted) {
+      return;
+    }
+    final shouldSelect = widget.resolveSelectedRef() == widget.dbPlatform.ref;
+    setSelected(selected: shouldSelect);
   }
 
   @override

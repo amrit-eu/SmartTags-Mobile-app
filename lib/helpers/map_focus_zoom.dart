@@ -16,12 +16,14 @@ double metersPerPixelAtZoom(double zoom, double latitude) {
 /// Lowest zoom in `[minZoom, maxZoom]` where no other [platforms] fall inside the
 /// map cluster radius (see main map `maxClusterRadius: 120`).
 ///
-/// If still overlapping at [maxZoom], returns [maxZoom] anyway (popup + selection remain correct).
+/// If still overlapping at [maxZoom], returns [declusterZoom] (above the cluster
+/// layer max) so the selected marker and ring are not hidden in a cluster badge.
 double resolvePlatformFocusZoom(
   LatLng target,
   Iterable<Platform> platforms, {
   double minZoom = MapConfig.platformFocusMinZoom,
   double maxZoom = MapConfig.platformFocusMaxZoom,
+  double declusterZoom = MapConfig.platformFocusDeclusterZoom,
   double clusterRadiusPx = MapConfig.platformClusterRadiusPx,
 }) {
   for (var z = minZoom; z <= maxZoom; z += 0.5) {
@@ -37,7 +39,7 @@ double resolvePlatformFocusZoom(
       return z;
     }
   }
-  return maxZoom;
+  return declusterZoom;
 }
 
 bool _sameLatLng(LatLng a, LatLng b) {
