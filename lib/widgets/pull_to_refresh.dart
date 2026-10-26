@@ -58,7 +58,7 @@ class _PullToRefreshState extends ConsumerState<PullToRefresh> {
       return false;
     }
     // Block pull while Retry / another sync is already downloading.
-    return ref.read(platformsSyncPhaseProvider) == PlatformsSyncPhase.idle;
+    return ref.read(platformsSyncPhaseProvider).phase == PlatformsSyncPhase.idle;
   }
 
   void _clearPointer() {
@@ -183,10 +183,10 @@ class _PullToRefreshState extends ConsumerState<PullToRefresh> {
   @override
   Widget build(BuildContext context) {
     final progress = (_dragOffset / _triggerDistance).clamp(0.0, 2.5);
-    final syncInProgress = ref.watch(platformsSyncPhaseProvider) != PlatformsSyncPhase.idle;
+    final syncInProgress = ref.watch(platformsSyncPhaseProvider).phase != PlatformsSyncPhase.idle;
 
     ref.listen(platformsSyncPhaseProvider, (previous, next) {
-      if (next != PlatformsSyncPhase.idle && (_dragOffset > 0 || _tracking)) {
+      if (next.phase != PlatformsSyncPhase.idle && (_dragOffset > 0 || _tracking)) {
         _snapBack();
       }
     });

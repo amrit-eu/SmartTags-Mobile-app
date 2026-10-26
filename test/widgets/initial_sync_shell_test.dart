@@ -6,7 +6,9 @@ import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
+import 'package:smart_tags/models/platforms_sync_state.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/initial_sync_feedback_provider.dart';
 import 'package:smart_tags/providers/map_providers.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
@@ -20,13 +22,18 @@ class _PaintedMapMarkersNotifier extends MapMarkersPaintedNotifier {
   bool build() => true;
 }
 
+class _AlwaysShowInitialSyncFeedback extends InitialSyncFeedbackNotifier {
+  @override
+  bool build() => true;
+}
+
 class _PhaseNotifier extends PlatformsSyncPhaseNotifier {
   _PhaseNotifier(this.fixedPhase);
 
   final PlatformsSyncPhase fixedPhase;
 
   @override
-  PlatformsSyncPhase build() => fixedPhase;
+  PlatformsSyncState build() => PlatformsSyncState(phase: fixedPhase);
 }
 
 class _ErrorRefreshNotifier extends PlatformsRefreshNotifier {
@@ -60,7 +67,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Downloading platforms…'), findsOneWidget);
+    expect(find.text('Preparing download…'), findsOneWidget);
     expect(
       find.widgetWithIcon(IconButton, Icons.close),
       findsNothing,
@@ -238,6 +245,29 @@ void main() {
     expect(find.text('Could not load platforms'), findsNothing);
   });
 
+  testWidgets('shows first load success banner when feedback is active', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.completed),
+          ),
+          initialSyncFeedbackProvider.overrideWith(_AlwaysShowInitialSyncFeedback.new),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationShellPages()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('First load completed successfully'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(find.text('Displaying platforms…'), findsNothing);
+  });
+
   testWidgets('shows displaying banner after sync until markers are painted', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -370,6 +400,54 @@ void main() {
     await tester.pump();
 
     expect(find.text('Downloading platforms…'), findsOneWidget);
+  });
+
+  testWidgets('shows download percent when content length is known', (tester) async {
+    final platform = Platform(
+      id: 1,
+      ref: 'PLT-001',
+      model: 'Test',
+      network: 'Net',
+      lat: 0,
+      lon: 0,
+      status: 'OPERATIONAL',
+      operationalStatus: 'Deployed',
+      lastUpdated: DateTime.utc(2025),
+      operationLat: 0,
+      operationLon: 0,
+      hasLatestObservation: false,
+      category: 'Profiling Float',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          initialSyncProvider.overrideWith(
+            () => StaticInitialSyncNotifier(InitialSyncStatus.notNeeded),
+          ),
+          platformsStreamProvider.overrideWith((ref) => Stream.value([platform])),
+          pendingPassportEventsProvider.overrideWith((ref) => Stream.value(const <PendingPassportEvent>[])),
+          mapMarkersPaintedProvider.overrideWith(_PaintedMapMarkersNotifier.new),
+        ],
+        child: MaterialApp(
+          home: MainNavigation(pages: testMainNavigationShellPages()),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MainNavigation)),
+    );
+    container.read(platformsSyncPhaseProvider.notifier)
+      ..setDownloading()
+      ..updateDownloadProgress(
+        bytesReceived: 16_826_694,
+        contentLength: 33_653_388,
+      );
+    await tester.pump();
+
+    expect(find.text('Downloading platforms… 50%'), findsOneWidget);
   });
 
   testWidgets('shows saving banner during save phase', (tester) async {
