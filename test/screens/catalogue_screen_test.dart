@@ -453,7 +453,7 @@ void main() {
     await tester.tap(find.text('Scan again'));
     await tester.pump();
     expect(scanAgainCalled, isTrue);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('No platforms stored on this device'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });

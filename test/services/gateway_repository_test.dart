@@ -302,6 +302,35 @@ void main() {
       expect(result.alerts.first.id.value, 'dcb42bf8-3f75-4241-a549-d79513fc8591');
     });
 
+    test('fetchUnclosedMissions reports download progress when Content-Length is set', () async {
+      final mockResponse = {
+        'items': [_samplePassportItem],
+        'total': 1,
+      };
+      final body = json.encode(mockResponse);
+
+      final client = _StreamingMockClient((request) async {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(body)),
+          200,
+          headers: {'content-length': '${body.length}'},
+        );
+      });
+
+      int? lastReceived;
+      int? lastLength;
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+      await repository.fetchUnclosedMissions(
+        onDownloadProgress: (received, length) {
+          lastReceived = received;
+          lastLength = length;
+        },
+      );
+
+      expect(lastReceived, body.length);
+      expect(lastLength, body.length);
+    });
+
     test('fetchUnclosedMissions throws on error response', () async {
       final client = MockClient((request) async {
         return http.Response('Not Found', 404);
@@ -357,6 +386,38 @@ void main() {
 
       expect(result.platforms.length, 1);
       expect(result.platforms.first.ref.value, '2900314');
+    });
+
+    test('searchPassports reports download progress when Content-Length is set', () async {
+      final mockResponse = {
+        'items': [_samplePassportItem],
+        'total': 1,
+      };
+      final body = json.encode(mockResponse);
+
+      final client = _StreamingMockClient((request) async {
+        expect(request.method, 'POST');
+        expect(request.url, GatewayConfig.passportsSearchUri);
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(body)),
+          200,
+          headers: {'content-length': '${body.length}'},
+        );
+      });
+
+      int? lastReceived;
+      int? lastLength;
+      final repository = GatewayRepository(client: client, authService: _FakeAuthService(null));
+      await repository.searchPassports(
+        const PassportFilterDto(filters: {}),
+        onDownloadProgress: (received, length) {
+          lastReceived = received;
+          lastLength = length;
+        },
+      );
+
+      expect(lastReceived, body.length);
+      expect(lastLength, body.length);
     });
 
     test('searchPassports throws on error response', () async {
@@ -592,4 +653,13 @@ void main() {
       }
     });
   });
+}
+
+class _StreamingMockClient extends http.BaseClient {
+  _StreamingMockClient(this._onSend);
+
+  final Future<http.StreamedResponse> Function(http.BaseRequest) _onSend;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) => _onSend(request);
 }

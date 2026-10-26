@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/initial_sync_status.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
+import 'package:smart_tags/models/platforms_sync_state.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/initial_sync_feedback_provider.dart';
 import 'package:smart_tags/providers/map_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/common/app_status_banner.dart';
@@ -22,8 +25,15 @@ class InitialSyncShell extends ConsumerStatefulWidget {
   ConsumerState<InitialSyncShell> createState() => _InitialSyncShellState();
 }
 
-String _syncPhaseMessage(PlatformsSyncPhase phase) =>
-    phase.bannerMessage ?? 'Downloading platforms…';
+String _syncPhaseMessage(PlatformsSyncState syncState) {
+  if (syncState.phase == PlatformsSyncPhase.downloading &&
+      syncState.downloadContentLength != null &&
+      syncState.downloadContentLength! > 0) {
+    final progress = syncState.downloadProgress ?? 0;
+    return 'Downloading platforms… ${(progress * 100).round()}%';
+  }
+  return syncState.bannerMessage ?? 'Downloading platforms…';
+}
 
 class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
   static const Duration _displayPhaseTimeout = Duration(seconds: 8);
@@ -56,20 +66,43 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
     final syncAsync = ref.watch(initialSyncProvider);
     final platformCount = ref.watch(platformsStreamProvider).value?.length ?? 0;
     final markersPainted = ref.watch(mapMarkersPaintedProvider);
-    final phase = ref.watch(platformsSyncPhaseProvider);
+    final syncState = ref.watch(platformsSyncPhaseProvider);
     final refresh = ref.watch(platformsRefreshProvider);
+    final showFirstLoadComplete = ref.watch(initialSyncFeedbackProvider);
+    final showUpToDate = ref.watch(platformsRefreshFeedbackProvider);
 
     ref.listen(platformsStreamProvider, (previous, next) {
-      if ((next.value?.length ?? 0) > 0) {
+      if ((next.value?.length ?? 0) > 0 &&
+          ref.read(platformsSyncPhaseProvider).phase == PlatformsSyncPhase.idle) {
         ref.read(initialSyncProvider.notifier).acknowledgeLocalData();
       }
     });
 
     // Download/save in progress (Retry, pull-to-refresh, or first load).
-    if (phase != PlatformsSyncPhase.idle) {
+    if (syncState.phase != PlatformsSyncPhase.idle) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      final showByteProgress = syncState.phase == PlatformsSyncPhase.downloading;
       return PlatformsLoadingBanner(
-        message: _syncPhaseMessage(phase),
+        message: _syncPhaseMessage(syncState),
+        progress: showByteProgress ? syncState.downloadProgress : null,
+      );
+    }
+
+    if (showFirstLoadComplete) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const AppStatusBanner(
+        message: 'First load completed successfully',
+        severity: AppStatusBannerSeverity.success,
+        icon: Icons.check_circle,
+      );
+    }
+
+    if (showUpToDate) {
+      _startDisplayTimeoutIfNeeded(showingDisplaying: false);
+      return const AppStatusBanner(
+        message: 'Everything up to date',
+        severity: AppStatusBannerSeverity.success,
+        icon: Icons.check_circle,
       );
     }
 
@@ -90,7 +123,10 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
       );
     }
 
-    if (markersPainted && platformCount > 0) {
+    if (markersPainted &&
+        platformCount > 0 &&
+        syncState.phase == PlatformsSyncPhase.idle &&
+        !syncAsync.isLoading) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
       return const SizedBox.shrink();
     }
@@ -100,11 +136,9 @@ class _InitialSyncShellState extends ConsumerState<InitialSyncShell> {
       return const SizedBox.shrink();
     }
 
-    if (syncAsync.isLoading) {
+    if (syncAsync.isLoading && syncState.phase == PlatformsSyncPhase.idle) {
       _startDisplayTimeoutIfNeeded(showingDisplaying: false);
-      return PlatformsLoadingBanner(
-        message: _syncPhaseMessage(phase),
-      );
+      return const PlatformsLoadingBanner(message: 'Preparing download…');
     }
 
     if (syncAsync.hasError) {

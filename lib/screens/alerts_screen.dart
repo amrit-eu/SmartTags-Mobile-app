@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/alert.dart';
 import 'package:smart_tags/models/platforms_sync_phase.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/platforms_refresh_feedback_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/widgets/alert_tile.dart';
+import 'package:smart_tags/widgets/common/app_status_banner.dart';
 import 'package:smart_tags/widgets/platforms_loading_banner.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -90,7 +92,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     final visible = alerts.where(_filter.matches).toList();
 
     // This screen is pushed above the main shell, so its sync banner is hidden.
-    final phase = ref.watch(platformsSyncPhaseProvider);
+    final syncState = ref.watch(platformsSyncPhaseProvider);
+    final showUpToDate = ref.watch(platformsRefreshFeedbackProvider);
 
     final isLoading = alertsAsync.isLoading && !alertsAsync.hasValue;
 
@@ -106,9 +109,18 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 leading: const BackButton(),
               ),
             ),
-            if (phase != PlatformsSyncPhase.idle)
+            if (syncState.phase != PlatformsSyncPhase.idle)
               PlatformsLoadingBanner(
-                message: phase.bannerMessage ?? 'Downloading platforms…',
+                message: syncState.bannerMessage ?? 'Downloading platforms…',
+                progress: syncState.phase == PlatformsSyncPhase.downloading
+                    ? syncState.downloadProgress
+                    : null,
+              )
+            else if (showUpToDate)
+              const AppStatusBanner(
+                message: 'Everything up to date',
+                severity: AppStatusBannerSeverity.success,
+                icon: Icons.check_circle,
               ),
             Expanded(
               child: PullToRefresh(
