@@ -30,6 +30,7 @@ final gatewayRepositoryProvider = Provider<GatewayRepository>((ref) {
 /// when the database is empty and the device is online.
 final initialSyncProvider = AsyncNotifierProvider<InitialSyncNotifier, InitialSyncStatus>(
   InitialSyncNotifier.new,
+  retry: (retryCount, error) => null,
 );
 
 /// True while [InitialSyncNotifier] is downloading into an empty local DB.
