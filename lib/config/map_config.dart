@@ -18,4 +18,19 @@ abstract final class MapConfig {
 
   /// Initial map zoom level.
   static const double defaultZoom = 4;
+
+  /// Preferred zoom when opening a platform from details (surroundings context).
+  static const double platformFocusMinZoom = 8;
+
+  /// Last zoom level at which the map still builds marker clusters.
+  static const double platformClusterMaxZoom = 15;
+
+  /// Highest zoom searched for a level where no other platform shares the cluster radius.
+  static const double platformFocusMaxZoom = platformClusterMaxZoom;
+
+  /// Zoom above [platformClusterMaxZoom] so focused markers render individually (selection ring).
+  static const double platformFocusDeclusterZoom = platformClusterMaxZoom + 1;
+
+  /// Matches the main map cluster `maxClusterRadius` for focus zoom heuristics.
+  static const double platformClusterRadiusPx = 120;
 }
