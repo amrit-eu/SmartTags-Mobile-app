@@ -1,0 +1,35 @@
+name: Generate seed database
+description: Builds the bundled SQLite seed from the Gateway unclosed export (#184).
+
+inputs:
+  schema-only:
+    description: When true, writes an empty schema-only seed (for PR CI).
+    required: false
+    default: 'false'
+  gateway-base-url:
+    description: Optional Gateway base URL override.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Generate seed database
+      shell: bash
+      env:
+        SMART_TAGS_GATEWAY_BASE_URL: ${{ inputs.gateway-base-url }}
+      run: |
+        set -euo pipefail
+        args=()
+        if [[ "${{ inputs.schema-only }}" == 'true' ]]; then
+          args+=(--schema-only)
+        fi
+        dart run tool/build_seed_database.dart "${args[@]}"
+        ls -lh assets/database/seed.sqlite assets/database/seed.manifest.json
+        if [[ "${{ inputs.schema-only }}" != 'true' ]]; then
+          platform_count=$(jq -er '.platformCount' assets/database/seed.manifest.json)
+          if [[ "$platform_count" -lt 1 ]]; then
+            echo '::error::Release seed must contain at least one platform.'
+            exit 1
+          fi
+        fi

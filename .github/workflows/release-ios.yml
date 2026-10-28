@@ -1,0 +1,173 @@
+name: Release iOS app
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  seed-database:
+    uses: ./.github/workflows/release-seed-database.yml
+
+  build:
+    name: Build release iOS app
+    needs: seed-database
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      IOS_ENABLE_TESTFLIGHT: ${{ vars.IOS_ENABLE_TESTFLIGHT }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-seed-${{ github.ref_name }}
+          path: assets/database/
+
+      - name: Validate tag and application version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! package_version=$(yq -er '.version | select(tag == "!!str")' pubspec.yaml); then
+            echo '::error::pubspec.yaml must contain a string version.'
+            exit 1
+          fi
+          version=${package_version%+*}
+          build_number=${package_version##*+}
+          if [[ "$RELEASE_TAG" != "v$version" ]]; then
+            echo "::error::Release tag must be v$version to match pubspec.yaml."
+            exit 1
+          fi
+          {
+            printf 'version=%s\n' "$version"
+            printf 'build_number=%s\n' "$build_number"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.0'
+          cache: true
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze and test
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Set up iOS codesigning for TestFlight
+        if: env.IOS_ENABLE_TESTFLIGHT == 'true'
+        uses: ./.github/actions/setup-ios-codesign
+        with:
+          certificate-base64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          certificate-password: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          provisioning-profile-base64: ${{ secrets.IOS_APPSTORE_PROVISIONING_PROFILE_BASE64 }}
+
+      - name: Build signed App Store IPA (TestFlight)
+        if: env.IOS_ENABLE_TESTFLIGHT == 'true'
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_DEVELOPER_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ vars.IOS_BUNDLE_IDENTIFIER }}
+        run: |
+          set -euo pipefail
+          for variable in APPLE_TEAM_ID IOS_BUNDLE_ID; do
+            if [[ -z "${!variable}" ]]; then
+              echo "::error::Missing repository variable: $variable (required when IOS_ENABLE_TESTFLIGHT=true)."
+              exit 1
+            fi
+          done
+
+          PP_FILE=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision | head -1)
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /dev/stdin <<< "$(security cms -D -i "$PP_FILE")")
+
+          EXPORT_PLIST="$RUNNER_TEMP/ExportOptions.plist"
+          cp ios/ExportOptions-app-store.plist "$EXPORT_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :teamID string $APPLE_TEAM_ID" "$EXPORT_PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :teamID $APPLE_TEAM_ID" "$EXPORT_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" "$EXPORT_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:$IOS_BUNDLE_ID string $PROFILE_NAME" "$EXPORT_PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :provisioningProfiles:$IOS_BUNDLE_ID $PROFILE_NAME" "$EXPORT_PLIST"
+
+          flutter build ipa --release --no-pub \
+            --build-name="$APP_VERSION" --build-number="$BUILD_NUMBER" \
+            --export-options-plist="$EXPORT_PLIST"
+
+          mkdir -p release-assets
+          IPA_PATH=$(find build/ios/ipa -maxdepth 1 -name '*.ipa' -print -quit)
+          test -n "$IPA_PATH"
+          cp "$IPA_PATH" release-assets/smart-tags.ipa
+          (cd release-assets && shasum -a 256 smart-tags.ipa > smart-tags.ipa.sha256)
+
+      - name: Build unsigned iOS app (fallback)
+        if: env.IOS_ENABLE_TESTFLIGHT != 'true'
+        run: flutter build ios --release --no-codesign
+
+      - name: Package release notes
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER: ${{ steps.version.outputs.build_number }}
+        run: |
+          seed_generated_at=$(jq -er '.generatedAt' assets/database/seed.manifest.json)
+          seed_platform_count=$(jq -er '.platformCount' assets/database/seed.manifest.json)
+          mkdir -p release-assets
+          if [[ "${IOS_ENABLE_TESTFLIGHT:-}" != 'true' ]]; then
+            tar -czf release-assets/smart-tags-ios-app.tar.gz -C build/ios/iphoneos Runner.app
+          fi
+          cat > release-assets/ios-release-notes.md <<EOF
+          SmartTags iOS **$APP_VERSION**, build **$BUILD_NUMBER** (tag ${{ github.ref_name }}).
+
+          Source commit: $GITHUB_SHA
+          Bundled seed database: $seed_platform_count platforms (generated $seed_generated_at UTC).
+          TestFlight upload: ${IOS_ENABLE_TESTFLIGHT:-false}
+          EOF
+          cat release-assets/ios-release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-release-${{ github.ref_name }}
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 14
+
+  upload-testflight:
+    name: Upload to TestFlight
+    needs: build
+    if: vars.IOS_ENABLE_TESTFLIGHT == 'true'
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: ios-release-${{ github.ref_name }}
+          path: release-assets/
+
+      - name: Upload IPA to App Store Connect
+        uses: Apple-Actions/upload-testflight-build@v3
+        with:
+          app-path: release-assets/smart-tags.ipa
+          issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}

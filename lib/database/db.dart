@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 import 'package:smart_tags/database/daos/auth_dao.dart';
-import 'package:smart_tags/database/db_connection.dart';
 import 'package:smart_tags/models/map_viewport_snapshot.dart';
 
 part 'db.g.dart';
@@ -397,11 +396,11 @@ class MapSessionStates extends Table {
   daos: [AuthDao],
 )
 class AppDatabase extends _$AppDatabase {
-  /// Creates an [AppDatabase] instance for production use.
-  AppDatabase() : super(openConnection());
+  /// Creates an [AppDatabase] with the given executor (production, tests, or seed builds).
+  AppDatabase(super.e);
 
   /// Creates an [AppDatabase] instance with a custom executor (for testing).
-  AppDatabase.executor(super.e);
+  AppDatabase.executor(QueryExecutor connection) : this(connection);
 
   @override
   int get schemaVersion => 2;

@@ -12,6 +12,7 @@ import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
+import 'package:smart_tags/seed/install_bundled_seed_database.dart';
 import 'package:smart_tags/theme.dart';
 import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   final prefs = await SharedPreferencesWithCache.create(
     cacheOptions: const SharedPreferencesWithCacheOptions(),
   );
+  await installBundledSeedDatabaseIfNeeded();
 
   runApp(
     ProviderScope(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:smart_tags/database/db.dart';
+import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/database/mappers/alert_mapper.dart';
 import 'package:smart_tags/helpers/connection_message.dart';
 import 'package:smart_tags/helpers/platforms_download_progress.dart';
@@ -16,7 +17,7 @@ import 'package:smart_tags/services/gateway_repository.dart';
 /// Provides a singleton instance of [AppDatabase] for the lifetime of the
 /// provider scope.
 final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
+  final db = AppDatabase(conn.openConnection());
   ref.onDispose(db.close);
   return db;
 });
