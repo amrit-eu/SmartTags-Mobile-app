@@ -82,8 +82,13 @@ class AuthService {
   /// Refresh outcomes that must update the app's user and permissions.
   Stream<AuthSessionEvent> get sessionEvents => _sessionEvents.stream;
 
+  /// Secure-storage key holding the refresh token's expected expiry, in
+  /// milliseconds since epoch. It is the deadline for protected offline work.
+  static const _refreshExpiresAtKey = 'refresh_expires_at';
+
   String? _cachedToken;
   String? _cachedUserId;
+  DateTime? _cachedRefreshExpiry;
 
   /// Releases the HTTP client and session notifications.
   void dispose() {
@@ -95,7 +100,15 @@ class AuthService {
     if (!_sessionEvents.isClosed) _sessionEvents.add(event);
   }
 
-  Future<void> _saveToken(String token, String refreshToken) async {
+  final _deadlineChanges = StreamController<DateTime?>.broadcast();
+
+  /// Emits the new offline-access deadline whenever it is recorded (after a
+  /// successful login or token refresh) or cleared (on logout).
+  Stream<DateTime?> get offlineAccessDeadlineChanges => _deadlineChanges.stream;
+
+  /// Saves the tokens returned by a successful login or refresh, along with
+  /// the refresh token's expiry ([refreshExpiresIn] seconds from now).
+  Future<void> _saveToken(String token, String refreshToken, {required int refreshExpiresIn}) async {
     try {
       _decodeToken(token);
     } catch (e) {
@@ -106,6 +119,11 @@ class AuthService {
     _cachedToken = token;
     await _storage.write(key: 'token', value: token);
     await _storage.write(key: 'refresh_token', value: refreshToken);
+
+    final refreshExpiry = clock.now().add(Duration(seconds: refreshExpiresIn));
+    _cachedRefreshExpiry = refreshExpiry;
+    await _storage.write(key: _refreshExpiresAtKey, value: refreshExpiry.millisecondsSinceEpoch.toString());
+    _deadlineChanges.add(refreshExpiry);
   }
 
   Future<void> _saveUserInfo(User user) async {
@@ -162,18 +180,18 @@ class AuthService {
     try {
       final response = await _client.post(
         uri,
-        headers: const {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'refresh_token': refreshToken,
-        }),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
       );
       final successCodes = <int>[200, 201];
       if (successCodes.contains(response.statusCode)) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
-        await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
+        await _saveToken(
+          authResponse.accessTokenRs256,
+          authResponse.refreshToken,
+          refreshExpiresIn: authResponse.refreshExpiresIn,
+        );
         // Update the user info in the local database with the new contact info from the refresh response.
         final userInfo = authResponse.contact;
         _cachedUserId = userInfo.id.toString();
@@ -219,6 +237,34 @@ class AuthService {
     // Check in-memory cache first for performance, then fallback to secure storage.
     final userId = _cachedUserId ?? await _storage.read(key: 'userId');
     return userId;
+  }
+
+  /// The expected expiry of the current refresh token, from memory cache or
+  /// secure storage: the deadline for protected offline actions.
+  ///
+  /// Returns `null` when none has been recorded (logged out, or a session
+  /// created before this was tracked), which callers treat as expired.
+  Future<DateTime?> getOfflineAccessDeadline() async {
+    final cached = _cachedRefreshExpiry;
+    if (cached != null) return cached;
+    final stored = int.tryParse(await _storage.read(key: _refreshExpiresAtKey) ?? '');
+    if (stored == null) return null;
+    return _cachedRefreshExpiry = DateTime.fromMillisecondsSinceEpoch(stored);
+  }
+
+  /// Exchanges the stored refresh token for new tokens, recording a new
+  /// offline-access deadline on success.
+  ///
+  /// Throws [RefreshException] (after logging out) if the server rejects the
+  /// refresh token, [AuthException] or [http.ClientException] on server or
+  /// network errors.
+  Future<void> refreshSession() async {
+    try {
+      await _refreshToken();
+    } on RefreshException {
+      await logout();
+      rethrow;
+    }
   }
 
   /// Returns JWT from memory cache or secure storage if expiry time has not passed
@@ -269,28 +315,24 @@ class AuthService {
   /// - The credentials are invalid (status code != 200)
   /// - There is a network error
   /// - The server returns an invalid response
-  Future<User> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<User> login({required String email, required String password}) async {
     final uri = GatewayConfig.loginUri;
 
     try {
       final response = await _client.post(
         uri,
-        headers: const {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'login': email,
-          'password': password,
-        }),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({'login': email, 'password': password}),
       );
       final successCodes = <int>[200, 201];
       if (successCodes.contains(response.statusCode)) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         final authResponse = AuthResponse.fromJson(json);
-        await _saveToken(authResponse.accessTokenRs256, authResponse.refreshToken);
+        await _saveToken(
+          authResponse.accessTokenRs256,
+          authResponse.refreshToken,
+          refreshExpiresIn: authResponse.refreshExpiresIn,
+        );
         final userInfo = authResponse.contact;
         _cachedUserId = userInfo.id.toString();
         await _storage.write(key: 'userId', value: userInfo.id.toString());
@@ -319,12 +361,8 @@ class AuthService {
       try {
         await _client.post(
           logoutUri,
-          headers: const {
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'refresh_token': refreshToken,
-          }),
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode({'refresh_token': refreshToken}),
         );
       } on Exception catch (e) {
         debugPrint('Logout backend call failed (ignored): $e');
@@ -334,6 +372,9 @@ class AuthService {
     // delete local tokens
     await _deleteAccessToken();
     await _storage.delete(key: 'refresh_token');
+    _cachedRefreshExpiry = null;
+    await _storage.delete(key: _refreshExpiresAtKey);
+    _deadlineChanges.add(null);
     final userId = await getUserId();
     final parsedUserId = userId != null ? int.tryParse(userId) : null;
     if (parsedUserId != null) {
