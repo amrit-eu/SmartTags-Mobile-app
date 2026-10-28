@@ -4,6 +4,7 @@ import 'package:smart_tags/constants/alert_style_palette.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/theme/touch_target_theme.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
 
 /// A card widget that displays details for a specific platform
@@ -32,6 +33,8 @@ class PlatformCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final touch = context.touchTargetSizes;
+    final textBump = touch.platformCardTextSizeBump;
 
     final counts = ref.watch(
       alertCountsByResourceStreamProvider.select(
@@ -54,7 +57,7 @@ class PlatformCard extends ConsumerWidget {
             .ignore();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: touch.platformCardPadding,
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
           border: Border.all(color: colorScheme.outline),
@@ -81,6 +84,7 @@ class PlatformCard extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
                       color: colorScheme.onSurface,
+                      fontSize: (theme.textTheme.titleMedium?.fontSize ?? 16) + textBump,
                     ),
                   ),
                 ),
@@ -88,12 +92,15 @@ class PlatformCard extends ConsumerWidget {
                 StatusBadge(rawStatus: platform.status),
               ],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: touch.enlarged ? 8 : 4),
             Text(
               _dash(platform.model),
-              style: theme.textTheme.bodyLarge?.copyWith(color: colorScheme.onSurface),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface,
+                fontSize: (theme.textTheme.bodyLarge?.fontSize ?? 16) + textBump,
+              ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: touch.enlarged ? 8 : 4),
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
@@ -101,7 +108,10 @@ class PlatformCard extends ConsumerWidget {
                   _dash(platform.wigosId),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: (theme.textTheme.bodyMedium?.fontSize ?? 14) + textBump,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -110,7 +120,10 @@ class PlatformCard extends ConsumerWidget {
                 Text(
                   _dash(platform.observingNetwork ?? platform.network),
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: (theme.textTheme.bodyMedium?.fontSize ?? 14) + textBump,
+                  ),
                 ),
               ],
             ),
@@ -118,10 +131,15 @@ class PlatformCard extends ConsumerWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  if (openCount > 0) _AlertCountChip(count: openCount, style: AlertStatusPalette.open),
+                  if (openCount > 0)
+                    _AlertCountChip(count: openCount, style: AlertStatusPalette.open, enlarged: touch.enlarged),
                   if (openCount > 0 && acknowledgedCount > 0) const SizedBox(width: 8),
                   if (acknowledgedCount > 0)
-                    _AlertCountChip(count: acknowledgedCount, style: AlertStatusPalette.acknowledged),
+                    _AlertCountChip(
+                      count: acknowledgedCount,
+                      style: AlertStatusPalette.acknowledged,
+                      enlarged: touch.enlarged,
+                    ),
                 ],
               ),
             ],
@@ -135,15 +153,16 @@ class PlatformCard extends ConsumerWidget {
 /// A pill-shaped chip showing an alert count for a given status, following
 /// [AlertStatusPalette] colors.
 class _AlertCountChip extends StatelessWidget {
-  const _AlertCountChip({required this.count, required this.style});
+  const _AlertCountChip({required this.count, required this.style, required this.enlarged});
 
   final int count;
   final AlertStatusStyle style;
+  final bool enlarged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: enlarged ? 12 : 10, vertical: enlarged ? 8 : 6),
       decoration: BoxDecoration(
         color: style.color,
         borderRadius: BorderRadius.circular(20),
