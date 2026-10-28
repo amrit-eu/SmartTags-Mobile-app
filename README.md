@@ -54,13 +54,11 @@ lib/
     flutter run
     ```
 
-### Android releases
+### Releases
 
-Push a version tag such as `v1.0.0` to build, test, sign, and publish an Android APK as a GitHub Release asset. The tag must match the version in `pubspec.yaml`; its `+BUILD` suffix supplies the Android build number.
+Push a version tag such as `v1.0.0` (must match `pubspec.yaml` before the `+` build suffix). That starts separate GitHub Actions workflows for [Android](docs/android_releases.md) and [iOS](docs/ios_releases.md). Both embed the same [release seed database](docs/release_seed_database.md) for faster first install.
 
-Use a prerelease tag such as `v0.0.1-alpha.1` to test a feature-branch commit. Prereleases are published separately from the website's latest stable download.
-
-See [Android release setup and distribution](docs/android_releases.md) for signing secrets, release commands, device checks, and the download link for the AMRIT website.
+Start with [Release overview](docs/release_overview.md) for tagging rules. Android publishes a signed APK on GitHub Releases; iOS CI currently produces an unsigned build artifact (Apple Developer Program and codesigning required for device/TestFlight distribution).
 
 ### Local database (DBeaver)
 
