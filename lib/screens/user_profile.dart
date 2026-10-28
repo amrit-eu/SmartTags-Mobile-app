@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:smart_tags/main.dart';
 import 'package:smart_tags/models/pending_operation.dart';
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/screens/pending_operations_screen.dart';
 import 'package:smart_tags/screens/user_login.dart';
@@ -58,6 +60,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final user = ref.watch(authProvider).value ?? widget.user;
     final events = ref.watch(pendingPassportEventsProvider).value ?? const <PendingPassportEvent>[];
     final failedCount = events.where((event) => event.status == PendingOperationStatus.failed).length;
+    final offlineAccessDeadline = ref.watch(offlineAccessProvider).value?.deadline;
+    final isOfflineAccessExpired = ref.watch(offlineAccessExpiredProvider);
 
     return Scaffold(
       appBar: TopNavigation(title: const Text('My Profile'), leading: const BackButton()),
@@ -92,9 +96,35 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     label: 'Full Name',
                     value: user.fullName,
                   ),
+                  const Divider(height: 16),
+                  ContainerRow(
+                    label: 'Offline access until',
+                    value: isOfflineAccessExpired || offlineAccessDeadline == null
+                        ? 'Expired'
+                        : DateFormat.yMMMd().add_Hm().format(offlineAccessDeadline),
+                  ),
                 ],
               ),
             ),
+            if (isOfflineAccessExpired)
+              SectionContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 8,
+                  children: [
+                    const Text(offlineAccessExpiredMessage),
+                    FilledButton(
+                      // Replace this screen: its auth listener would otherwise
+                      // react to the new login underneath the login screen.
+                      onPressed: () => Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute<UserLoginScreen>(builder: (_) => const UserLoginScreen()),
+                      ),
+                      child: const Text('Log in again'),
+                    ),
+                  ],
+                ),
+              ),
             // Always reachable entry point: the pending operations banner can
             // be dismissed by the user.
             SectionContainer(

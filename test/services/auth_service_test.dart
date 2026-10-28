@@ -497,4 +497,105 @@ void main() {
       verify(mockFlutterSecureStorage.write(key: 'refresh_token', value: 'newMockRefreshToken')).called(1);
     });
   });
+
+  group('offline access deadline', () {
+    final now = DateTime(2026, 01, 02);
+    // buildAuthResponse defaults refresh_expires_in to 864000 s (10 days).
+    final expectedDeadline = now.add(const Duration(seconds: 864000));
+    final expectedStoredValue = expectedDeadline.millisecondsSinceEpoch.toString();
+
+    AuthService refreshingService(http.Client client) {
+      when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+      when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
+      return AuthService(
+        authDao: mockAuthDao,
+        client: client,
+        storage: mockFlutterSecureStorage,
+        connectivityForRefresh: onlineConnectivity,
+      );
+    }
+
+    test('login records the refresh token expiry from the server response', () async {
+      final client = MockClient((request) async => http.Response(json.encode(mockAuthResponse), 200));
+      final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+
+      await withClock(Clock.fixed(now), () async {
+        final changes = expectLater(authService.offlineAccessDeadlineChanges, emits(expectedDeadline));
+        await authService.login(email: 'joe.bloggs@test.com', password: 'password');
+        await changes;
+      });
+
+      verify(mockFlutterSecureStorage.write(key: 'refresh_expires_at', value: expectedStoredValue)).called(1);
+      expect(await authService.getOfflineAccessDeadline(), expectedDeadline);
+    });
+
+    test('a successful token refresh moves the deadline', () async {
+      final client = MockClient(
+        (request) async => http.Response(json.encode(buildAuthResponse(refreshExpiresIn: 3600)), 200),
+      );
+      final authService = refreshingService(client);
+
+      await withClock(Clock.fixed(now), authService.getAccessToken);
+
+      final refreshedDeadline = now.add(const Duration(hours: 1));
+      verify(
+        mockFlutterSecureStorage.write(
+          key: 'refresh_expires_at',
+          value: refreshedDeadline.millisecondsSinceEpoch.toString(),
+        ),
+      ).called(1);
+      expect(await authService.getOfflineAccessDeadline(), refreshedDeadline);
+    });
+
+    test('a failed token refresh leaves the deadline unchanged', () async {
+      final client = MockClient((request) async => http.Response('Server error', 500));
+      final authService = refreshingService(client);
+
+      await withClock(Clock.fixed(now), () async {
+        await expectLater(authService.getAccessToken(), throwsA(isA<AuthException>()));
+      });
+
+      verifyNever(mockFlutterSecureStorage.write(key: 'refresh_expires_at', value: anyNamed('value')));
+    });
+
+    test('the deadline is read back from secure storage after an app restart', () async {
+      when(mockFlutterSecureStorage.read(key: 'refresh_expires_at')).thenAnswer((_) async => expectedStoredValue);
+      final authService = AuthService(authDao: mockAuthDao, storage: mockFlutterSecureStorage);
+
+      expect(await authService.getOfflineAccessDeadline(), expectedDeadline);
+    });
+
+    test('no deadline is returned when none was recorded', () async {
+      when(mockFlutterSecureStorage.read(key: 'refresh_expires_at')).thenAnswer((_) async => null);
+      final authService = AuthService(authDao: mockAuthDao, storage: mockFlutterSecureStorage);
+
+      expect(await authService.getOfflineAccessDeadline(), isNull);
+    });
+
+    test('logout clears the deadline', () async {
+      final client = MockClient((request) async => http.Response(json.encode(mockAuthResponse), 200));
+      final authService = AuthService(authDao: mockAuthDao, client: client, storage: mockFlutterSecureStorage);
+      await withClock(Clock.fixed(now), () => authService.login(email: 'joe.bloggs@test.com', password: 'password'));
+      when(mockFlutterSecureStorage.read(key: 'refresh_token')).thenAnswer((_) async => 'mockRefreshToken');
+      when(mockFlutterSecureStorage.read(key: 'refresh_expires_at')).thenAnswer((_) async => null);
+
+      final changes = expectLater(authService.offlineAccessDeadlineChanges, emits(isNull));
+      await authService.logout();
+      await changes;
+
+      verify(mockFlutterSecureStorage.delete(key: 'refresh_expires_at')).called(1);
+      expect(await authService.getOfflineAccessDeadline(), isNull);
+    });
+
+    test('refreshSession logs out and rethrows when the refresh token is rejected', () async {
+      final client = MockClient((request) async => http.Response('Invalid refresh token', 401));
+      final authService = refreshingService(client);
+      when(mockFlutterSecureStorage.read(key: 'userId')).thenAnswer((_) async => null);
+
+      await expectLater(authService.refreshSession(), throwsA(isA<RefreshException>()));
+
+      verify(mockFlutterSecureStorage.delete(key: 'refresh_token')).called(1);
+      verify(mockFlutterSecureStorage.delete(key: 'refresh_expires_at')).called(1);
+    });
+  });
 }

@@ -1,7 +1,9 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/models/program_role.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 
 /// Available roles.
 enum Role {
@@ -107,12 +109,20 @@ const _roleRank = {
   'program-manager': 2,
 };
 
-/// Provides a function to check user authorisation for actions on resources in a program
+/// Provides a function to check user authorisation for actions on resources in a program.
+///
+/// The signed-in user's cached permissions apply only until their offline
+/// access expires (see [offlineAccessProvider]); after that they get
+/// anonymous access until they reauthenticate online.
 final permissionProvider = Provider<bool Function(Action, Resource, {int? programId})>((ref) {
   final user = ref.watch(authProvider).value;
+  final offlineAccess = ref.watch(offlineAccessProvider).value;
 
   return (Action action, Resource resource, {int? programId}) {
-    if (user == null) {
+    // Checked at call time so a deadline passing while the app is suspended
+    // takes effect before the expiry timer fires.
+    final isExpired = offlineAccess?.isExpiredAt(clock.now()) ?? false;
+    if (user == null || isExpired) {
       return _policy[resource]?[action] == Role.anonymous;
     }
 
