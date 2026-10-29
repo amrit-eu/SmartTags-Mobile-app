@@ -107,7 +107,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     ref
         .read(errorNotificationProvider.notifier)
         .setError(
-          '${e.message}: Please log in again.',
+          'Session has expired: please log in again.',
           type: 'session_expired',
         );
     state = const AsyncData(null);
