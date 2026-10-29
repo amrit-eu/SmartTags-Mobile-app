@@ -114,14 +114,14 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 
   /// Wraps any async operation that might trigger a token refresh error.
-  /// Automatically handles RefreshException and updates state.
+  /// Session expiry ([RefreshException]) is reported through [AuthService.sessionEvents], not here.
   /// Called with following syntax: `await _callWithRefreshHandling(() => _authService.someMethod())`
   Future<T?> _callWithRefreshHandling<T>(Future<T> Function() fn) async {
     try {
       return await fn();
-    } on RefreshException catch (e) {
-      // Token refresh failed - Notify user to login again.
-      _handleRefreshException(e);
+    } on RefreshException {
+      // AuthService already emitted AuthSessionExpired; the sessionEvents listener
+      // notifies the user and clears state, so handling it here would duplicate the banner.
       return null;
     } on AuthException catch (e) {
       // This could be a temporary server error during refresh - notify user but keep them logged in with old token.
