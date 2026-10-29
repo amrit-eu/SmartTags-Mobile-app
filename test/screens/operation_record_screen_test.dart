@@ -597,6 +597,7 @@ void main() {
             _NoConnectivityStatus.new,
           ),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
         child: MaterialApp(
           home: _OperationRecordHost(
@@ -690,6 +691,7 @@ void main() {
           // enqueueOrSend until its 5s connectivity-check timeout.
           checkConnectionProvider.overrideWith(_NoConnectivityStatus.new),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
         child: MaterialApp(
           home: _OperationRecordHost(

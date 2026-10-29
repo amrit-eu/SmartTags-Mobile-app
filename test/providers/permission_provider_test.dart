@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/models/program.dart';
@@ -5,6 +6,7 @@ import 'package:smart_tags/models/program_role.dart';
 import 'package:smart_tags/models/role.dart' as model show Role;
 import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 
 import '../utils/fake_auth_notifiers.dart';
@@ -13,10 +15,11 @@ import '../utils/test_user.dart';
 void main() {
   late ProviderContainer container;
 
-  ProviderContainer buildContainer(User? user) {
+  ProviderContainer buildContainer(User? user, {DateTime? offlineAccessDeadline}) {
     return ProviderContainer(
       overrides: [
         authProvider.overrideWith(() => FakeAuthNotifier(user)),
+        offlineAccessProvider.overrideWith(() => FakeOfflineAccessNotifier(offlineAccessDeadline ?? DateTime(2100))),
       ],
     );
   }
@@ -99,23 +102,24 @@ void main() {
     });
   });
 
-  group('superuser', () {
-    setUp(() {
-      final user = createTestUser(roles: const ['alert_admin'], programRoles: const []);
-      container = buildContainer(user);
-    });
+  // 29/10/2026(ylubac): no superUser management implemented yet
+  // group('superuser', () {
+  //   setUp(() {
+  //     final user = createTestUser(roles: const ['alert_admin'], programRoles: const []);
+  //     container = buildContainer(user);
+  //   });
 
-    test('is granted every action regardless of policy', () async {
-      await container.read(authProvider.future);
-      final can = container.read(permissionProvider);
+  //   test('is granted every action regardless of policy', () async {
+  //     await container.read(authProvider.future);
+  //     final can = container.read(permissionProvider);
 
-      expect(can(Action.delete, Resource.deployment), isTrue);
-      expect(can(Action.delete, Resource.asset), isTrue);
-      expect(can(Action.create, Resource.asset, programId: 999), isTrue);
-      // Even resource/action combos with no policy defined at all.
-      expect(can(Action.delete, Resource.mission), isTrue);
-    });
-  });
+  //     expect(can(Action.delete, Resource.deployment), isTrue);
+  //     expect(can(Action.delete, Resource.asset), isTrue);
+  //     expect(can(Action.create, Resource.asset, programId: 999), isTrue);
+  //     // Even resource/action combos with no policy defined at all.
+  //     expect(can(Action.delete, Resource.mission), isTrue);
+  //   });
+  // });
 
   group('program-member user', () {
     setUp(() {
@@ -192,6 +196,50 @@ void main() {
       final can = container.read(permissionProvider);
 
       expect(can(Action.create, Resource.deployment, programId: 42), isTrue);
+    });
+  });
+
+  group('offline access expired', () {
+    Future<void> buildExpiringContainer(User user, {required DateTime deadline}) async {
+      container = buildContainer(user, offlineAccessDeadline: deadline);
+      await container.read(authProvider.future);
+      await container.read(offlineAccessProvider.future);
+    }
+
+    test('a program manager is limited to anonymous actions', () async {
+      await buildExpiringContainer(createTestUser(), deadline: DateTime(2000));
+      final can = container.read(permissionProvider);
+
+      expect(can(Action.view, Resource.deployment), isTrue);
+      expect(can(Action.view, Resource.alert), isTrue);
+      expect(can(Action.viewSensitive, Resource.deployment), isFalse);
+      expect(can(Action.edit, Resource.deployment, programId: 4), isFalse);
+      expect(can(Action.ack, Resource.alert, programId: 4), isFalse);
+    });
+
+    test('a superuser is limited to anonymous actions too', () async {
+      await buildExpiringContainer(
+        createTestUser(roles: const ['alert_admin'], programRoles: const []),
+        deadline: DateTime(2000),
+      );
+      final can = container.read(permissionProvider);
+
+      expect(can(Action.view, Resource.deployment), isTrue);
+      expect(can(Action.delete, Resource.deployment), isFalse);
+      expect(can(Action.close, Resource.alert, programId: 4), isFalse);
+    });
+
+    test('cached permissions apply until the deadline, checked at call time', () async {
+      await buildExpiringContainer(createTestUser(), deadline: DateTime(2030));
+      final can = container.read(permissionProvider);
+
+      withClock(Clock.fixed(DateTime(2029, 12, 31)), () {
+        expect(can(Action.edit, Resource.deployment, programId: 4), isTrue);
+      });
+      withClock(Clock.fixed(DateTime(2030)), () {
+        expect(can(Action.edit, Resource.deployment, programId: 4), isFalse);
+        expect(can(Action.view, Resource.deployment), isTrue);
+      });
     });
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/database/db.dart';
@@ -14,6 +15,7 @@ import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 import 'package:smart_tags/services/passport_event_mapper.dart';
 
@@ -39,8 +41,9 @@ enum PassportEventSubmitOutcome {
   /// Sent to the Gateway immediately.
   sent,
 
-  /// Not sent and not queued because no user is logged in: a queued row must
-  /// be replayed as the user who made it, so there is no one to queue it for.
+  /// Not sent and not queued because no user is logged in (a queued row must
+  /// be replayed as the user who made it, so there is no one to queue it for),
+  /// or because the user's offline access has expired.
   notQueuedAuthRequired,
 
   /// Queued locally because the device is offline or the request failed for
@@ -64,12 +67,14 @@ class PassportEventQueueNotifier extends Notifier<void> {
   /// Attempts to send [request] immediately when online; otherwise (or on
   /// failure) queues it locally, tagged with the current user, for later
   /// replay. Never throws: every failure path degrades to "queued", or to
-  /// "not queued" when no user is logged in.
+  /// "not queued" when no user is logged in or their offline access expired.
   Future<PassportEventSubmitOutcome> enqueueOrSend({
     required String platformRef,
     required DeployAction action,
     required PassportEventRequest request,
   }) async {
+    if (await _isOfflineAccessExpired()) return PassportEventSubmitOutcome.notQueuedAuthRequired;
+
     final db = ref.read(databaseProvider);
     final bodyJson = jsonEncode(PassportEventMapper.toJson(request));
 
@@ -104,8 +109,9 @@ class PassportEventQueueNotifier extends Notifier<void> {
   /// Applies [action] to [alert]: sends it immediately when online, otherwise
   /// (or on a network/server/auth failure) queues it, tagged with the current
   /// user, for later replay. In both cases the alert's status is updated
-  /// locally so the UI reflects it at once. With no user logged in, nothing
-  /// is queued nor changed locally.
+  /// locally so the UI reflects it at once. With no user logged in, or once
+  /// their offline access has expired, nothing is sent, queued nor changed
+  /// locally.
   ///
   /// Unlike [enqueueOrSend], a 4xx rejection from the Gateway (e.g. 403, 404)
   /// is rethrown as a [GatewayException]: nothing is queued or changed locally,
@@ -144,6 +150,8 @@ class PassportEventQueueNotifier extends Notifier<void> {
     required Map<String, dynamic> payload,
     required Future<void> Function(AppDatabase db) applyLocally,
   }) async {
+    if (await _isOfflineAccessExpired()) return PassportEventSubmitOutcome.notQueuedAuthRequired;
+
     final db = ref.read(databaseProvider);
     final bodyJson = jsonEncode(payload);
 
@@ -215,6 +223,9 @@ class PassportEventQueueNotifier extends Notifier<void> {
     // the auth state to load: a pass is triggered again on login.
     final authorId = ref.read(authProvider).value?.id;
     if (authorId == null) return;
+    // Rows stay pending until the user reauthenticates; a pass is triggered
+    // again when access is restored or on login.
+    if (await _isOfflineAccessExpired()) return;
 
     final db = ref.read(databaseProvider);
     final repository = ref.read(gatewayRepositoryProvider);
@@ -272,6 +283,22 @@ class PassportEventQueueNotifier extends Notifier<void> {
     }
   }
 
+  /// Whether the signed-in user's offline access has expired, waiting for it
+  /// to load if needed. Fails closed if it can't be resolved; `false` when no
+  /// user is signed in (callers handle that case themselves).
+  Future<bool> _isOfflineAccessExpired() async {
+    // Listen rather than read: a provider without listeners is paused, so its
+    // rebuild (e.g. once the auth state loads) would never complete the future.
+    final subscription = ref.listen(offlineAccessProvider.future, (_, _) {});
+    try {
+      final access = await subscription.read().timeout(const Duration(seconds: 5));
+      return access?.isExpiredAt(clock.now()) ?? false;
+    } on Object {
+      return true;
+    } finally {
+      subscription.close();
+    }
+  }
 }
 
 /// Triggers an automatic replay pass on app start (if already online), and
@@ -297,6 +324,12 @@ final passportEventQueueLifecycleProvider = Provider<void>((ref) {
     })
     ..listen(authProvider.select((async) => async.value), (previous, next) {
       if (previous == null && next != null) {
+        unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
+      }
+    })
+    ..listen(offlineAccessExpiredProvider, (previous, next) {
+      // Access restored without a new login (background session renewal).
+      if (previous == true && !next) {
         unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
       }
     });
