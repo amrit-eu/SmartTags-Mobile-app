@@ -90,14 +90,19 @@ class AuthService {
   String? _cachedUserId;
   DateTime? _cachedRefreshExpiry;
 
-  /// Releases the HTTP client and session notifications.
+  /// Releases the HTTP client, session and deadline notifications.
   void dispose() {
     _client.close();
     unawaited(_sessionEvents.close());
+    unawaited(_deadlineChanges.close());
   }
 
   void _emitSessionEvent(AuthSessionEvent event) {
     if (!_sessionEvents.isClosed) _sessionEvents.add(event);
+  }
+
+  void _emitDeadlineChange(DateTime? deadline) {
+    if (!_deadlineChanges.isClosed) _deadlineChanges.add(deadline);
   }
 
   final _deadlineChanges = StreamController<DateTime?>.broadcast();
@@ -123,7 +128,7 @@ class AuthService {
     final refreshExpiry = clock.now().add(Duration(seconds: refreshExpiresIn));
     _cachedRefreshExpiry = refreshExpiry;
     await _storage.write(key: _refreshExpiresAtKey, value: refreshExpiry.millisecondsSinceEpoch.toString());
-    _deadlineChanges.add(refreshExpiry);
+    _emitDeadlineChange(refreshExpiry);
   }
 
   Future<void> _saveUserInfo(User user) async {
@@ -255,16 +260,23 @@ class AuthService {
   /// Exchanges the stored refresh token for new tokens, recording a new
   /// offline-access deadline on success.
   ///
-  /// Throws [RefreshException] (after logging out) if the server rejects the
-  /// refresh token, [AuthException] or [http.ClientException] on server or
-  /// network errors.
+  /// Throws [RefreshException] (after emitting [AuthSessionExpired] and
+  /// logging out) if the server rejects the refresh token, [AuthException] or
+  /// [http.ClientException] on server or network errors.
   Future<void> refreshSession() async {
     try {
       await _refreshToken();
-    } on RefreshException {
-      await logout();
+    } on RefreshException catch (e) {
+      await _expireSession(e);
       rethrow;
     }
+  }
+
+  /// Handles a definitive refresh rejection: notifies listeners, then logs out.
+  Future<void> _expireSession(RefreshException error) async {
+    // Invalidate UI permissions before awaiting backend/local cleanup.
+    _emitSessionEvent(AuthSessionExpired(error));
+    await logout();
   }
 
   /// Returns JWT from memory cache or secure storage if expiry time has not passed
@@ -286,9 +298,7 @@ class AuthService {
         token = await _refreshToken();
       } on RefreshException catch (e) {
         // refresh error (401 or no refresh token found) - force logout
-        // Invalidate UI permissions before awaiting backend/local cleanup.
-        _emitSessionEvent(AuthSessionExpired(e));
-        await logout();
+        await _expireSession(e);
         // Rethrow to notify caller of the logout event so it can update UI accordingly.
         rethrow;
       } on (AuthException, http.ClientException) catch (exc) {
@@ -374,7 +384,7 @@ class AuthService {
     await _storage.delete(key: 'refresh_token');
     _cachedRefreshExpiry = null;
     await _storage.delete(key: _refreshExpiresAtKey);
-    _deadlineChanges.add(null);
+    _emitDeadlineChange(null);
     final userId = await getUserId();
     final parsedUserId = userId != null ? int.tryParse(userId) : null;
     if (parsedUserId != null) {
