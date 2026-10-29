@@ -19,7 +19,7 @@ enum Role {
   /// A manager of a program.
   programManager,
 
-  /// Has elevated permissions across all programs.
+  /// Has elevated permissions across all programs (not implemented yet).
   superUser;
 
   /// The API code for this role, or `null` if it isn't program-scoped.
@@ -104,10 +104,7 @@ const Map<Resource, Map<Action, Role>> _policy = {
 };
 
 // Role hierarchy, low to high.
-const _roleRank = {
-  'program-member': 1,
-  'program-manager': 2,
-};
+const _roleRank = {'program-member': 1, 'program-manager': 2};
 
 /// Provides a function to check user authorisation for actions on resources in a program.
 ///
@@ -125,8 +122,6 @@ final permissionProvider = Provider<bool Function(Action, Resource, {int? progra
     if (user == null || isExpired) {
       return _policy[resource]?[action] == Role.anonymous;
     }
-
-    if (user.roles.contains('alert_admin')) return true;
 
     final requiredRole = _policy[resource]?[action];
     debugPrint('requiredRole :  $requiredRole');
