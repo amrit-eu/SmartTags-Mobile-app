@@ -13,6 +13,7 @@ import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/platforms_sync_phase_provider.dart';
 import 'package:smart_tags/providers/qr_passport_lookup_provider.dart';
 import 'package:smart_tags/screens/platform_detail_screen.dart';
+import 'package:smart_tags/theme/touch_target_theme.dart';
 import 'package:smart_tags/widgets/platform_card.dart';
 import 'package:smart_tags/widgets/pull_to_refresh.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
@@ -337,14 +338,16 @@ class _CatalogueScreenState extends ConsumerState<CatalogueScreen> {
 
   Widget _platformGrid(List<Platform> platforms) {
     final textScaler = MediaQuery.textScalerOf(context);
+    final touch = context.touchTargetSizes;
+    final gridGap = touch.platformCardGridSpacing;
     return MasonryGridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: EdgeInsets.fromLTRB(gridGap, 12, gridGap, 8),
       gridDelegate: SliverSimpleGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: textScaler.scale(400),
+        maxCrossAxisExtent: textScaler.scale(touch.platformCardMaxCrossAxisExtent),
       ),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
+      crossAxisSpacing: gridGap,
+      mainAxisSpacing: gridGap,
       itemCount: platforms.length,
       itemBuilder: (context, index) {
         final platform = platforms[index];

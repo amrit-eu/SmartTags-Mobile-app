@@ -106,4 +106,19 @@ void main() {
       expect(_containerFor(prefs).read(textScaleProvider), isNull);
     });
   });
+
+  group('largeTouchTargetsProvider', () {
+    test('defaults to false when nothing is stored', () async {
+      final container = _containerFor(await _openPrefs());
+
+      expect(container.read(largeTouchTargetsProvider), isFalse);
+    });
+
+    test('persists enabled state across launches', () async {
+      final prefs = await _openPrefs();
+      _containerFor(prefs).read(largeTouchTargetsProvider.notifier).setEnabled(enabled: true);
+
+      expect(_containerFor(prefs).read(largeTouchTargetsProvider), isTrue);
+    });
+  });
 }
