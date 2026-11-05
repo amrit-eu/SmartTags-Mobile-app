@@ -1,0 +1,46 @@
+name: Set up iOS codesigning
+description: Imports distribution certificate and App Store provisioning profile into a temporary keychain.
+
+inputs:
+  certificate-base64:
+    description: Base64-encoded Apple Distribution .p12 certificate.
+    required: true
+  certificate-password:
+    description: Password for the .p12 certificate.
+    required: true
+  provisioning-profile-base64:
+    description: Base64-encoded App Store provisioning profile (.mobileprovision).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Import certificate and provisioning profile
+      shell: bash
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ inputs.certificate-base64 }}
+        P12_PASSWORD: ${{ inputs.certificate-password }}
+        BUILD_PROVISION_PROFILE_BASE64: ${{ inputs.provisioning-profile-base64 }}
+      run: |
+        set -euo pipefail
+
+        CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
+        PP_PATH="$RUNNER_TEMP/build_pp.mobileprovision"
+        KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+        KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+
+        echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+        echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
+
+        security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security import "$CERTIFICATE_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+        PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<< "$(security cms -D -i "$PP_PATH")")
+        mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+        cp "$PP_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+
+        echo "Installed provisioning profile UUID: $PROFILE_UUID"

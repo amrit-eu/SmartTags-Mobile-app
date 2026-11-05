@@ -1,0 +1,42 @@
+name: Generate release seed database
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  seed-database:
+    name: Generate release seed database
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.0'
+          cache: true
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - uses: ./.github/actions/generate-seed-database
+        with:
+          gateway-base-url: ${{ vars.SMART_TAGS_GATEWAY_BASE_URL }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-seed-${{ github.ref_name }}
+          path: assets/database/
+          if-no-files-found: error
+          retention-days: 14

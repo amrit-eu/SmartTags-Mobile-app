@@ -17,8 +17,12 @@ defaults:
     shell: bash
 
 jobs:
+  seed-database:
+    uses: ./.github/workflows/release-seed-database.yml
+
   build:
     name: Build and verify signed APK
+    needs: seed-database
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     outputs:
@@ -29,6 +33,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-seed-${{ github.ref_name }}
+          path: assets/database/
 
       - name: Validate tag and application version
         id: version
@@ -135,6 +144,8 @@ jobs:
           fi
           min_sdk=$(sed -n "s/^sdkVersion:'\([0-9]*\)'$/\1/p" "$RUNNER_TEMP/apk-badging.txt")
           test -n "$min_sdk"
+          seed_generated_at=$(jq -er '.generatedAt' assets/database/seed.manifest.json)
+          seed_platform_count=$(jq -er '.platformCount' assets/database/seed.manifest.json)
           mkdir -p release-assets
           cp "$apk" release-assets/smart-tags.apk
           (cd release-assets && sha256sum smart-tags.apk > smart-tags.apk.sha256)
@@ -144,6 +155,7 @@ jobs:
           Source commit: $GITHUB_SHA
           Minimum Android API level: $min_sdk
           Architectures: armeabi-v7a, arm64-v8a, x86_64.
+          Bundled seed database: $seed_platform_count platforms (generated $seed_generated_at UTC).
 
           Download **smart-tags.apk** and open it on your Android device. Allow your browser or file manager to install unknown apps when prompted.
           To verify the download, use the accompanying **smart-tags.apk.sha256** file.
@@ -178,12 +190,10 @@ jobs:
       - name: Publish verified APK
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
           APP_VERSION: ${{ needs.build.outputs.version }}
           BUILD_NUMBER: ${{ needs.build.outputs.build_number }}
           IS_PRERELEASE: ${{ needs.build.outputs.prerelease }}
-        shell: bash
         run: |
           cd release-assets
           sha256sum --check smart-tags.apk.sha256
