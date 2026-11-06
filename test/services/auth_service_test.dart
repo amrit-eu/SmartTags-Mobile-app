@@ -598,4 +598,31 @@ void main() {
       verify(mockFlutterSecureStorage.delete(key: 'refresh_expires_at')).called(1);
     });
   });
+
+  group('getAccessTokenExpiry', () {
+    test('returns the stored access token exp claim', () async {
+      when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => mockJwt);
+      final authService = AuthService(authDao: mockAuthDao, storage: mockFlutterSecureStorage);
+
+      final expiry = await authService.getAccessTokenExpiry();
+
+      // mockJwt expires on 01-Jan-2026 00:00:00 UTC.
+      expect(expiry?.millisecondsSinceEpoch, 1767225600 * 1000);
+    });
+
+    test('returns null without an access token', () async {
+      when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => null);
+      final authService = AuthService(authDao: mockAuthDao, storage: mockFlutterSecureStorage);
+
+      expect(await authService.getAccessTokenExpiry(), isNull);
+    });
+
+    test('returns null when the access token has no exp claim', () async {
+      final tokenWithoutExp = buildJwt(payload: {'name': 'Alice Example', 'sub': 'alice@example.com', 'contactId': 1});
+      when(mockFlutterSecureStorage.read(key: 'token')).thenAnswer((_) async => tokenWithoutExp);
+      final authService = AuthService(authDao: mockAuthDao, storage: mockFlutterSecureStorage);
+
+      expect(await authService.getAccessTokenExpiry(), isNull);
+    });
+  });
 }

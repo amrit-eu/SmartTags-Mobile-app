@@ -93,9 +93,9 @@ class AuthNotifier extends AsyncNotifier<User?> {
     } // catch other exception thrown if remote logout fails if/when we logout server side
   }
 
-  /// Asks the server for fresh tokens once the offline-access deadline has
-  /// passed or is unknown, while online. On success a new deadline is recorded
-  /// and protected actions become available again. If the server rejects the
+  /// Asks the server for fresh tokens, while online, once the access token or
+  /// the offline-access deadline has expired (or is unknown). On success a new
+  /// deadline is recorded and protected actions remain or become available. If the server rejects the
   /// refresh token, the user is logged out and asked to log in again; their
   /// queued operations are kept and replayed after the next login.
   Future<void> renewExpiredSession() async {

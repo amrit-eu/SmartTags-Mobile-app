@@ -140,22 +140,28 @@ class AuthService {
     await _storage.delete(key: 'token');
   }
 
-  bool _isExpired(String token) {
+  /// The [token]'s `exp` claim, or `null` if it is missing or undecodable.
+  DateTime? _accessTokenExpiry(String token) {
     try {
       final claims = decodeJwtClaims(token);
       if (claims['exp'] is! int) {
         debugPrint('JWT is missing exp claim or it is not a valid integer');
-        return true;
+        return null;
       }
       // API returns expiry as seconds since epoch, convert to match available Dart function
-      final tokenExpiry = DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
-      // Consider the token expired if it's within 30 seconds of expiry to avoid edge cases where token expires during a request.
-      final expiryBuffer = tokenExpiry.subtract(const Duration(seconds: 30));
-      return !clock.now().isBefore(expiryBuffer);
+      return DateTime.fromMillisecondsSinceEpoch((claims['exp'] as int) * 1000);
     } on JwtDecodingException catch (exc) {
       debugPrint('Failed to decode JWT claims: ${exc.message}');
-      return true;
+      return null;
     }
+  }
+
+  bool _isExpired(String token) {
+    final tokenExpiry = _accessTokenExpiry(token);
+    if (tokenExpiry == null) return true;
+    // Consider the token expired if it's within 30 seconds of expiry to avoid edge cases where token expires during a request.
+    final expiryBuffer = tokenExpiry.subtract(const Duration(seconds: 30));
+    return !clock.now().isBefore(expiryBuffer);
   }
 
   Future<ConnectivityResult?> _readConnectivityForRefresh() async {
@@ -255,6 +261,13 @@ class AuthService {
     final stored = int.tryParse(await _storage.read(key: _refreshExpiresAtKey) ?? '');
     if (stored == null) return null;
     return _cachedRefreshExpiry = DateTime.fromMillisecondsSinceEpoch(stored);
+  }
+
+  /// When the current access token expires, from memory cache or secure
+  /// storage. Returns `null` without a token or if its expiry can't be read.
+  Future<DateTime?> getAccessTokenExpiry() async {
+    final token = _cachedToken ?? await _storage.read(key: 'token');
+    return token == null ? null : _accessTokenExpiry(token);
   }
 
   /// Exchanges the stored refresh token for new tokens, recording a new

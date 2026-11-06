@@ -15,15 +15,22 @@ import 'package:smart_tags/services/auth_service.dart';
 import '../utils/fake_auth_notifiers.dart';
 import '../utils/test_user.dart';
 
-/// [AuthService] whose recorded deadline is set by the test.
+/// [AuthService] whose recorded deadline and access-token expiry are set by
+/// the test (the access token is valid for an hour by default).
 class _FakeAuthService extends AuthService {
-  _FakeAuthService(this.deadline) : super(authDao: AppDatabase.executor(conn.inMemoryConnection()).authDao);
+  _FakeAuthService(this.deadline, {DateTime? accessTokenExpiry})
+    : accessTokenExpiry = accessTokenExpiry ?? clock.now().add(const Duration(hours: 1)),
+      super(authDao: AppDatabase.executor(conn.inMemoryConnection()).authDao);
 
   DateTime? deadline;
+  DateTime? accessTokenExpiry;
   final changes = StreamController<DateTime?>.broadcast();
 
   @override
   Future<DateTime?> getOfflineAccessDeadline() async => deadline;
+
+  @override
+  Future<DateTime?> getAccessTokenExpiry() async => accessTokenExpiry;
 
   @override
   Stream<DateTime?> get offlineAccessDeadlineChanges => changes.stream;
@@ -76,6 +83,18 @@ void main() {
 
       expect(access.isExpiredAt(DateTime(2029, 12, 31, 23, 59)), isFalse);
       expect(access.isExpiredAt(DateTime(2030)), isTrue);
+    });
+
+    test('a refresh is due once the access token has expired', () {
+      final access = OfflineAccess(DateTime(2030), accessTokenExpiry: DateTime(2029));
+
+      expect(access.isRefreshDueAt(DateTime(2028, 12, 31)), isFalse);
+      expect(access.isRefreshDueAt(DateTime(2029)), isTrue);
+    });
+
+    test('a refresh is due once offline access has expired, or without an access-token expiry', () {
+      expect(OfflineAccess(DateTime(2030), accessTokenExpiry: DateTime(2031)).isRefreshDueAt(DateTime(2030)), isTrue);
+      expect(OfflineAccess(DateTime(2030)).isRefreshDueAt(DateTime(2000)), isTrue);
     });
 
     test('a missing deadline counts as expired', () {
@@ -147,9 +166,14 @@ void main() {
     Future<_RenewCountingAuthNotifier> runLifecycle({
       required DateTime? deadline,
       required ConnectivityResult connectivity,
+      DateTime? accessTokenExpiry,
     }) async {
       final auth = _RenewCountingAuthNotifier(createTestUser());
-      final container = containerWith(_FakeAuthService(deadline), auth: () => auth, connectivity: connectivity);
+      final container = containerWith(
+        _FakeAuthService(deadline, accessTokenExpiry: accessTokenExpiry),
+        auth: () => auth,
+        connectivity: connectivity,
+      );
       await container.read(checkConnectionProvider.future);
       // Listened, as at the app root: an unlistened provider is paused.
       container.listen(offlineAccessLifecycleProvider, (_, _) {});
@@ -179,6 +203,40 @@ void main() {
 
     test('does not renew a session that is still valid', () async {
       final auth = await runLifecycle(deadline: DateTime(2100), connectivity: ConnectivityResult.wifi);
+
+      expect(auth.renewCalls, 0);
+    });
+
+    test('renews while online once the access token has expired', () async {
+      final auth = await runLifecycle(
+        deadline: DateTime(2100),
+        accessTokenExpiry: DateTime(2000),
+        connectivity: ConnectivityResult.wifi,
+      );
+
+      expect(auth.renewCalls, 1);
+    });
+
+    test('renews when the access token expires while the app is open', () async {
+      final auth = await runLifecycle(
+        deadline: DateTime(2100),
+        accessTokenExpiry: clock.now().add(const Duration(milliseconds: 50)),
+        connectivity: ConnectivityResult.wifi,
+      );
+      expect(auth.renewCalls, 0);
+
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await pumpEventQueue();
+
+      expect(auth.renewCalls, 1);
+    });
+
+    test('does not renew offline when only the access token has expired', () async {
+      final auth = await runLifecycle(
+        deadline: DateTime(2100),
+        accessTokenExpiry: DateTime(2000),
+        connectivity: ConnectivityResult.none,
+      );
 
       expect(auth.renewCalls, 0);
     });
