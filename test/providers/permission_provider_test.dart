@@ -102,25 +102,6 @@ void main() {
     });
   });
 
-  // 29/10/2026(ylubac): no superUser management implemented yet
-  // group('superuser', () {
-  //   setUp(() {
-  //     final user = createTestUser(roles: const ['alert_admin'], programRoles: const []);
-  //     container = buildContainer(user);
-  //   });
-
-  //   test('is granted every action regardless of policy', () async {
-  //     await container.read(authProvider.future);
-  //     final can = container.read(permissionProvider);
-
-  //     expect(can(Action.delete, Resource.deployment), isTrue);
-  //     expect(can(Action.delete, Resource.asset), isTrue);
-  //     expect(can(Action.create, Resource.asset, programId: 999), isTrue);
-  //     // Even resource/action combos with no policy defined at all.
-  //     expect(can(Action.delete, Resource.mission), isTrue);
-  //   });
-  // });
-
   group('program-member user', () {
     setUp(() {
       final user = createTestUser(

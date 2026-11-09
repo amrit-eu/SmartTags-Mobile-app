@@ -17,10 +17,7 @@ enum Role {
   programMember,
 
   /// A manager of a program.
-  programManager,
-
-  /// Has elevated permissions across all programs (not implemented yet).
-  superUser;
+  programManager;
 
   /// The API code for this role, or `null` if it isn't program-scoped.
   String? get code => switch (this) {
@@ -84,7 +81,6 @@ const Map<Resource, Map<Action, Role>> _policy = {
     Action.viewSensitive: Role.loggedIn,
     Action.create: Role.programMember,
     Action.edit: Role.programMember,
-    Action.delete: Role.superUser,
   },
   Resource.asset: {
     Action.view: Role.programMember,
@@ -99,7 +95,6 @@ const Map<Resource, Map<Action, Role>> _policy = {
     Action.close: Role.programMember,
     Action.addNote: Role.programMember,
     Action.open: Role.programMember,
-    Action.delete: Role.superUser,
   },
 };
 
