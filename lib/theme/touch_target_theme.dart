@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Theme extension for enlarged control sizing (#46).
+/// Theme extension for enlarged touch targets and navigation sizing (#46).
 @immutable
 class AppTouchTargetSizes extends ThemeExtension<AppTouchTargetSizes> {
   /// Creates touch-target sizing tokens.
