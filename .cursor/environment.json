@@ -1,0 +1,9 @@
+{
+  "$schema": "https://cursor.com/schemas/environment.schema.json",
+  "name": "SmartTags-Mobile-app",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "install": "flutter pub get && flutter analyze && flutter test"
+}
