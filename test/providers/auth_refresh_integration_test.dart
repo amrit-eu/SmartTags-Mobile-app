@@ -34,6 +34,7 @@ void main() {
   late User refreshedUser;
   late String refreshedToken;
   late int refreshStatus;
+  late int refreshCalls;
   Completer<void>? logoutGate;
   late Completer<void> logoutStarted;
 
@@ -91,10 +92,12 @@ void main() {
       },
     );
     refreshStatus = 200;
+    refreshCalls = 0;
     logoutGate = null;
     logoutStarted = Completer<void>();
     client = MockClient((request) async {
       if (request.url.path.endsWith('/refresh')) {
+        refreshCalls++;
         return http.Response(
           jsonEncode(
             buildAuthResponse(
@@ -205,6 +208,42 @@ void main() {
     final pending = await database.getPendingOperationsOrdered();
     expect(pending.single.userRef, originalUser.id);
     expect(pending.single.status, 'pending');
+  });
+
+  test('a background renewal and a queue replay on reconnect share one rejected refresh and notify once', () async {
+    refreshStatus = 401;
+    final notifications = <ErrorNotification>[];
+    container.listen(errorNotificationProvider, (_, next) {
+      if (next != null) notifications.add(next);
+    });
+
+    await withClock(Clock.fixed(now), () async {
+      await Future.wait([
+        container.read(authProvider.notifier).renewExpiredSession(),
+        expectLater(
+          container.read(gatewayRepositoryProvider).submitPassportEventJson('{}'),
+          throwsA(isA<GatewayAuthException>()),
+        ),
+      ]);
+      await container.pump();
+    });
+
+    expect(refreshCalls, 1);
+    expect(notifications.map((n) => n.message), ['Session has expired: please log in again.']);
+    expect(container.read(authProvider).value, isNull);
+    expect((await database.getPendingOperationsOrdered()).single.status, 'pending');
+  });
+
+  test('concurrent refreshes share one successful request', () async {
+    await withClock(Clock.fixed(now), () async {
+      await Future.wait([
+        container.read(authProvider.notifier).renewExpiredSession(),
+        container.read(gatewayRepositoryProvider).submitPassportEventJson('{}'),
+      ]);
+    });
+
+    expect(refreshCalls, 1);
+    expect(stored['token'], refreshedToken);
   });
 
   test('a successful background renewal restores offline access', () async {

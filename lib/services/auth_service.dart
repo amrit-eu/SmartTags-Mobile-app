@@ -277,8 +277,20 @@ class AuthService {
   /// logging out) if the server rejects the refresh token, [AuthException] or
   /// [http.ClientException] on server or network errors.
   Future<void> refreshSession() async {
+    await _refreshShared();
+  }
+
+  Future<String?>? _ongoingRefresh;
+
+  /// Concurrent callers (e.g. the background renewal and a queue replay on
+  /// reconnect) share one refresh request, so a rejection expires the session
+  /// (event + logout) once for all of them.
+  Future<String?> _refreshShared() =>
+      _ongoingRefresh ??= _refreshOrExpire().whenComplete(() => _ongoingRefresh = null);
+
+  Future<String?> _refreshOrExpire() async {
     try {
-      await _refreshToken();
+      return await _refreshToken();
     } on RefreshException catch (e) {
       await _expireSession(e);
       rethrow;
@@ -308,11 +320,10 @@ class AuthService {
         return token;
       }
       try {
-        token = await _refreshToken();
-      } on RefreshException catch (e) {
-        // refresh error (401 or no refresh token found) - force logout
-        await _expireSession(e);
-        // Rethrow to notify caller of the logout event so it can update UI accordingly.
+        token = await _refreshShared();
+      } on RefreshException {
+        // Refresh rejected (401 or no refresh token): the session was already
+        // expired and logged out; rethrow so the caller can update its UI.
         rethrow;
       } on (AuthException, http.ClientException) catch (exc) {
         // Network error or server error during refresh - keep user logged in with old token and let them retry.

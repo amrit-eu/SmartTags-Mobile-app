@@ -234,6 +234,10 @@ class PassportEventQueueNotifier extends Notifier<void> {
   }
 
   Future<void> _performProcessQueue(int authorId) async {
+    // Expired offline access: rows stay pending until access is renewed (the
+    // lifecycle provider replays them then) or the author logs in again.
+    if (await _isOfflineAccessExpired()) return;
+
     final db = ref.read(databaseProvider);
     final repository = ref.read(gatewayRepositoryProvider);
     final rows = (await db.getPendingOperationsOrdered()).where(
