@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_tags/constants/platform_status_palette.dart';
 import 'package:smart_tags/models/platform.dart';
+import 'package:smart_tags/theme/touch_target_theme.dart';
 
 /// A compact badge displaying a platform or operational status.
 class StatusBadge extends StatelessWidget {
@@ -77,9 +78,10 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeStyle = _resolveStyle();
+    final enlarged = context.touchTargetSizes.enlarged;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: enlarged ? 12 : 10, vertical: enlarged ? 8 : 6),
       decoration: BoxDecoration(
         color: badgeStyle.backgroundColor,
         borderRadius: BorderRadius.circular(20),
@@ -103,6 +105,9 @@ class StatusBadge extends StatelessWidget {
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: badgeStyle.textColor,
               fontWeight: FontWeight.w600,
+              fontSize: enlarged
+                  ? (Theme.of(context).textTheme.labelMedium?.fontSize ?? 12) + 2
+                  : null,
             ),
           ),
         ],

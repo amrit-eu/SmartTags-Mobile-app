@@ -3,28 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
 import 'package:smart_tags/widgets/common/settings_menu.dart';
-
-class TextScaleWrapper extends ConsumerWidget {
-  const TextScaleWrapper({required this.child, super.key});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final customTextScale = ref.watch(textScaleProvider);
-    final mediaQuery = MediaQuery.of(context);
-    return MediaQuery(
-      data: mediaQuery.copyWith(
-        textScaler: customTextScale != null
-            ? TextScaler.linear(customTextScale)
-            : mediaQuery.textScaler.clamp(
-          minScaleFactor: AppTextScale.min,
-          maxScaleFactor: AppTextScale.max,
-        ),
-      ),
-      child: child,
-    );
-  }
-}
+import 'package:smart_tags/widgets/common/settings_transition_overlay.dart';
 
 Future<void> settingsMenuTestSetup(WidgetTester tester) async {
   await tester.pumpWidget(
@@ -44,11 +23,24 @@ Future<void> settingsMenuTestSetupWithConsumer(WidgetTester tester) async {
     ProviderScope(
       child: Consumer(
         builder: (context, ref, _) {
+          final applyingTouchTargets = ref.watch(largeTouchTargetsTransitionProvider);
           return MaterialApp(
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),
             themeMode: ref.watch(themeProvider),
-            builder: (context, child) => TextScaleWrapper(child: child!),
+            builder: (context, child) {
+              var content = child!;
+              if (applyingTouchTargets) {
+                content = Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    content,
+                    const SettingsTransitionOverlay(message: 'Updating display…'),
+                  ],
+                );
+              }
+              return content;
+            },
             home: Scaffold(
               appBar: AppBar(),
               body: const Center(child: SettingsMenu()),
@@ -64,7 +56,6 @@ Future<void> openSettingsMenu(WidgetTester tester, {bool withConsumer = false}) 
   withConsumer
     ? await settingsMenuTestSetupWithConsumer(tester)
     : await settingsMenuTestSetup(tester);
-  // Tap the ellipsis icon button and wait for menu to open
   await tester.tap(find.byIcon(Icons.more_vert));
   await tester.pumpAndSettle();
 }
@@ -73,24 +64,21 @@ void main() {
   testWidgets('Settings menu can be opened from app bar and shows dark mode options', (tester) async {
     await settingsMenuTestSetup(tester);
 
-    // Ensure menu is closed
     expect(find.text('Dark Mode'), findsNothing);
 
-    // Tap the ellipsis icon button and wait for menu to open
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
 
-    // Verify menu has opened
     expect(find.text('Dark Mode'), findsOneWidget);
     expect(find.text('Theme Mode: Use System Default'), findsOneWidget);
+    expect(find.text('Larger buttons and links'), findsOneWidget);
+    expect(find.text('Text Size: Use System Default'), findsNothing);
   });
 
   testWidgets('System theme is enabled by default', (tester) async {
     await openSettingsMenu(tester);
 
-    // Verify system theme switch is enabled
     expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default')).value, true);
-    // Verify dark mode switch is off and disabled if system theme is in use
     expect(tester.widget<SwitchListTile>(find.widgetWithIcon(SwitchListTile, Icons.dark_mode)).onChanged, null);
     expect(tester.widget<SwitchListTile>(find.widgetWithIcon(SwitchListTile, Icons.dark_mode)).value, false);
   });
@@ -98,11 +86,9 @@ void main() {
   testWidgets('Disabling system theme enables light mode', (tester) async {
     await openSettingsMenu(tester, withConsumer: true);
     final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default');
-    // Tap switch to disable
     await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
 
-    // Verify dark mode is turned off
     expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Dark Mode')).value, false);
 
     final container = ProviderScope.containerOf(
@@ -114,14 +100,11 @@ void main() {
   testWidgets('Dark mode can be toggled on', (tester) async {
     await openSettingsMenu(tester, withConsumer: true);
     final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Theme Mode: Use System Default');
-    // Tap switch to disable
     await tester.tap(systemDefaultSwitch);
     await tester.pumpAndSettle();
-    // Turn on dark mode
     await tester.tap(find.widgetWithText(SwitchListTile, 'Dark Mode'));
     await tester.pumpAndSettle();
 
-    // Verify dark mode is turned on
     expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Dark Mode')).value, true);
 
     final container = ProviderScope.containerOf(
@@ -130,73 +113,23 @@ void main() {
     expect(container.read(themeProvider), ThemeMode.dark);
   });
 
-  testWidgets('Settings menu shows text size options', (tester) async {
-    await settingsMenuTestSetup(tester);
-
-    // Ensure menu is closed
-    expect(find.text('Text Size'), findsNothing);
-
-    // Tap the ellipsis icon button and wait for menu to open
-    await tester.tap(find.byIcon(Icons.more_vert));
-    await tester.pumpAndSettle();
-
-    // Verify menu has opened
-    expect(find.text('Text Size: Use System Default'), findsOneWidget);
-    expect(find.byKey(const Key('textSizeSlider')), findsOneWidget);
-  });
-
-  testWidgets('System font size is enabled by default', (tester) async {
-    await openSettingsMenu(tester);
-
-    // Verify system text size is enabled
-    expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Text Size: Use System Default')).value, true);
-    // Verify text size slider is set to system font size and disabled
-    expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).onChanged, null);
-    expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).value, 1);
-  });
-
-  testWidgets('Disabling system font size enables slider', (tester) async {
-    await openSettingsMenu(tester);
-
-    final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Text Size: Use System Default');
-
-    // Tap switch to disable
-    await tester.tap(systemDefaultSwitch);
-    await tester.pumpAndSettle();
-
-    // Verify slider is enabled
-    expect(tester.widget<Slider>(find.byKey(const Key('textSizeSlider'))).onChanged, isNot(null));
-  });
-
-  testWidgets('Text size can be changed using settings slider', (tester) async {
+  testWidgets('Larger buttons toggle persists in settings', (tester) async {
     await openSettingsMenu(tester, withConsumer: true);
-    final systemDefaultSwitch = find.widgetWithText(SwitchListTile, 'Text Size: Use System Default');
 
-    // Tap switch to disable system default
-    await tester.tap(systemDefaultSwitch);
-    await tester.pumpAndSettle();
+    expect(find.text('Larger buttons and links'), findsOneWidget);
+    final toggle = find.widgetWithText(SwitchListTile, 'Larger buttons and links');
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
 
-    final textSizeBefore = MediaQuery.textScalerOf(
-      tester.element(find.byType(SettingsMenu)),
-    ).scale(10);
-    expect(textSizeBefore, 10);
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(find.text('Updating display…'), findsOneWidget);
 
-    // Drag text size slider
-    await tester.drag(find.byKey(const Key('textSizeSlider')), const Offset(500, 0));
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(
       tester.element(find.byType(SettingsMenu)),
     );
-    final scale = container.read(textScaleProvider);
-    expect(scale, 2);
-    expect(scale, AppTextScale.max);
-
-    final textSizeAfter = MediaQuery.textScalerOf(
-      tester.element(find.byType(SettingsMenu)),
-    ).scale(10);
-
-    expect(textSizeAfter, greaterThan(textSizeBefore));
-    expect(textSizeAfter, 20);
+    expect(container.read(largeTouchTargetsProvider), isTrue);
+    expect(find.text('Updating display…'), findsNothing);
   });
 }

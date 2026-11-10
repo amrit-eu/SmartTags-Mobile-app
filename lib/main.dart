@@ -13,7 +13,9 @@ import 'package:smart_tags/screens/catalogue_screen.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/theme.dart';
+import 'package:smart_tags/theme/touch_target_theme.dart';
 import 'package:smart_tags/widgets/common/app_snack_bar.dart';
+import 'package:smart_tags/widgets/common/settings_transition_overlay.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/initial_sync_shell.dart';
 import 'package:smart_tags/widgets/pending_operations_banner.dart';
@@ -46,26 +48,69 @@ class MyApp extends ConsumerWidget {
       ..watch(passportEventQueueLifecycleProvider)
       ..watch(platformsRefreshLifecycleProvider);
 
+    final largeTouchTargets = ref.watch(largeTouchTargetsProvider);
+    final lightTheme = TouchTargets.apply(AppTheme.lightTheme, large: largeTouchTargets);
+    final darkTheme = TouchTargets.apply(AppTheme.darkTheme, large: largeTouchTargets);
+
     return MaterialApp(
       title: 'SmartTags',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
       home: const MainNavigation(),
       themeMode: ref.watch(themeProvider),
       builder: (context, child) {
         final customTextScale = ref.watch(textScaleProvider);
-        if (customTextScale == null) return child!;
-
-        final mediaQuery = MediaQuery.of(context);
-        final systemTextScale = mediaQuery.textScaler.scale(1);
-
-        return MediaQuery(data: mediaQuery.copyWith(
-          textScaler: TextScaler.linear(customTextScale * systemTextScale),
-        ), child: child!,
-        );
-      }
+        final applyingTouchTargets = ref.watch(largeTouchTargetsTransitionProvider);
+        var content = child!;
+        if (customTextScale != null) {
+          final mediaQuery = MediaQuery.of(context);
+          final systemTextScale = mediaQuery.textScaler.scale(1);
+          content = MediaQuery(
+            data: mediaQuery.copyWith(
+              textScaler: TextScaler.linear(customTextScale * systemTextScale),
+            ),
+            child: content,
+          );
+        }
+        if (applyingTouchTargets) {
+          content = Stack(
+            fit: StackFit.expand,
+            children: [
+              content,
+              const SettingsTransitionOverlay(message: 'Updating display…'),
+            ],
+          );
+        }
+        return content;
+      },
     );
   }
+}
+
+List<NavigationDestination> _mainNavigationDestinations(BuildContext context) {
+  final navIconSize = context.touchTargetSizes.navigationIconSize;
+
+  NavigationDestination tab({
+    required IconData icon,
+    required IconData selectedIcon,
+    required String label,
+  }) {
+    return NavigationDestination(
+      icon: Icon(icon, size: navIconSize),
+      selectedIcon: Icon(selectedIcon, size: navIconSize),
+      label: label,
+    );
+  }
+
+  return [
+    tab(icon: Icons.map_outlined, selectedIcon: Icons.map, label: 'Map'),
+    tab(icon: Icons.search_outlined, selectedIcon: Icons.search, label: 'Search'),
+    tab(
+      icon: Icons.qr_code_scanner_outlined,
+      selectedIcon: Icons.qr_code_scanner,
+      label: 'Scan',
+    ),
+  ];
 }
 
 /// Main navigation shell with bottom navigation bar.
@@ -160,23 +205,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
-        destinations: const <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Map',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner_outlined),
-            selectedIcon: Icon(Icons.qr_code_scanner),
-            label: 'Scan',
-          ),
-        ],
+        destinations: _mainNavigationDestinations(context),
       ),
     );
   }
