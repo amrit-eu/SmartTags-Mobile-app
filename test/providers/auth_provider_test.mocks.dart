@@ -38,6 +38,20 @@ class MockAuthService extends _i1.Mock implements _i3.AuthService {
   }
 
   @override
+  _i4.Stream<_i3.AuthSessionEvent> get sessionEvents =>
+      (super.noSuchMethod(
+            Invocation.getter(#sessionEvents),
+            returnValue: _i4.Stream<_i3.AuthSessionEvent>.empty(),
+          )
+          as _i4.Stream<_i3.AuthSessionEvent>);
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i4.Future<String?> getUserId() =>
       (super.noSuchMethod(
             Invocation.method(#getUserId, []),

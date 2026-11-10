@@ -14,6 +14,7 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
+import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
@@ -38,19 +39,23 @@ PassportEventRequest _sampleRequest() {
 }
 
 /// Fake repository whose outcome per call is scripted by [outcomes]:
-/// `null` succeeds, otherwise the given exception is thrown.
+/// `null` succeeds, otherwise the given exception is thrown. [onSend], if
+/// given, runs (and is awaited) while each call is in flight, with the call's
+/// 0-based index — used to change the session mid-replay.
 class _ScriptedGatewayRepository extends GatewayRepository {
-  _ScriptedGatewayRepository(this.outcomes) : super(authService: NoOpAuthService());
+  _ScriptedGatewayRepository(this.outcomes, {this.onSend}) : super(authService: NoOpAuthService());
 
   final List<Exception?> outcomes;
+  final FutureOr<void> Function(int call)? onSend;
   final List<String> sentBodies = [];
   var _calls = 0;
 
   @override
   Future<void> submitPassportEventJson(String body) async {
     sentBodies.add(body);
-    final outcome = _calls < outcomes.length ? outcomes[_calls] : outcomes.last;
-    _calls++;
+    final call = _calls++;
+    final outcome = call < outcomes.length ? outcomes[call] : outcomes.last;
+    await onSend?.call(call);
     if (outcome != null) {
       throw outcome;
     }
@@ -104,6 +109,9 @@ class _SwitchableAuthNotifier extends AuthNotifier {
   Future<User?> build() async => _initial;
 
   void setUser(User? user) => state = AsyncData(user);
+
+  /// Mirrors [AuthNotifier.logout]'s first step, before credentials are cleared.
+  void beginLogout() => state = const AsyncLoading();
 }
 
 final int _userId = createTestUser().id;
@@ -448,6 +456,166 @@ void main() {
         auth.setUser(null);
         events = await container.read(pendingPassportEventsProvider.future);
         expect(events, isEmpty);
+      });
+
+      group('replay pauses when the session ends', () {
+        Future<void> enqueueThree() async {
+          await enqueueFor(_userId, 'PLT-1');
+          await enqueueFor(_userId, 'PLT-2');
+          await enqueueFor(_userId, 'PLT-3');
+        }
+
+        Future<void> expectUntouchedPending(List<String> platformRefs) async {
+          final rows = await db.getPendingOperationsOrdered();
+          expect(rows.map((r) => r.platformRef), platformRefs);
+          for (final row in rows) {
+            expect(row.status, 'pending');
+            expect(row.attempts, 0);
+            expect(row.userRef, _userId);
+          }
+        }
+
+        test('logout during a send: that row completes, later rows stay pending', () async {
+          await enqueueThree();
+          final auth = _SwitchableAuthNotifier(createTestUser());
+          final repository = _ScriptedGatewayRepository([null], onSend: (_) => auth.setUser(null));
+          final container = containerFor(repository, () => auth);
+          await container.read(authProvider.future);
+
+          await container.read(passportEventQueueProvider.notifier).processQueue();
+
+          expect(repository.sentBodies, ['{"p":"PLT-1"}']);
+          await expectUntouchedPending(['PLT-2', 'PLT-3']);
+        });
+
+        test('logout starting during a send stops the replay before credentials are cleared', () async {
+          await enqueueThree();
+          final auth = _SwitchableAuthNotifier(createTestUser());
+          final repository = _ScriptedGatewayRepository([null], onSend: (_) => auth.beginLogout());
+          final container = containerFor(repository, () => auth);
+          await container.read(authProvider.future);
+
+          await container.read(passportEventQueueProvider.notifier).processQueue();
+
+          expect(repository.sentBodies, ['{"p":"PLT-1"}']);
+          await expectUntouchedPending(['PLT-2', 'PLT-3']);
+        });
+
+        test('account change during a send: no later row is sent with the new account', () async {
+          await enqueueThree();
+          final auth = _SwitchableAuthNotifier(createTestUser());
+          final repository = _ScriptedGatewayRepository([
+            null,
+          ], onSend: (_) => auth.setUser(createTestUser(id: otherUserId)));
+          final container = containerFor(repository, () => auth);
+          await container.read(authProvider.future);
+
+          await container.read(passportEventQueueProvider.notifier).processQueue();
+
+          expect(repository.sentBodies, ['{"p":"PLT-1"}']);
+          await expectUntouchedPending(['PLT-2', 'PLT-3']);
+        });
+
+        test('the in-flight row keeps its real result; no error is shown after logout', () async {
+          await enqueueThree();
+          final auth = _SwitchableAuthNotifier(createTestUser());
+          final repository = _ScriptedGatewayRepository([
+            const GatewayException('boom', statusCode: 500),
+          ], onSend: (_) => auth.setUser(null));
+          final container = containerFor(repository, () => auth);
+          await container.read(authProvider.future);
+
+          await container.read(passportEventQueueProvider.notifier).processQueue();
+
+          final rows = await db.getPendingOperationsOrdered();
+          expect(rows.map((r) => (r.platformRef, r.status)), [
+            ('PLT-1', 'failed'),
+            ('PLT-2', 'pending'),
+            ('PLT-3', 'pending'),
+          ]);
+          expect(rows.first.attempts, 1);
+          expect(container.read(errorNotificationProvider), isNull);
+        });
+
+        test('an auth failure stops the replay: the row and later rows stay pending', () async {
+          await enqueueThree();
+          final repository = _ScriptedGatewayRepository([null, const GatewayAuthException('Session expired'), null]);
+          final container = containerFor(repository, () => FakeAuthNotifier(createTestUser()));
+          await container.read(authProvider.future);
+
+          await container.read(passportEventQueueProvider.notifier).processQueue();
+
+          expect(repository.sentBodies, ['{"p":"PLT-1"}', '{"p":"PLT-2"}']);
+          await expectUntouchedPending(['PLT-2', 'PLT-3']);
+          expect(container.read(errorNotificationProvider)?.type, 'session_expired');
+        });
+
+        test("a new account's pass does not join the previous account's run", () async {
+          await enqueueFor(_userId, 'PLT-A1');
+          await enqueueFor(_userId, 'PLT-A2');
+          await enqueueFor(otherUserId, 'PLT-B1');
+          final started = Completer<void>();
+          final gate = Completer<void>();
+          final auth = _SwitchableAuthNotifier(createTestUser());
+          final repository = _ScriptedGatewayRepository(
+            [null],
+            onSend: (call) async {
+              if (call == 0) {
+                started.complete();
+                await gate.future;
+              }
+            },
+          );
+          final container = containerFor(repository, () => auth);
+          await container.read(authProvider.future);
+          final queue = container.read(passportEventQueueProvider.notifier);
+
+          final first = queue.processQueue();
+          await started.future;
+          auth.setUser(createTestUser(id: otherUserId));
+          final second = queue.processQueue();
+          gate.complete();
+          await first;
+          await second;
+
+          expect(repository.sentBodies, ['{"p":"PLT-A1"}', '{"p":"PLT-B1"}']);
+          final remaining = (await db.getPendingOperationsOrdered()).single;
+          expect(remaining.platformRef, 'PLT-A2');
+          expect(remaining.status, 'pending');
+          expect(remaining.attempts, 0);
+        });
+
+        test('a paused replay resumes when its author logs in again', () async {
+          await enqueueThree();
+          final allSent = Completer<void>();
+          final auth = _SwitchableAuthNotifier(null);
+          final repository = _ScriptedGatewayRepository(
+            [null],
+            onSend: (call) {
+              if (call == 0) auth.setUser(null);
+              if (call == 2) allSent.complete();
+            },
+          );
+          final container = containerFor(repository, () => auth)
+            ..listen(passportEventQueueLifecycleProvider, (_, _) {});
+          await container.read(authProvider.future);
+          await container.read(checkConnectionProvider.future);
+          final queue = container.read(passportEventQueueProvider.notifier);
+
+          // Logging in starts a pass, paused by the logout during its first send.
+          auth.setUser(createTestUser());
+          await queue.processQueue();
+          expect(repository.sentBodies, ['{"p":"PLT-1"}']);
+          await expectUntouchedPending(['PLT-2', 'PLT-3']);
+
+          // Logging back in resumes it, without anyone calling processQueue.
+          auth.setUser(createTestUser());
+          await allSent.future.timeout(const Duration(seconds: 5));
+          await queue.processQueue();
+
+          expect(repository.sentBodies, ['{"p":"PLT-1"}', '{"p":"PLT-2"}', '{"p":"PLT-3"}']);
+          expect(await db.getPendingOperationsOrdered(), isEmpty);
+        });
       });
     });
   });

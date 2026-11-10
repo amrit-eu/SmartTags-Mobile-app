@@ -50,13 +50,12 @@ enum PassportEventSubmitOutcome {
 
 /// Coordinates submitting deploy/recover passport events to the Gateway,
 /// queueing them locally when offline or when a submission attempt fails.
-final passportEventQueueProvider = NotifierProvider<PassportEventQueueNotifier, void>(
-  PassportEventQueueNotifier.new,
-);
+final passportEventQueueProvider = NotifierProvider<PassportEventQueueNotifier, void>(PassportEventQueueNotifier.new);
 
 /// Notifier managing the offline queue of deploy/recover passport events.
 class PassportEventQueueNotifier extends Notifier<void> {
   Future<void>? _ongoingProcessQueue;
+  int? _ongoingAuthorId;
 
   @override
   void build() {}
@@ -110,10 +109,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
   /// Unlike [enqueueOrSend], a 4xx rejection from the Gateway (e.g. 403, 404)
   /// is rethrown as a [GatewayException]: nothing is queued or changed locally,
   /// as replaying it could never succeed.
-  Future<PassportEventSubmitOutcome> enqueueOrSendAlertAction({
-    required Alert alert,
-    required AlertAction action,
-  }) {
+  Future<PassportEventSubmitOutcome> enqueueOrSendAlertAction({required Alert alert, required AlertAction action}) {
     return _enqueueOrSendAlert(
       alert: alert,
       kind: PendingOperationKind.fromAlertAction(action),
@@ -125,10 +121,7 @@ class PassportEventQueueNotifier extends Notifier<void> {
   /// Adds [text] as a note on [alert]: same send/queue/local-update behaviour
   /// as [enqueueOrSendAlertAction]. The local `lastNote` follows Alerta's
   /// `"<user> : <text>"` format.
-  Future<PassportEventSubmitOutcome> enqueueOrSendAlertNote({
-    required Alert alert,
-    required String text,
-  }) {
+  Future<PassportEventSubmitOutcome> enqueueOrSendAlertNote({required Alert alert, required String text}) {
     final author = ref.read(authProvider).value?.fullName;
     return _enqueueOrSendAlert(
       alert: alert,
@@ -190,32 +183,49 @@ class PassportEventQueueNotifier extends Notifier<void> {
   /// row is marked `failed` with [PendingOperation.lastError] and left in
   /// place; the loop still tries every later row.
   ///
+  /// The pass stops before its next send once the author logs out (or starts
+  /// to), another account signs in, or the session is rejected: unsent rows
+  /// stay `pending` under their author, to be replayed on their next login.
+  /// The row already being sent keeps the outcome of that request.
+  ///
   /// Safe to call repeatedly and concurrently: a second call while a replay
-  /// is already running joins that same in-flight run instead of starting a
-  /// duplicate one, so every caller's `await` resolves only once the drain
-  /// has actually finished (mirrors `PlatformsRefreshNotifier`'s
-  /// `_ongoingRefresh` / `InitialSyncNotifier`'s `_ongoingSync`).
+  /// is already running for the same user joins that in-flight run instead of
+  /// starting a duplicate one, so every caller's `await` resolves only once
+  /// the drain has actually finished (mirrors `PlatformsRefreshNotifier`'s
+  /// `_ongoingRefresh` / `InitialSyncNotifier`'s `_ongoingSync`). A run left
+  /// over from a previous session is not joined: the new pass starts once it
+  /// has settled its in-flight send.
   Future<void> processQueue() {
-    final ongoing = _ongoingProcessQueue;
-    if (ongoing != null) {
-      return ongoing;
-    }
-
-    final run = _performProcessQueue();
-    _ongoingProcessQueue = run;
-    return run.whenComplete(() {
-      if (identical(_ongoingProcessQueue, run)) {
-        _ongoingProcessQueue = null;
-      }
-    });
-  }
-
-  Future<void> _performProcessQueue() async {
     // Rows are replayed only as the user who queued them. No need to wait for
     // the auth state to load: a pass is triggered again on login.
     final authorId = ref.read(authProvider).value?.id;
-    if (authorId == null) return;
 
+    final ongoing = _ongoingProcessQueue;
+    if (ongoing != null) {
+      return _ongoingAuthorId == authorId ? ongoing : ongoing.then((_) => processQueue());
+    }
+    if (authorId == null) return Future.value();
+
+    late final Future<void> run;
+    run = _performProcessQueue(authorId).whenComplete(() {
+      if (identical(_ongoingProcessQueue, run)) {
+        _ongoingProcessQueue = null;
+        _ongoingAuthorId = null;
+      }
+    });
+    _ongoingProcessQueue = run;
+    _ongoingAuthorId = authorId;
+    return run;
+  }
+
+  /// Whether [authorId] is still signed in with no logout under way; the
+  /// replay must not start another send otherwise.
+  bool _isSessionActive(int authorId) {
+    final auth = ref.read(authProvider);
+    return !auth.isLoading && auth.value?.id == authorId;
+  }
+
+  Future<void> _performProcessQueue(int authorId) async {
     final db = ref.read(databaseProvider);
     final repository = ref.read(gatewayRepositoryProvider);
     final rows = (await db.getPendingOperationsOrdered()).where(
@@ -223,16 +233,31 @@ class PassportEventQueueNotifier extends Notifier<void> {
     );
 
     var failedCount = 0;
+    var sessionLost = false;
     for (final row in rows) {
+      if (!_isSessionActive(authorId)) break;
       try {
         await _replay(repository, row);
         await db.deletePendingOperation(row.id);
+      } on GatewayAuthException {
+        // Missing, expired or rejected session: not this row's fault. It and
+        // every later row stay pending until the author logs in again.
+        sessionLost = true;
+        break;
       } on Object catch (e) {
         await db.markPendingOperationFailed(row.id, error: e.toString(), attempts: row.attempts + 1);
         failedCount++;
       }
     }
-    if (failedCount > 0) {
+
+    // The author is gone: don't show their sync errors to whoever is now
+    // (or isn't) logged in.
+    if (!_isSessionActive(authorId)) return;
+    if (sessionLost) {
+      ref
+          .read(errorNotificationProvider.notifier)
+          .setError('Your session has expired. Log in again to send your queued operations.', type: 'session_expired');
+    } else if (failedCount > 0) {
       ref
           .read(errorNotificationProvider.notifier)
           .setError(
@@ -271,14 +296,14 @@ class PassportEventQueueNotifier extends Notifier<void> {
       return null;
     }
   }
-
 }
 
 /// Triggers an automatic replay pass on app start (if already online), and
-/// whenever connectivity transitions from offline to online, or the user
-/// logs in (auth-required failures can't be fixed by reconnecting alone —
-/// they need a fresh login). Mirrors [initialSyncLifecycleProvider]; must be
-/// `ref.watch`'d at the app root.
+/// whenever connectivity transitions from offline to online, or — while
+/// online — a user logs in, another account signs in, or a logout fails and
+/// restores the user (a pass paused by a session change, or by an
+/// auth-required failure, only resumes on login). Mirrors
+/// [initialSyncLifecycleProvider]; must be `ref.watch`'d at the app root.
 final passportEventQueueLifecycleProvider = Provider<void>((ref) {
   unawaited(
     Future.microtask(() async {
@@ -295,8 +320,11 @@ final passportEventQueueLifecycleProvider = Provider<void>((ref) {
         unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
       }
     })
-    ..listen(authProvider.select((async) => async.value), (previous, next) {
-      if (previous == null && next != null) {
+    ..listen(authProvider, (previous, next) {
+      final user = next.value;
+      if (next.isLoading || user == null) return;
+      final isNewSession = previous == null || previous.isLoading || previous.value?.id != user.id;
+      if (isNewSession && isDeviceOnline(ref.read(checkConnectionProvider).value)) {
         unawaited(ref.read(passportEventQueueProvider.notifier).processQueue());
       }
     });
