@@ -146,6 +146,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(database),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
           checkConnectionProvider.overrideWith(
             () => _Connection(online ? ConnectivityResult.wifi : ConnectivityResult.none),
           ),

@@ -22,6 +22,7 @@ import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/map_focus_request_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/providers/platform_detail_scroll_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
@@ -36,6 +37,7 @@ import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/identifiers_bottom_sheet.dart';
+import 'package:smart_tags/widgets/offline_access_banner.dart';
 import 'package:smart_tags/widgets/status_badge.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 
@@ -156,6 +158,10 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       _showPairingMessage('Log in to pair this platform to a QR code.', severity: AppSnackBarSeverity.warning);
       return null;
     }
+    if (ref.read(offlineAccessExpiredProvider)) {
+      _showPairingMessage(offlineAccessExpiredMessage, severity: AppSnackBarSeverity.warning);
+      return null;
+    }
     if (!ref.read(permissionProvider).canEdit(Resource.deployment, programId: platform.program?.id ?? 0)) {
       _showPairingMessage(
         "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program.",
@@ -271,6 +277,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     final userPermissions = ref.watch(permissionProvider);
     final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: platform.program?.id ?? 0);
     final isLoggedIn = ref.watch(authProvider).value != null;
+    final isOfflineAccessExpired = ref.watch(offlineAccessExpiredProvider);
     final isOnline = isDeviceOnline(ref.watch(checkConnectionProvider).value);
     final touch = context.touchTargetSizes;
     final fabIconSize = touch.buttonIconSize;
@@ -293,6 +300,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
       body: Column(
         children: [
           const ConnectivityBanner(),
+          const OfflineAccessBanner(),
           Expanded(
             child: SingleChildScrollView(
               controller: _scrollController,
@@ -406,9 +414,11 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
             : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         onPressed: () async {
           if (!canEditExamplePlatform) {
-            final message = isLoggedIn
-                ? "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program."
-                : 'Log in to edit this platform.';
+            final message = !isLoggedIn
+                ? 'Log in to edit this platform.'
+                : isOfflineAccessExpired
+                ? offlineAccessExpiredMessage
+                : "You don't have permission to edit this platform. You must be member of the ${platform.program?.name} program.";
             ScaffoldMessenger.of(context).showSnackBar(
               buildAppSnackBar(
                 context: context,

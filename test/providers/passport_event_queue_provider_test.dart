@@ -15,6 +15,7 @@ import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/connection_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
 
@@ -136,6 +137,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -158,6 +160,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -181,6 +184,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(null)),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -202,6 +206,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.none)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -251,6 +256,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -284,6 +290,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -325,6 +332,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -353,6 +361,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -378,6 +387,7 @@ void main() {
             checkConnectionProvider.overrideWith(() => _FixedConnectivity(ConnectivityResult.wifi)),
             gatewayRepositoryProvider.overrideWithValue(repository),
             authProvider.overrideWith(auth),
+            validOfflineAccessOverride,
           ],
         );
         addTearDown(container.dispose);
@@ -686,6 +696,7 @@ void main() {
           checkConnectionProvider.overrideWith(() => _FixedConnectivity(connectivity)),
           gatewayRepositoryProvider.overrideWithValue(repository),
           authProvider.overrideWith(() => FakeAuthNotifier(loggedIn ? createTestUser() : null)),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);
@@ -851,6 +862,128 @@ void main() {
       final stored = await storedAlert();
       expect(stored.severity, 'warning');
       expect(stored.previousSeverity, 'normal');
+    });
+  });
+
+  group('PassportEventQueueNotifier — offline access expiry', () {
+    late AppDatabase db;
+
+    setUp(() {
+      db = AppDatabase.executor(conn.inMemoryConnection());
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    Future<void> enqueueRow(String platformRef) => db.enqueuePendingOperation(
+      PendingOperationsCompanion.insert(
+        platformRef: platformRef,
+        action: 'deploy',
+        payloadJson: '{"ref":"$platformRef"}',
+        userRef: _userId,
+      ),
+    );
+
+    Future<ProviderContainer> containerWith(
+      GatewayRepository repository, {
+      required DateTime? deadline,
+      ConnectivityResult connectivity = ConnectivityResult.wifi,
+    }) async {
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          checkConnectionProvider.overrideWith(() => _FixedConnectivity(connectivity)),
+          gatewayRepositoryProvider.overrideWithValue(repository),
+          authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          offlineAccessProvider.overrideWith(() => FakeOfflineAccessNotifier(deadline)),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(authProvider.future);
+      return container;
+    }
+
+    test('enqueueOrSend neither sends nor queues once the deadline has passed', () async {
+      final repository = _ScriptedGatewayRepository([null]);
+      final container = await containerWith(repository, deadline: DateTime(2000));
+
+      final outcome = await container
+          .read(passportEventQueueProvider.notifier)
+          .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
+
+      expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
+      expect(repository.sentBodies, isEmpty);
+      expect(await db.getPendingOperationsOrdered(), isEmpty);
+    });
+
+    test('a missing deadline counts as expired', () async {
+      final repository = _ScriptedGatewayRepository([null]);
+      final container = await containerWith(repository, deadline: null, connectivity: ConnectivityResult.none);
+
+      final outcome = await container
+          .read(passportEventQueueProvider.notifier)
+          .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
+
+      expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
+      expect(await db.getPendingOperationsOrdered(), isEmpty);
+    });
+
+    test('offline before the deadline, work is still queued', () async {
+      final repository = _ScriptedGatewayRepository([null]);
+      final container = await containerWith(
+        repository,
+        deadline: DateTime(2100),
+        connectivity: ConnectivityResult.none,
+      );
+
+      final outcome = await container
+          .read(passportEventQueueProvider.notifier)
+          .enqueueOrSend(platformRef: 'PLT-001', action: DeployAction.deploy, request: _sampleRequest());
+
+      expect(outcome, PassportEventSubmitOutcome.queued);
+      expect((await db.getPendingOperationsOrdered()).single.status, 'pending');
+    });
+
+    test('enqueueOrSendAlertAction changes nothing once the deadline has passed', () async {
+      final repository = _AlertGatewayRepository([null]);
+      final container = await containerWith(repository, deadline: DateTime(2000));
+
+      final outcome = await container
+          .read(passportEventQueueProvider.notifier)
+          .enqueueOrSendAlertAction(
+            alert: const Alert(
+              id: 'alert-1',
+              resource: 'PLT-001',
+              event: 'LowBattery',
+              severity: AlertSeverity.warning,
+              status: AlertStatus.open,
+              description: 'Battery low',
+              service: 'service',
+              previousSeverity: AlertSeverity.normal,
+              duplicateCount: 0,
+              alertCategory: 'category',
+              country: 'country',
+            ),
+            action: AlertAction.ack,
+          );
+
+      expect(outcome, PassportEventSubmitOutcome.notQueuedAuthRequired);
+      expect(repository.sent, isEmpty);
+      expect(await db.getPendingOperationsOrdered(), isEmpty);
+    });
+
+    test('processQueue keeps queued rows pending while access is expired', () async {
+      await enqueueRow('PLT-001');
+      final repository = _ScriptedGatewayRepository([null]);
+      final container = await containerWith(repository, deadline: DateTime(2000));
+
+      await container.read(passportEventQueueProvider.notifier).processQueue();
+
+      expect(repository.sentBodies, isEmpty);
+      final rows = await db.getPendingOperationsOrdered();
+      expect(rows.single.status, 'pending');
+      expect(rows.single.attempts, 0);
     });
   });
 }
