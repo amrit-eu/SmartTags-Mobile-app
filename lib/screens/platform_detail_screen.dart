@@ -30,7 +30,6 @@ import 'package:smart_tags/screens/operation_record_screen.dart';
 import 'package:smart_tags/screens/qr_scan_screen.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
-import 'package:smart_tags/theme/touch_target_theme.dart';
 import 'package:smart_tags/widgets/alerts_bottom_sheet.dart';
 import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
@@ -272,8 +271,6 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
     final canEditExamplePlatform = userPermissions.canEdit(Resource.deployment, programId: platform.program?.id ?? 0);
     final isLoggedIn = ref.watch(authProvider).value != null;
     final isOnline = isDeviceOnline(ref.watch(checkConnectionProvider).value);
-    final touch = context.touchTargetSizes;
-    final fabIconSize = touch.buttonIconSize;
 
     // Listen for position updates and auto-center map
     ref.listen(platformByRefStreamProvider(widget.platformRef), (previous, next) {
@@ -391,7 +388,7 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
                   const SizedBox(height: 16),
 
                   _LatestOperationCard(platform: platform),
-                  SizedBox(height: touch.enlarged ? 96 : 72),
+                  const SizedBox(height: 72),
                 ],
               ),
             ),
@@ -437,8 +434,8 @@ class _PlatformDetailScreenState extends ConsumerState<PlatformDetailScreen> {
           );
         },
         icon: platform.operationalStatus == OperationalStatus.deployed
-            ? Icon(Icons.repeat, size: fabIconSize)
-            : Icon(Icons.arrow_circle_up_rounded, size: fabIconSize),
+            ? const Icon(Icons.repeat)
+            : const Icon(Icons.arrow_circle_up_rounded),
         label: platform.operationalStatus == OperationalStatus.deployed ? const Text('Recover') : const Text('Deploy'),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

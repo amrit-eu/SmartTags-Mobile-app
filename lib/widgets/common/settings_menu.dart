@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
@@ -15,7 +13,6 @@ class SettingsMenu extends ConsumerStatefulWidget {
 
 class _SettingsMenuState extends ConsumerState<SettingsMenu> {
   final FocusNode _buttonFocusNode = FocusNode(debugLabel: 'Menu Button');
-  MenuController? _menuController;
 
   @override
   void dispose() {
@@ -25,8 +22,9 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final largeTouchTargets = ref.watch(largeTouchTargetsProvider);
-    final applyingTouchTargets = ref.watch(largeTouchTargetsTransitionProvider);
+    final customTextScale = ref.watch(textScaleProvider);
+    final useSystemTextScale = customTextScale == null;
+    final textScaleSliderValue = customTextScale ?? 1.0;
 
     Widget menuItem(Widget child) => ConstrainedBox(
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 32),
@@ -63,22 +61,54 @@ class _SettingsMenuState extends ConsumerState<SettingsMenu> {
                 },
         )),
         menuItem(SwitchListTile(
-          title: const Text('Larger buttons and links'),
-          subtitle: const Text('Easier to tap with gloves at sea'),
-          value: largeTouchTargets,
-          onChanged: applyingTouchTargets
-              ? null
-              : (enabled) {
-                  _menuController?.close();
-                  unawaited(
-                    ref.read(largeTouchTargetsTransitionProvider.notifier).apply(enabled: enabled),
-                  );
-                },
-          secondary: const ExcludeSemantics(child: Icon(Icons.touch_app)),
+          title: const Text('Text Size: Use System Default'),
+          value: useSystemTextScale,
+          onChanged: (checked) {
+            if (checked) {
+              ref.read(textScaleProvider.notifier).useSystem();
+            } else {
+              ref.read(textScaleProvider.notifier).useCustom();
+            }
+          },
+          secondary: const Icon(Icons.format_size),
+        )),
+        menuItem(Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: ExcludeSemantics(
+                child: Icon(
+                  Icons.text_decrease,
+                  color: useSystemTextScale ? Theme.of(context).disabledColor : null,
+                ),
+              )
+            ),
+            Expanded(
+              child: Slider(
+                key: const Key('textSizeSlider'),
+                value: textScaleSliderValue,
+                min: AppTextScale.min,
+                max: AppTextScale.max,
+                divisions: AppTextScale.divisions,
+                label: '${(textScaleSliderValue * 100).round()}%',
+                onChanged: useSystemTextScale
+                    ? null
+                    : (value) => ref.read(textScaleProvider.notifier).set(value),
+              ),
+            ),
+            Padding(
+                padding: const EdgeInsets.only(right: 32),
+                child: ExcludeSemantics(
+                  child: Icon(
+                    Icons.text_increase,
+                    color: useSystemTextScale ? Theme.of(context).disabledColor : null,
+                  ),
+                )
+            ),
+          ],
         )),
       ],
       builder: (_, controller, child) {
-        _menuController = controller;
         return IconButton(
           focusNode: _buttonFocusNode,
           onPressed: () {
