@@ -16,6 +16,7 @@ import 'package:smart_tags/widgets/alert_chip.dart';
 import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/common/container.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
+import 'package:smart_tags/widgets/offline_access_banner.dart';
 import 'package:smart_tags/widgets/pending_operations_banner.dart';
 import 'package:smart_tags/widgets/top_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -190,6 +191,7 @@ class AlertDetailsScreen extends ConsumerWidget {
       body: Column(
         children: [
           const ConnectivityBanner(),
+          const OfflineAccessBanner(),
           const PendingOperationsBanner(),
           Expanded(
             child: SingleChildScrollView(

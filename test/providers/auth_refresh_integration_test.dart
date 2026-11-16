@@ -14,6 +14,7 @@ import 'package:smart_tags/models/user.dart';
 import 'package:smart_tags/providers/auth_provider.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/providers/permission_provider.dart';
 import 'package:smart_tags/services/auth_service.dart';
 import 'package:smart_tags/services/gateway_repository.dart';
@@ -33,6 +34,7 @@ void main() {
   late User refreshedUser;
   late String refreshedToken;
   late int refreshStatus;
+  late int refreshCalls;
   Completer<void>? logoutGate;
   late Completer<void> logoutStarted;
 
@@ -58,6 +60,8 @@ void main() {
     stored = {
       'userId': originalUser.id.toString(),
       'refresh_token': 'original-refresh-token',
+      // Offline access still valid, so cached permissions apply.
+      'refresh_expires_at': DateTime.utc(2100).millisecondsSinceEpoch.toString(),
       'token': buildJwt(
         payload: {
           'contactId': originalUser.id,
@@ -88,10 +92,12 @@ void main() {
       },
     );
     refreshStatus = 200;
+    refreshCalls = 0;
     logoutGate = null;
     logoutStarted = Completer<void>();
     client = MockClient((request) async {
       if (request.url.path.endsWith('/refresh')) {
+        refreshCalls++;
         return http.Response(
           jsonEncode(
             buildAuthResponse(
@@ -171,7 +177,7 @@ void main() {
         expect(container.read(authProvider).value, isNull);
         expect(container.read(permissionProvider).canEdit(Resource.deployment, programId: 4), isFalse);
         expect(container.read(errorNotificationProvider)?.type, 'session_expired');
-        expect(container.read(errorNotificationProvider)?.message, contains('Please log in again'));
+        expect(container.read(errorNotificationProvider)?.message, 'Session has expired: please log in again.');
       } finally {
         gate.complete();
       }
@@ -184,6 +190,74 @@ void main() {
     expect(pending, hasLength(1));
     expect(pending.single.userRef, originalUser.id);
     expect(pending.single.status, 'pending');
+  });
+
+  test('a rejected background renewal after offline expiry logs out and preserves queued work', () async {
+    refreshStatus = 401;
+    stored.remove('refresh_expires_at');
+    await container.read(offlineAccessProvider.future);
+    expect(container.read(offlineAccessExpiredProvider), isTrue);
+
+    await container.read(authProvider.notifier).renewExpiredSession();
+    await container.pump();
+
+    expect(container.read(authProvider).value, isNull);
+    expect(container.read(errorNotificationProvider)?.type, 'session_expired');
+    expect(container.read(errorNotificationProvider)?.message, 'Session has expired: please log in again.');
+    expect(stored, isEmpty);
+    final pending = await database.getPendingOperationsOrdered();
+    expect(pending.single.userRef, originalUser.id);
+    expect(pending.single.status, 'pending');
+  });
+
+  test('a background renewal and a queue replay on reconnect share one rejected refresh and notify once', () async {
+    refreshStatus = 401;
+    final notifications = <ErrorNotification>[];
+    container.listen(errorNotificationProvider, (_, next) {
+      if (next != null) notifications.add(next);
+    });
+
+    await withClock(Clock.fixed(now), () async {
+      await Future.wait([
+        container.read(authProvider.notifier).renewExpiredSession(),
+        expectLater(
+          container.read(gatewayRepositoryProvider).submitPassportEventJson('{}'),
+          throwsA(isA<GatewayAuthException>()),
+        ),
+      ]);
+      await container.pump();
+    });
+
+    expect(refreshCalls, 1);
+    expect(notifications.map((n) => n.message), ['Session has expired: please log in again.']);
+    expect(container.read(authProvider).value, isNull);
+    expect((await database.getPendingOperationsOrdered()).single.status, 'pending');
+  });
+
+  test('concurrent refreshes share one successful request', () async {
+    await withClock(Clock.fixed(now), () async {
+      await Future.wait([
+        container.read(authProvider.notifier).renewExpiredSession(),
+        container.read(gatewayRepositoryProvider).submitPassportEventJson('{}'),
+      ]);
+    });
+
+    expect(refreshCalls, 1);
+    expect(stored['token'], refreshedToken);
+  });
+
+  test('a successful background renewal restores offline access', () async {
+    stored.remove('refresh_expires_at');
+    await container.read(offlineAccessProvider.future);
+    expect(container.read(offlineAccessExpiredProvider), isTrue);
+
+    await container.read(authProvider.notifier).renewExpiredSession();
+    await container.pump();
+    await container.read(offlineAccessProvider.future);
+
+    expect(container.read(authProvider).value, isNotNull);
+    expect(container.read(offlineAccessExpiredProvider), isFalse);
+    expect(stored['refresh_expires_at'], isNotNull);
   });
 
   test('missing refresh credentials clear observable session state and preserve queued work', () async {

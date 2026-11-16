@@ -140,6 +140,7 @@ void main() {
           gatewayRepositoryProvider.overrideWithValue(repository),
           platformsRefreshDelayProvider.overrideWithValue(const Duration(milliseconds: 20)),
           authProvider.overrideWith(() => FakeAuthNotifier(createTestUser())),
+          validOfflineAccessOverride,
         ],
       );
       addTearDown(container.dispose);

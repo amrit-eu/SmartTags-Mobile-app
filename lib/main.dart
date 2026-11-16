@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/providers/error_notification_provider.dart';
 import 'package:smart_tags/providers/map_focus_request_provider.dart';
+import 'package:smart_tags/providers/offline_access_provider.dart';
 import 'package:smart_tags/providers/passport_event_queue_provider.dart';
 import 'package:smart_tags/providers/platforms_refresh_provider.dart';
 import 'package:smart_tags/providers/settings_providers.dart';
@@ -16,6 +17,7 @@ import 'package:smart_tags/theme.dart';
 import 'package:smart_tags/widgets/common/app_snack_bar.dart';
 import 'package:smart_tags/widgets/connectivity_banner.dart';
 import 'package:smart_tags/widgets/initial_sync_shell.dart';
+import 'package:smart_tags/widgets/offline_access_banner.dart';
 import 'package:smart_tags/widgets/pending_operations_banner.dart';
 
 Future<void> main() async {
@@ -44,6 +46,7 @@ class MyApp extends ConsumerWidget {
       ..watch(initialSyncProvider)
       ..watch(initialSyncLifecycleProvider)
       ..watch(passportEventQueueLifecycleProvider)
+      ..watch(offlineAccessLifecycleProvider)
       ..watch(platformsRefreshLifecycleProvider);
 
     return MaterialApp(
@@ -139,6 +142,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
           children: [
             const InitialSyncShell(),
             const ConnectivityBanner(),
+            const OfflineAccessBanner(),
             const PendingOperationsBanner(),
             Expanded(
               child: IndexedStack(
