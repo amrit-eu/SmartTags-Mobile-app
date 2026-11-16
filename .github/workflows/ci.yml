@@ -6,6 +6,10 @@ on:
       - main
   pull_request:
 
+# Keep in sync with release-android.yml.
+env:
+  FLUTTER_VERSION: '3.47.8'
+
 jobs:
 
   flutter_test:
@@ -20,6 +24,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
       - run: flutter --version
       - run: flutter test --coverage
@@ -36,6 +41,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
       - run: flutter --version
       - run: flutter analyze
@@ -52,6 +58,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
       - run: |
           flutter pub outdated --json > outdated.json
@@ -80,6 +87,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
       - run: flutter clean
       - run: flutter build apk --debug
@@ -97,6 +105,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
       - run: flutter clean
       - run: flutter build ios --no-codesign
