@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:smart_tags/database/db.dart';
 import 'package:smart_tags/database/db_connection.dart' as conn;
 import 'package:smart_tags/helpers/location/location_fetcher.dart';
+import 'package:smart_tags/map/smart_tags_marker_cluster_layer_widget.dart';
 import 'package:smart_tags/providers/db_providers.dart';
 import 'package:smart_tags/screens/map_screen.dart';
 
@@ -388,6 +390,70 @@ void main() {
 
       expect(find.text('Updated Platform'), findsOneWidget);
       expect(find.text('First Platform'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
+      await db.close();
+    },
+  );
+  testWidgets(
+    'Rebuilds without data changes keep the cluster markers list (no re-clustering)',
+    (tester) async {
+      final db = AppDatabase.executor(conn.inMemoryConnection());
+      await db
+          .into(db.platforms)
+          .insert(
+            PlatformsCompanion.insert(
+              ref: 'TEST-STABLE',
+              model: 'Stable Markers Platform',
+              network: 'Test Network',
+              lat: 45.5,
+              lon: -5.5,
+              operationLat: 44,
+              operationLon: -6,
+              status: 'OPERATIONAL',
+              operationalStatus: 'Deployed',
+              lastUpdated: DateTime.now(),
+              category: 'Profiling Float',
+            ),
+          );
+
+      Widget app({required double textScale}) => ProviderScope(
+        overrides: [
+          databaseProvider.overrideWith((ref) => db),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
+          home: MapScreen(
+            showMapSkeleton: false,
+            reportMarkersPainted: false,
+            recenterOnMarkerSelect: false,
+            locationFetcher: FakeLocationFetcher(const LatLng(12.34, 56.78)),
+          ),
+        ),
+      );
+
+      List<Marker> clusterMarkers() =>
+          tester.widget<SmartTagsMarkerClusterLayerWidget>(find.byType(SmartTagsMarkerClusterLayerWidget)).options.markers;
+
+      await tester.pumpWidget(app(textScale: 1));
+      await tester.pump(const Duration(seconds: 1));
+      final initialMarkers = clusterMarkers();
+      expect(initialMarkers, hasLength(1));
+
+      // Text size change (settings menu) rebuilds the whole tree.
+      await tester.pumpWidget(app(textScale: 1.4));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(identical(clusterMarkers(), initialMarkers), isTrue);
+
+      // Location update calls setState; its marker lives outside the cluster layer.
+      await tester.tap(find.byIcon(Icons.my_location));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(identical(clusterMarkers(), initialMarkers), isTrue);
+      expect(find.byType(MarkerLayer), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 100));
