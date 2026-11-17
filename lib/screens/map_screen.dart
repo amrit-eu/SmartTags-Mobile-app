@@ -750,32 +750,19 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     WidgetsBinding.instance.addPostFrameCallback((_) => onFrame());
   }
 
+  /// Returns the same list instance until [databasePlatforms] changes.
+  ///
+  /// The cluster layer re-clusters every marker on all zoom levels whenever it
+  /// receives a different list instance, which blocks the UI thread for
+  /// hundreds of milliseconds with thousands of platforms. Keeping the
+  /// instance stable limits that work to real data changes, not to rebuilds
+  /// caused by text scale, theme, location or skeleton updates.
   List<Marker> _platformMarkersFor(List<Platform> databasePlatforms) {
     if (!identical(_markersCacheSource, databasePlatforms)) {
       _markersCacheSource = databasePlatforms;
       _platformMarkers = databasePlatforms.map(_platformMarkerFor).toList(growable: false);
     }
     return _platformMarkers;
-  }
-
-  List<Marker> _buildMarkers(List<Platform> databasePlatforms) {
-    final markers = <Marker>[];
-
-    // Add current location marker if available
-    if (_currentLocation != null) {
-      markers.add(
-        Marker(
-          width: 40,
-          height: 40,
-          point: _currentLocation!,
-          child: _buildCurrentLocationMarker(),
-        ),
-      );
-    }
-
-    markers.addAll(_platformMarkersFor(databasePlatforms));
-
-    return markers;
   }
 
   @override
@@ -792,7 +779,8 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
 
     final platformsAsync = ref.watch(platformsStreamProvider);
 
-    final platforms = platformsAsync.value ?? [];
+    // Const fallback keeps the list identity stable while loading (see _platformMarkersFor).
+    final platforms = platformsAsync.value ?? const <Platform>[];
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.small(
@@ -871,7 +859,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   markerChildBehavior: true,
                   centerMarkerOnClick: false,
                   onClusterTap: _onClusterTap,
-                  markers: _buildMarkers(platforms),
+                  markers: _platformMarkersFor(platforms),
                   builder: (context, markers) {
                     return Container(
                       decoration: BoxDecoration(
@@ -888,6 +876,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                   },
                 ),
               ),
+              // Kept out of the cluster layer: a location update must not re-cluster every platform.
+              if (_currentLocation != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      width: 40,
+                      height: 40,
+                      point: _currentLocation!,
+                      child: _buildCurrentLocationMarker(),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
