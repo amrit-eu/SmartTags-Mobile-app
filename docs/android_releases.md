@@ -1,6 +1,8 @@
 # Android releases
 
-The [release workflow](../.github/workflows/release-android.yml) runs when a version tag such as `v1.0.0` or `v0.0.1-alpha.1` is pushed. Tags identify the agreed source commit; GitHub Releases host the signed APK for distribution outside Google Play.
+Distribution outside Google Play uses a **signed APK** published as a **GitHub Release** asset. For shared versioning, tags, and the bundled seed database, see [Release overview](release_overview.md) and [Release seed database](release_seed_database.md).
+
+Workflow: **[Release Android APK](../.github/workflows/release-android.yml)** (runs on tags such as `v1.0.0`).
 
 ## One-time signing setup
 
@@ -38,43 +40,24 @@ The workflow uses the automatic `GITHUB_TOKEN` to create releases; a personal ac
 ## Create a release
 
 1. Set the agreed application version in `pubspec.yaml`, for example `version: 1.0.0+1`. `1.0.0` becomes Android `versionName`; `1` becomes `versionCode`. Use a positive integer build number and increase it for each new release, even when the version changes.
-2. Merge the version change and release workflow into `main`, and let the existing CI pass.
-3. Tag that commit and push the tag:
+2. Merge the version change into `main`, and let CI pass.
+3. Tag that commit and push the tag (see [Release overview](release_overview.md)).
+4. Open **Actions → Release Android APK**. When jobs finish, the workflow creates the GitHub Release with `smart-tags.apk` and `smart-tags.apk.sha256`.
 
-   ```bash
-   git checkout main
-   git pull --ff-only
-   git tag -a v1.0.0 -m "SmartTags 1.0.0 (build 1)"
-   git push origin v1.0.0
-   ```
+Do not create a GitHub Release in advance: the workflow creates it after verification.
 
-4. Follow **Actions > Release Android APK**. Once all checks pass, the workflow creates the GitHub Release and uploads `smart-tags.apk` and `smart-tags.apk.sha256`.
-
-The tag excludes the build suffix: `version: 1.2.0+7` uses tag `v1.2.0`, and `version: 1.2.0-rc.1+7` uses tag `v1.2.0-rc.1`. Do not create a GitHub Release in advance: the workflow creates it after verification.
-
-The release title and notes identify the application version, build number, source commit, minimum Android API level, and included architectures. The version and build number are also embedded in the APK.
+The release title and notes identify the application version, build number, source commit, minimum Android API level, included architectures, and seed database stats. The version and build number are also embedded in the APK.
 
 ## Test a feature branch with a prerelease
 
 A tag can point to a feature-branch commit; merging into `main` is not required. The tagged commit must contain the workflow, signing configuration, and the matching application version. Uncommitted changes are not included in a tag.
 
 1. Configure the same four repository signing secrets described above.
-2. On the feature branch, set `pubspec.yaml` to `version: 0.0.1-alpha.1+1` and commit that version together with the release workflow changes. Use an increasing build number if test devices already have an APK signed with the same key.
-3. Push the branch and tag that commit:
+2. On the feature branch, set `pubspec.yaml` to `version: 0.0.1-alpha.1+1` and commit. Use an increasing build number if test devices already have an APK signed with the same key.
+3. Push the branch and tag that commit (see [Release overview](release_overview.md) for tag rules).
+4. Follow **Actions → Release Android APK**. The APK passes the same build, test, and signature checks as a stable release.
 
-   ```bash
-   git push origin HEAD
-   git tag -a v0.0.1-alpha.1 -m "SmartTags Android alpha test 1"
-   git push origin v0.0.1-alpha.1
-   ```
-
-4. Follow **Actions > Release Android APK**. The APK passes the same build, test, and signature checks as a stable release.
-
-Use SemVer prerelease suffixes such as `-alpha.1`, `-alpha.2`, `-beta.1`, or `-rc.1`. A tag like `v0.0.1a1` is not supported. For another alpha, update the application version to `0.0.1-alpha.2+2` and tag `v0.0.1-alpha.2`.
-
-The workflow creates prereleases with `gh release create --prerelease --latest=false`, so they do not replace the website's `releases/latest/download/smart-tags.apk` link. See the [GitHub CLI release options](https://cli.github.com/manual/gh_release_create).
-
-Download the alpha APK using its tag-specific link:
+Prerelease tags use SemVer suffixes such as `-alpha.1`, `-rc.1`. The workflow publishes with `--prerelease --latest=false`. Download an alpha APK by tag:
 
 ```text
 https://github.com/amrit-eu/SmartTags-Mobile-app/releases/download/v0.0.1-alpha.1/smart-tags.apk
@@ -82,7 +65,7 @@ https://github.com/amrit-eu/SmartTags-Mobile-app/releases/download/v0.0.1-alpha.
 
 ## Build verification and manual device checks
 
-The workflow pins Flutter **3.44.0** and Java **17**, installs the committed dependency lockfile, runs `flutter analyze` and `flutter test`, and builds one release APK containing `armeabi-v7a`, `arm64-v8a`, and `x86_64`. Update the Flutter pin and lockfile together when upgrading the release toolchain.
+The workflow pins Flutter **3.47.0** and Java **17**, installs the committed dependency lockfile, runs `flutter analyze` and `flutter test`, and builds one release APK containing `armeabi-v7a`, `arm64-v8a`, and `x86_64`.
 
 Before publication it verifies the APK signature, embedded version/build number, Internet permission, included architectures, and that debugging is disabled. The publish job verifies the download checksum again.
 

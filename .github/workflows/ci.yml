@@ -89,6 +89,9 @@ jobs:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
+      - uses: ./.github/actions/generate-seed-database
+        with:
+          schema-only: 'true'
       - run: flutter clean
       - run: flutter build apk --debug
       - run: flutter clean
@@ -107,6 +110,9 @@ jobs:
           channel: 'stable'
           flutter-version: ${{ env.FLUTTER_VERSION }}
       - run: flutter pub get
+      - uses: ./.github/actions/generate-seed-database
+        with:
+          schema-only: 'true'
       - run: flutter clean
       - run: flutter build ios --no-codesign
       - run: flutter clean
